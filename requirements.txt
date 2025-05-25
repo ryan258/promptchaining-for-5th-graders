@@ -2,20 +2,15 @@
 # This file tells Python which extra tools to download and install
 # Think of it like a shopping list for our code
 
-# llm - This is the main tool that lets us talk to AI models
-# It's like having a universal translator for different AI languages
-# Without this, we can't send prompts to Claude, GPT, or other AI models
-llm
+# google-generativeai - This is the main tool that lets us talk to Google's Gemini AI models
+# It's like having a universal translator for Google's AI languages
+# This is much more affordable than other AI options, perfect for learning!
+google-generativeai
 
 # python-dotenv - This helps us keep our secret keys safe
 # It reads passwords from a file called .env instead of putting them in our code
 # This way we can share our code without sharing our secret passwords
 python-dotenv
-
-# llm-claude-3 - This is a special add-on for the llm tool
-# It teaches the llm tool how to specifically talk to Claude AI models
-# Without this, the llm tool wouldn't know how to speak "Claude language"
-llm-claude-3
 
 # pytest - This is our testing tool
 # It runs all our tests to make sure our code works correctly
@@ -33,3 +28,11 @@ pydantic
 # 3. Type: pip install -r requirements.txt
 # 4. Press Enter and wait for everything to download
 # 5. Now you have all the tools you need!
+
+# Getting Your Google API Key:
+# 1. Go to https://makersuite.google.com/app/apikey
+# 2. Sign in with your Google account
+# 3. Click "Create API Key"
+# 4. Copy the key and put it in your .env file like this:
+#    GOOGLE_API_KEY=your_key_here
+# 5. Google gives you free credits to start - perfect for learning!

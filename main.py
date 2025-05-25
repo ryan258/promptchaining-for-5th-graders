@@ -6,7 +6,7 @@ import os  # Helps us read secret keys from the computer
 from typing import List, Dict, Union  # Tells Python what types of data we expect
 from dotenv import load_dotenv  # Helps us load secret keys from a file
 from chain import MinimalChainable, FusionChain  # Our magic prompt chaining tools
-import llm  # Library that talks to AI models
+import google.generativeai as genai  # Google's library that talks to Gemini AI models
 import json  # Helps us work with data that looks like {"key": "value"}
 
 
@@ -15,55 +15,76 @@ def build_models():
     This function sets up our AI models so we can talk to them.
     
     Think of this like getting phone numbers for three different friends
-    who are really good at writing. Each friend has different strengths:
-    - Claude 3.5 Sonnet: The smartest friend
-    - Claude 3 Sonnet: Pretty smart friend  
-    - Claude 3 Haiku: Fast friend who gives quick answers
+    who are really good at writing. We're using Google's Gemini models now
+    because they're super affordable and still really smart:
+    - Gemini 2.5 Flash: Fast, smart, and budget-friendly!
+    - Gemini Pro: A bit more powerful for complex tasks
+    - Gemini Flash: Lightning fast for simple questions
     """
     
     # Load our secret API key from a file called .env
     # This is like getting the password to call our AI friends
     load_dotenv()
     
-    # Get the secret key from our computer's environment
-    ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-
-    # Set up our three AI model friends
-    # Each one needs the same secret key to work
+    # Get the secret key for Google's AI from our computer's environment
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     
-    # Claude 3.5 Sonnet - the newest and smartest
-    sonnet_3_5_model: llm.Model = llm.get_model("claude-3.5-sonnet")
-    sonnet_3_5_model.key = ANTHROPIC_API_KEY
+    # Check if we actually got the key
+    if not GOOGLE_API_KEY:
+        raise ValueError(
+            "🔑 Missing API key! Please:\n"
+            "   1. Copy .env.example to .env\n"
+            "   2. Get your key from https://makersuite.google.com/app/apikey\n"
+            "   3. Add it to your .env file as GOOGLE_API_KEY=your_key_here"
+        )
+    
+    # Tell Google's library to use our secret key
+    genai.configure(api_key=GOOGLE_API_KEY)
 
-    # Claude 3 Sonnet - still very smart, just not the newest
-    sonnet_3_model: llm.Model = llm.get_model("claude-3-sonnet")
-    sonnet_3_model.key = ANTHROPIC_API_KEY
+    # Set up our three Gemini model friends
+    # They're all fast and affordable - perfect for learning!
+    
+    # Gemini 2.5 Flash - newest stable model, fast and cost-effective
+    gemini_flash_new = genai.GenerativeModel("gemini-2.5-flash")
 
-    # Claude 3 Haiku - faster but simpler responses
-    haiku_3_model: llm.Model = llm.get_model("claude-3-haiku")
-    haiku_3_model.key = ANTHROPIC_API_KEY
+    # Gemini 2.5 Pro - more powerful for complex reasoning
+    gemini_pro = genai.GenerativeModel("gemini-2.5-pro")
+    
+    # Gemini 1.0 Pro - reliable and well-tested
+    gemini_stable = genai.GenerativeModel("gemini-pro")
 
     # Return all three models so we can use them later
-    return [sonnet_3_5_model, sonnet_3_model, haiku_3_model]
+    return [gemini_flash_new, gemini_pro, gemini_stable]
 
 
-def prompt(model: llm.Model, prompt: str):
+def prompt(model: genai.GenerativeModel, prompt: str):
     """
-    This function sends a message to an AI model and gets back an answer.
+    This function sends a message to a Gemini AI model and gets back an answer.
     
     It's like sending a text message to your smart friend and waiting
     for them to text you back with an answer.
     """
     
-    # Send the prompt to the model with some settings
-    # Temperature 0.5 means "be creative, but not too crazy"
-    res = model.prompt(
-        prompt,
-        temperature=0.5,  # How creative should the AI be? (0 = boring, 1 = very creative)
-    )
-    
-    # Get just the text part of the response
-    return res.text()
+    try:
+        # Configure the model settings
+        # Temperature 0.5 means "be creative, but not too crazy"
+        generation_config = genai.types.GenerationConfig(
+            temperature=0.5,  # How creative should the AI be? (0 = boring, 1 = very creative)
+            max_output_tokens=1000,  # Maximum length of response
+        )
+        
+        # Send the prompt to the model and get a response
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config
+        )
+        
+        # Get just the text part of the response
+        return response.text
+        
+    except Exception as e:
+        # If something goes wrong, give a helpful message instead of a scary error
+        return f"Oops! Something went wrong talking to the AI: {str(e)}\nCheck your API key in the .env file!"
 
 
 def prompt_chainable_poc():
@@ -92,8 +113,8 @@ def prompt_chainable_poc():
         # Our starting context - this is like our bag of ingredients
         context={"topic": "AI Agents"},
         
-        # Which AI model to use
-        model=sonnet_3_5_model,
+        # Which AI model to use - now we're using Google's fastest stable model!
+        model=gemini_flash_new,
         
         # The function that sends prompts to the AI
         callable=prompt,
@@ -150,8 +171,8 @@ def fusion_chain_poc():
     choosing who gave the best response.
     """
     
-    # Get all three of our AI models
-    sonnet_3_5_model, sonnet_3_model, haiku_3_model = build_models()
+    # Get all three of our Gemini AI models
+    models = build_models()
 
     def evaluator(outputs: List[str]) -> tuple[str, List[float]]:
         """
@@ -181,8 +202,8 @@ def fusion_chain_poc():
         # Same context as before
         context={"topic": "AI Agents"},
         
-        # Use all three AI models - they'll compete!
-        models=[sonnet_3_5_model, sonnet_3_model, haiku_3_model],
+        # Use all three Gemini models - they'll compete!
+        models=models,
         
         # Function to send prompts
         callable=prompt,
@@ -207,7 +228,7 @@ BLOG_HOOK:
         evaluator=evaluator,
         
         # Function to get model names for the report
-        get_model_name=lambda model: model.model_id,
+        get_model_name=lambda model: model.model_name,
     )
 
     # Convert our result to a dictionary so we can save it as JSON
@@ -222,6 +243,39 @@ BLOG_HOOK:
         json.dump(result_dump, json_file, indent=4)
 
 
+def verify_setup():
+    """
+    This function helps you test that everything is working correctly.
+    
+    It's like checking if your car starts before going on a road trip.
+    We'll try to connect to the AI and get a simple response.
+    """
+    
+    print("🔧 Testing your AI setup...")
+    
+    try:
+        # Try to build our models and use the first one for testing
+        models = build_models()
+        test_model = models[0]  # Use the first model from our collection
+        
+        # Send a simple test message
+        test_response = prompt(test_model, "Say 'Hello, young builder!' if you can hear me.")
+        
+        print("✅ Success! Your AI is ready to chain prompts!")
+        print(f"🤖 AI says: {test_response}")
+        return True
+        
+    except Exception as e:
+        print("❌ Setup test failed!")
+        print(f"🐛 Error: {str(e)}")
+        print("\n🔍 Troubleshooting tips:")
+        print("   1. Check that you have a .env file with your GOOGLE_API_KEY")
+        print("   2. Make sure you copied your key correctly from Google AI Studio")
+        print("   3. Verify you have internet connection")
+        print("   4. Try running: pip install -r requirements.txt")
+        return False
+
+
 def main():
     """
     This is the main function that runs when we start the program.
@@ -230,7 +284,16 @@ def main():
     pieces of music (functions) to play and in what order.
     """
     
-    # First, show how basic prompt chaining works
+    # First, let's make sure everything is working
+    if not verify_setup():
+        print("\n🚫 Please fix the setup issues above before continuing.")
+        return
+    
+    print("\n" + "="*60)
+    print("🎪 Welcome to the Prompt Chaining Carnival!")
+    print("="*60)
+    
+    # Show how basic prompt chaining works
     prompt_chainable_poc()
 
     # Uncomment the next line if you want to see fusion chaining too!

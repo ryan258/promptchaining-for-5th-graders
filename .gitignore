@@ -86,6 +86,11 @@ poc_*.json
 *_context_filled_prompts.txt
 poc_fusion_chain_result.json
 
+# Gemini-specific cache and temp files
+.gemini_cache/
+gemini_responses.cache
+*.gemini_cache
+
 # Log files - the chronicles of execution
 *.log
 logs/
