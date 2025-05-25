@@ -267,7 +267,7 @@ class MinimalChainable:
         result_string = ""  # We'll build up the final text here
         
         # Create a file with the given name
-        with open(f"{name}.txt", "w") as outfile:
+        with open(f"{name}.txt", "w", encoding="utf-8") as outfile:
             # Go through each item in our content
             for i, item in enumerate(content, 1):  # Start counting from 1
                 
