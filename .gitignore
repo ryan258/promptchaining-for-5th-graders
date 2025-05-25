@@ -127,6 +127,8 @@ temp/
 docs/_build/
 .readthedocs.yml
 
+# DEMOS
+demos/*/*.txt
 # ============================================================================
 # OPERATING SYSTEM ARTIFACTS - Digital Dust from Different Worlds
 # ============================================================================
