@@ -1,0 +1,35 @@
+# requirements.txt - The Tools We Need
+# This file tells Python which extra tools to download and install
+# Think of it like a shopping list for our code
+
+# llm - This is the main tool that lets us talk to AI models
+# It's like having a universal translator for different AI languages
+# Without this, we can't send prompts to Claude, GPT, or other AI models
+llm
+
+# python-dotenv - This helps us keep our secret keys safe
+# It reads passwords from a file called .env instead of putting them in our code
+# This way we can share our code without sharing our secret passwords
+python-dotenv
+
+# llm-claude-3 - This is a special add-on for the llm tool
+# It teaches the llm tool how to specifically talk to Claude AI models
+# Without this, the llm tool wouldn't know how to speak "Claude language"
+llm-claude-3
+
+# pytest - This is our testing tool
+# It runs all our tests to make sure our code works correctly
+# Think of it like a robot that checks our work for us
+pytest
+
+# pydantic - This helps us create clean, organized data structures
+# It's like having labeled boxes for our data, so everything stays organized
+# It also checks that the data is the right type (text vs number vs etc.)
+pydantic
+
+# Installation Instructions:
+# 1. Open your terminal (command line)
+# 2. Navigate to the folder with this file
+# 3. Type: pip install -r requirements.txt
+# 4. Press Enter and wait for everything to download
+# 5. Now you have all the tools you need!

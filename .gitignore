@@ -1,0 +1,225 @@
+# .gitignore - The Art of Selective Attention
+# Every exclusion is a decision about what deserves permanence
+
+# ============================================================================
+# SECRETS & CREDENTIALS - Guard the Keys to the Kingdom
+# ============================================================================
+.env
+.env.local
+.env.*.local
+*.key
+**/secrets/**
+config/credentials.yml
+.credentials
+
+# API keys that might sneak into filenames
+*api_key*
+*secret*
+*token*
+
+# ============================================================================
+# PYTHON ECOSYSTEM - The Inevitable Artifacts of Execution
+# ============================================================================
+
+# Bytecode - the machine's interpretation of our poetry
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging - the scaffolding of sharing
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments - isolated universes for our experiments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+pyvenv.cfg
+
+# Testing artifacts - evidence of our diligence
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+cover/
+htmlcov/
+.testmondir/
+.pytest_cache/
+
+# Jupyter Notebook checkpoints - the auto-save archaeology
+.ipynb_checkpoints
+
+# pyenv - version management traces
+.python-version
+
+# ============================================================================
+# GENERATED OUTPUTS - The Fruits of Our Digital Labor
+# ============================================================================
+
+# Demo output files - each run creates its own story
+poc_*.txt
+poc_*.json
+*_prompt_results.txt
+*_context_filled_prompts.txt
+poc_fusion_chain_result.json
+
+# Log files - the chronicles of execution
+*.log
+logs/
+*.out
+
+# Temporary files - the ephemeral thoughts of computation
+*.tmp
+*.temp
+.tmp/
+temp/
+
+# ============================================================================
+# DEVELOPMENT TOOLS - The Artisan's Workshop Debris
+# ============================================================================
+
+# IDEs and Editors - each craftsperson's preferred workspace
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vim/
+.emacs.d/
+.spyderproject
+.spyproject
+
+# Code formatting and linting
+.black/
+.mypy_cache/
+.ruff_cache/
+.pylint.d/
+
+# Documentation builds - generated wisdom
+docs/_build/
+.readthedocs.yml
+
+# ============================================================================
+# OPERATING SYSTEM ARTIFACTS - Digital Dust from Different Worlds
+# ============================================================================
+
+# macOS - the fruit company's hidden files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows - microsoft's metadata
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux - the penguin's preferences
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ============================================================================
+# VERSION CONTROL ARCHAEOLOGY - Git's Own Memories
+# ============================================================================
+*.orig
+*.rej
+
+# ============================================================================
+# DATA & EXPERIMENTS - The Sandbox of Discovery
+# ============================================================================
+
+# Large datasets - too big for version control
+data/
+datasets/
+*.csv
+*.xlsx
+*.json
+!requirements.txt
+!package.json
+
+# Model files - the learned wisdom of machines
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+
+# Experimental outputs - each iteration's unique fingerprint
+experiments/
+outputs/
+results/
+sandbox/
+
+# ============================================================================
+# CUSTOM PROJECT PATTERNS - The Specifics of Our Domain
+# ============================================================================
+
+# Prompt chain outputs - the conversations with our AI friends
+chain_output_*.txt
+fusion_results_*.json
+prompt_experiments/
+
+# User-generated content during demos
+user_stories/
+generated_content/
+demo_outputs/
+
+# Performance and debugging
+profiling/
+debug_logs/
+memory_dumps/
+
+# ============================================================================
+# PHILOSOPHY OF EXCLUSION
+# ============================================================================
+#
+# This .gitignore embodies a fundamental principle: 
+# Version control should preserve intent, not artifact.
+#
+# We include:
+# - Source code (the thoughts)
+# - Configuration templates (the patterns)
+# - Documentation (the explanations)
+# - Tests (the validations)
+#
+# We exclude:
+# - Generated outputs (reproducible artifacts)
+# - Secrets (private knowledge)
+# - Environment-specific debris (local context)
+# - Tool artifacts (means, not ends)
+#
+# Every exclusion is an act of curation, choosing what deserves 
+# to travel through time and what should remain local to the moment.
+#
+# This file is itself a kind of prompt chain - each pattern
+# anticipates a future possibility and prepares a response.
+# ============================================================================
