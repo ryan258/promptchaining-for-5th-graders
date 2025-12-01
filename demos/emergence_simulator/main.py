@@ -29,9 +29,10 @@ def emergence_simulator_demo():
     print("🚀 Running: Emergence Simulator Demo")
 
     # First, let's get our AI models ready.
-    all_models = build_models()
+    client, model_names = build_models()
     # We'll pick the first AI friend from the list to help us.
-    selected_model = all_models[0]
+    selected_model_name = model_names[0]
+    model_info = (client, selected_model_name)
 
     # Let's define a type of "agent" and some simple rules for it.
     # An agent can be an ant, a bird, a person, or even just a dot.
@@ -56,36 +57,26 @@ def emergence_simulator_demo():
         # 'context' is like giving our AI starting information.
         context={"agent": agent_type, "rule_A": rule1, "rule_B": rule2, "rule_C": rule3},
         # 'model' tells it which AI friend to talk to.
-        model=selected_model,
+        model=model_info,
         # 'callable' is the function that actually sends the message to the AI.
         callable=prompt,
         # 'prompts' is a list of questions we'll ask the AI, one after another.
         prompts=[
             # Prompt 1: Describe individual behavior based on the rules.
             # "{{agent}}", "{{rule_A}}", etc., will be replaced.
-            "Imagine one '{{agent}}' on a large empty grid. Based *only* on these rules: " +
-            "1. {{rule_A}}, 2. {{rule_B}}, 3. {{rule_C}}. " +
-            "What would its typical behavior be if there's food scattered randomly and occasionally other robots or walls? Describe its movement pattern. " +
-            "Respond in JSON like {'individual_behavior': 'description of movement'}",
+            """Imagine one '{{agent}}' on a large empty grid. Based *only* on these rules: 1. {{rule_A}}, 2. {{rule_B}}, 3. {{rule_C}}. What would its typical behavior be if there's food scattered randomly and occasionally other robots or walls? Describe its movement pattern. Respond in JSON like {"individual_behavior": "description of movement"}""",
 
             # Prompt 2: Predict group interactions.
             # "{{output[-1].individual_behavior}}" uses the behavior from the AI's last answer.
-            "Now, imagine many '{{agent}}' (all following rules: 1. {{rule_A}}, 2. {{rule_B}}, 3. {{rule_C}}) are on the same grid with food. " +
-            "Knowing their individual behavior ({{output[-1].individual_behavior}}), how would they interact with each other? What might happen when they get close? " +
-            "Respond in JSON like {'group_interactions': 'description of interactions'}",
+            """Now, imagine many '{{agent}}' (all following rules: 1. {{rule_A}}, 2. {{rule_B}}, 3. {{rule_C}}) are on the same grid with food. Knowing their individual behavior ({{output[-1].individual_behavior}}), how would they interact with each other? What might happen when they get close? Respond in JSON like {"group_interactions": "description of interactions"}""",
 
             # Prompt 3: Identify emergent patterns.
             # "{{output[-1].group_interactions}}" uses the interactions from the last answer.
-            "From these group interactions ({{output[-1].group_interactions}}) of '{{agent}}' following rules: 1. {{rule_A}}, 2. {{rule_B}}, 3. {{rule_C}}, " +
-            "what complex group pattern or behavior might 'emerge' that you wouldn't expect from just looking at the simple rules? " +
-            "Think about how they might distribute themselves or find food. " +
-            "Respond in JSON like {'emergent_pattern': 'description of the complex pattern'}",
+            """From these group interactions ({{output[-1].group_interactions}}) of '{{agent}}' following rules: 1. {{rule_A}}, 2. {{rule_B}}, 3. {{rule_C}}, what complex group pattern or behavior might 'emerge' that you wouldn't expect from just looking at the simple rules? Think about how they might distribute themselves or find food. Respond in JSON like {"emergent_pattern": "description of the complex pattern"}""",
 
             # Prompt 4: Give real-world examples.
             # "{{output[-1].emergent_pattern}}" uses the pattern from the last answer.
-            "The emergent pattern you described for '{{agent}}' is '{{output[-1].emergent_pattern}}'. " +
-            "Can you give 1-2 examples from the real world (like animals, people, or nature) where similar simple rules lead to complex group behaviors or patterns? Briefly explain the connection. " +
-            "Respond in JSON like {'real_world_examples': [{'example': 'example name', 'connection': 'how it relates'}, ...]}"
+            """The emergent pattern you described for '{{agent}}' is '{{output[-1].emergent_pattern}}'. Can you give 1-2 examples from the real world (like animals, people, or nature) where similar simple rules lead to complex group behaviors or patterns? Briefly explain the connection. Respond in JSON like {"real_world_examples": [{"example": "example name", "connection": "how it relates"}, ...]}"""
         ],
     )
 
@@ -115,6 +106,7 @@ def emergence_simulator_demo():
 # This special code block runs only when you run this file directly.
 if __name__ == "__main__":
     # This part helps load our secret API key from a file named '.env'.
+    # The API key is like a password to talk to AI models through OpenRouter.
     from dotenv import load_dotenv
     # We need to find the '.env' file, which is in our main project folder.
     dotenv_path = os.path.join(project_root, '.env')
@@ -122,12 +114,12 @@ if __name__ == "__main__":
         load_dotenv(dotenv_path) # Load the secret key
     else:
         # If the file isn't there, print a friendly warning.
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure GOOGLE_API_KEY is set in your environment.")
+        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
     # Check if we actually got the API key.
-    if not os.getenv("GOOGLE_API_KEY"):
+    if not os.getenv("OPENROUTER_API_KEY"):
         # If not, tell the user what to do.
-        print("🚨 GOOGLE_API_KEY not found. Please set it up in the .env file in the project root.")
+        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.")
     else:
         # If we have the key, then it's time to run our emergence_simulator_demo recipe!
         emergence_simulator_demo()

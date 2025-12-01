@@ -29,9 +29,10 @@ def problem_solution_spider_demo():
     print("🚀 Running: Problem-Solution Spider Demo")
 
     # First, let's get our AI models ready.
-    all_models = build_models()
+    client, model_names = build_models()
     # We'll pick the first AI friend from the list to help us.
-    selected_model = all_models[0]
+    selected_model_name = model_names[0]
+    model_info = (client, selected_model_name)
 
     # This is the problem we want the AI to help us solve.
     # Try changing this to a different problem you want to think about!
@@ -47,7 +48,7 @@ def problem_solution_spider_demo():
         # 'context' is like giving our AI starting information.
         context={"problem": problem_to_solve},
         # 'model' tells it which AI friend to talk to.
-        model=selected_model,
+        model=model_info,
         # 'callable' is the function that actually sends the message to the AI.
         callable=prompt,
         # 'prompts' is a list of questions we'll ask the AI, one after another.
@@ -55,24 +56,24 @@ def problem_solution_spider_demo():
             # Prompt 1: Define the problem clearly.
             # "{{problem}}" will be replaced with our chosen problem_to_solve.
             # We ask the AI to answer in JSON format.
-            "Clearly define the problem: '{{problem}}' for a 5th-grade audience. What are the main issues involved? Respond in JSON like {'defined_problem': 'clear definition and main issues'}",
+            """Clearly define the problem: '{{problem}}' for a 5th-grade audience. What are the main issues involved? Respond in JSON like {"defined_problem": "clear definition and main issues"}""",
 
             # Prompt 2: List constraints.
             # "{{output[-1].defined_problem}}" uses the defined problem from the AI's last answer.
-            "For the problem '{{output[-1].defined_problem}}', list 2-3 common constraints or limitations a 5th grader might face when trying to solve it (e.g., limited budget, school rules, not much time). Respond in JSON like {'constraints': ['constraint1', 'constraint2', ...]}",
+            """For the problem '{{output[-1].defined_problem}}', list 2-3 common constraints or limitations a 5th grader might face when trying to solve it (e.g., limited budget, school rules, not much time). Respond in JSON like {"constraints": ["constraint1", "constraint2", ...]}""",
 
             # Prompt 3: Brainstorm wild ideas.
             # "{{output[-2].defined_problem}}" uses the problem from 2 answers ago.
             # "{{output[-1].constraints}}" uses the constraints from the last answer.
-            "Let's brainstorm! For the problem '{{output[-2].defined_problem}}' with constraints {{output[-1].constraints}}, suggest 3-4 wild and imaginative ideas to solve it. Don't worry if they seem silly or impossible right now. Respond in JSON like {'wild_ideas': [{'idea': 'wild idea 1 description'}, ...]}",
+            """Let's brainstorm! For the problem '{{output[-2].defined_problem}}' with constraints {{output[-1].constraints}}, suggest 3-4 wild and imaginative ideas to solve it. Don't worry if they seem silly or impossible right now. Respond in JSON like {"wild_ideas": [{"idea": "wild idea 1 description"}, ...]}""",
 
             # Prompt 4: Combine the best parts of wild ideas.
             # "{{output[-1].wild_ideas}}" uses the wild ideas from the AI's last answer.
-            "Look at these wild ideas for '{{output[-3].defined_problem}}': {{output[-1].wild_ideas}}. Now, try to combine the best parts of 1-2 of these ideas to create a more practical, creative solution. Describe the combined solution. Respond in JSON like {'combined_solution': 'description of combined solution'}",
+            """Look at these wild ideas for '{{output[-3].defined_problem}}': {{output[-1].wild_ideas}}. Now, try to combine the best parts of 1-2 of these ideas to create a more practical, creative solution. Describe the combined solution. Respond in JSON like {"combined_solution": "description of combined solution"}""",
 
             # Prompt 5: Test the combined solution with a scenario.
             # "{{output[-1].combined_solution}}" uses the combined solution from the last answer.
-            "Let's test the solution: '{{output[-1].combined_solution}}' for the problem '{{output[-4].defined_problem}}'. Describe a brief scenario where a 5th grader tries this solution. What happens? Does it work well? What could be improved? Respond in JSON like {'scenario_test': {'outcome': 'description of what happens', 'improvements_needed': 'any improvements'}}"
+            """Let's test the solution: '{{output[-1].combined_solution}}' for the problem '{{output[-4].defined_problem}}'. Describe a brief scenario where a 5th grader tries this solution. What happens? Does it work well? What could be improved? Respond in JSON like {"scenario_test": {"outcome": "description of what happens", "improvements_needed": "any improvements"}}"""
         ],
     )
 
@@ -102,6 +103,7 @@ def problem_solution_spider_demo():
 # This special code block runs only when you run this file directly.
 if __name__ == "__main__":
     # This part helps load our secret API key from a file named '.env'.
+    # The API key is like a password to talk to AI models through OpenRouter.
     from dotenv import load_dotenv
     # We need to find the '.env' file, which is in our main project folder.
     dotenv_path = os.path.join(project_root, '.env')
@@ -109,12 +111,12 @@ if __name__ == "__main__":
         load_dotenv(dotenv_path) # Load the secret key
     else:
         # If the file isn't there, print a friendly warning.
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure GOOGLE_API_KEY is set in your environment.")
+        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
     # Check if we actually got the API key.
-    if not os.getenv("GOOGLE_API_KEY"):
+    if not os.getenv("OPENROUTER_API_KEY"):
         # If not, tell the user what to do.
-        print("🚨 GOOGLE_API_KEY not found. Please set it up in the .env file in the project root.")
+        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.")
     else:
         # If we have the key, then it's time to run our problem_solution_spider_demo recipe!
         problem_solution_spider_demo()

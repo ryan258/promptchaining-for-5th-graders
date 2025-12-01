@@ -25,9 +25,10 @@ def concept_simplifier_demo():
     print("🚀 Running: Concept Simplifier Demo")
 
     # Get our AI models ready to help.
-    all_models = build_models()
+    client, model_names = build_models()
     # We'll use the first AI friend in the list.
-    selected_model = all_models[0]
+    selected_model_name = model_names[0]
+    model_info = (client, selected_model_name)
 
     # This is the tricky topic we want the AI to explain simply.
     # Try changing this to something else you're curious about!
@@ -40,7 +41,7 @@ def concept_simplifier_demo():
         # 'context' gives the AI the starting topic.
         context={"topic": complex_topic},
         # Which AI friend to use.
-        model=selected_model,
+        model=model_info,
         # The function to send messages to the AI.
         callable=prompt,
         # Our list of step-by-step questions for the AI.
@@ -48,22 +49,22 @@ def concept_simplifier_demo():
             # Prompt 1: Break the topic into small pieces.
             # "{{topic}}" will be replaced with "Photosynthesis".
             # We ask for the answer in JSON format (like a dictionary).
-            "Break the complex topic '{{topic}}' into 3-4 main parts a 5th grader can understand. Respond in JSON: {'parts': ['part1 explanation', 'part2 explanation', ...]}",
+            """Break the complex topic '{{topic}}' into 3-4 main parts a 5th grader can understand. Respond in JSON: {"parts": ["part1 explanation", "part2 explanation", ...]}""",
 
             # Prompt 2: Find simple comparisons (analogies).
             # "{{output[-1].parts}}" uses the 'parts' from the AI's last answer.
-            "For the topic '{{topic}}' and its parts {{output[-1].parts}}, find a simple analogy for each part to help a 5th grader understand. Respond in JSON: {'analogies': [{'part': 'original part1', 'analogy': 'analogy1'}, ...]}",
+            """For the topic '{{topic}}' and its parts {{output[-1].parts}}, find a simple analogy for each part to help a 5th grader understand. Respond in JSON: {"analogies": [{"part": "original part1", "analogy": "analogy1"}, ...]}""",
 
             # Prompt 3: Give examples for those analogies.
             # "{{output[-1].analogies}}" uses the 'analogies' from the AI's last answer.
-            "Using the analogies from {{output[-1].analogies}} for '{{topic}}', provide a simple example for each to test understanding. Respond in JSON: {'examples': [{'analogy_for_part': 'analogy1', 'example': 'example1'}, ...]}",
+            """Using the analogies from {{output[-1].analogies}} for '{{topic}}', provide a simple example for each to test understanding. Respond in JSON: {"examples": [{"analogy_for_part": "analogy1", "example": "example1"}, ...]}""",
 
             # Prompt 4: Create a short teaching story.
             # This prompt uses answers from three previous steps!
             # "{{output[-3].parts}}" gets the parts from 3 answers ago.
             # "{{output[-2].analogies}}" gets the analogies from 2 answers ago.
             # "{{output[-1].examples}}" gets the examples from the last answer.
-            "Now, create a very short teaching story (3-5 sentences) for a 5th grader that explains '{{topic}}' using the main parts, analogies, and examples from {{output[-3].parts}}, {{output[-2].analogies}}, and {{output[-1].examples}}. Make it engaging! Respond in JSON: {'story': 'your teaching story'}"
+            """Now, create a very short teaching story (3-5 sentences) for a 5th grader that explains '{{topic}}' using the main parts, analogies, and examples from {{output[-3].parts}}, {{output[-2].analogies}}, and {{output[-1].examples}}. Make it engaging! Respond in JSON: {"story": "your teaching story"}"""
         ],
     )
 
@@ -93,18 +94,18 @@ def concept_simplifier_demo():
 # This special code runs if you start this Python file directly.
 if __name__ == "__main__":
     # This part helps load our secret API key.
-    # The API key is like a password to talk to Google's AI.
+    # The API key is like a password to talk to AI models through OpenRouter.
     from dotenv import load_dotenv
     # Find the '.env' file in our main project folder.
     dotenv_path = os.path.join(project_root, '.env')
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path) # Load the secret key
     else:
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure GOOGLE_API_KEY is set in your environment.")
+        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
     # Check if we have the API key.
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("🚨 GOOGLE_API_KEY not found. Please set it up in the .env file in the project root.") #
+    if not os.getenv("OPENROUTER_API_KEY"):
+        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.") #
     else:
         # If we have the key, let's run our concept_simplifier_demo recipe!
         concept_simplifier_demo()

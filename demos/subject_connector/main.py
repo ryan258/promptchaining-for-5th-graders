@@ -19,7 +19,7 @@ elif sys.path[0] != project_root:
 
 # Now we're importing our special tools!
 # 'MinimalChainable' is our main LEGO builder for prompts.
-# 'build_models' helps set up our AI friends (the Gemini models).
+# 'build_models' helps set up our AI friends.
 # 'prompt' is the function that sends our message to the AI.
 from chain import MinimalChainable # Our magic prompt chaining tool
 from main import build_models, prompt # Tools from our main project file
@@ -32,9 +32,10 @@ def subject_connector_demo():
 
     # First, let's get our AI models ready.
     # 'build_models()' wakes up our AI friends.
-    all_models = build_models()
+    client, model_names = build_models()
     # We'll pick the first AI friend from the list to help us.
-    selected_model = all_models[0]
+    selected_model_name = model_names[0]
+    model_info = (client, selected_model_name)
 
     # These are the two school subjects we want to connect.
     # You can change these to any subjects you like!
@@ -51,7 +52,7 @@ def subject_connector_demo():
         # Here, we're telling it our two subjects.
         context={"subject_A": subject_a, "subject_B": subject_b},
         # 'model' tells it which AI friend to talk to.
-        model=selected_model,
+        model=model_info,
         # 'callable' is the function that actually sends the message to the AI.
         callable=prompt,
         # 'prompts' is a list of questions we'll ask the AI, one after another.
@@ -60,15 +61,15 @@ def subject_connector_demo():
             # Prompt 1: Ask for connections
             # "{{subject_A}}" and "{{subject_B}}" will be replaced with "History" and "Mathematics".
             # We ask the AI to answer in a special format called JSON, which is like a dictionary.
-            "List three surprising connections between {{subject_A}} and {{subject_B}}. Respond in JSON like {'connections': ['connection1', 'connection2', 'connection3']}",
+            """List three surprising connections between {{subject_A}} and {{subject_B}}. Respond in JSON like {"connections": ["connection1", "connection2", "connection3"]}""",
 
             # Prompt 2: Ask why those connections matter
             # "{{output[-1].connections}}" means "use the 'connections' part from the AI's last answer".
-            "For each of the connections to {{subject_A}} and {{subject_B}} from {{output[-1].connections}}, briefly explain why it matters. Respond in JSON like {'explanations': [{'connection': 'conn1', 'importance': 'importance1'}, ...]}",
+            """For each of the connections to {{subject_A}} and {{subject_B}} from {{output[-1].connections}}, briefly explain why it matters. Respond in JSON like {"explanations": [{"connection": "conn1", "importance": "importance1"}, ...]}""",
 
             # Prompt 3: Ask for a project idea
             # "{{output[-1].explanations}}" means "use the 'explanations' from the AI's last answer".
-            "Based on the connections and their importance for {{subject_A}} and {{subject_B}} found in {{output[-1].explanations}}, design a simple project idea for a 5th grader that uses both subjects. Provide a project title and a short description. Respond in JSON like {'project_title': 'title', 'project_description': 'description'}"
+            """Based on the connections and their importance for {{subject_A}} and {{subject_B}} found in {{output[-1].explanations}}, design a simple project idea for a 5th grader that uses both subjects. Provide a project title and a short description. Respond in JSON like {"project_title": "title", "project_description": "description"}"""
         ],
     )
 
@@ -100,7 +101,7 @@ def subject_connector_demo():
 # (not when it's imported as a tool by another file).
 if __name__ == "__main__":
     # This part helps load our secret API key from a file named '.env'.
-    # The API key is like a password to talk to Google's AI.
+    # The API key is like a password to talk to AI models through OpenRouter.
     from dotenv import load_dotenv
     # We need to find the '.env' file, which is in our main project folder.
     dotenv_path = os.path.join(project_root, '.env')
@@ -108,12 +109,12 @@ if __name__ == "__main__":
         load_dotenv(dotenv_path) # Load the secret key
     else:
         # If the file isn't there, print a friendly warning.
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure GOOGLE_API_KEY is set in your environment.")
+        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
     # Check if we actually got the API key.
-    if not os.getenv("GOOGLE_API_KEY"):
+    if not os.getenv("OPENROUTER_API_KEY"):
         # If not, tell the user what to do.
-        print("🚨 GOOGLE_API_KEY not found. Please set it up in the .env file in the project root.")
+        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.")
     else:
         # If we have the key, then it's time to run our subject_connector_demo recipe!
         subject_connector_demo()

@@ -19,7 +19,7 @@ _Before we journey into the circles of mastery, here are the practical improveme
   - [x] Update `build_models()` function to work with OpenRouter
   - [x] Update documentation to reflect the change
   - [x] Migrate core demos (Character Evolution, Common Ground, Historical What-If)
-  - [ ] Migrate remaining demos (Subject Connector, Concept Simplifier, Emergence Simulator, Knowledge Time Machine, Problem Solution Spider)
+  - [x] Migrate remaining demos (Subject Connector, Concept Simplifier, Emergence Simulator, Knowledge Time Machine, Problem Solution Spider)
   - Benefit: Access to multiple AI models through one API, more flexibility, better pricing options
 
 **Priority 2: Code Quality & Consistency**
