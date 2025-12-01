@@ -25,9 +25,10 @@ def character_evolution_demo():
     print("🚀 Running: Character Evolution Engine Demo")
 
     # Get our AI models ready.
-    all_models = build_models()
+    client, model_names = build_models()
     # We'll use the first AI friend in our list.
-    selected_model = all_models[0]
+    selected_model_name = model_names[0]
+    model_info = (client, selected_model_name)
 
     # What kind of character do we want to create?
     # You can change this to "a brave knight", "a shy alien", or anything else!
@@ -40,7 +41,8 @@ def character_evolution_demo():
         # 'context' gives the AI the starting character type.
         context={"char_type": character_type},
         # Which AI friend will help us.
-        model=selected_model,
+        # Which AI friend will help us.
+        model=model_info,
         # The function to send messages to the AI.
         callable=prompt,
         # Our list of step-by-step questions to build the story.
@@ -48,26 +50,26 @@ def character_evolution_demo():
             # Prompt 1: Describe the basic character.
             # "{{char_type}}" will be replaced with "a curious squirrel".
             # We ask for the answer in JSON format (like a dictionary).
-            "Describe a basic character who is {{char_type}}. Include a name and one positive trait. Respond in JSON: {'name': 'name', 'positive_trait': 'trait', 'description': 'desc'}",
+            "Describe a basic character who is {{char_type}}. Include a name and one positive trait. Respond in JSON: {\"name\": \"name\", \"positive_trait\": \"trait\", \"description\": \"desc\"}",
 
             # Prompt 2: Give the character a flaw.
             # "{{output[-1].name}}" uses the 'name' from the AI's last answer.
             # "{{output[-1].description}}" uses the 'description' from the AI's last answer.
-            "Give the character {{output[-1].name}} (the {{char_type}} from {{output[-1].description}}) a significant but relatable flaw for a 5th grader. Respond in JSON: {'flaw': 'character flaw'}",
+            "Give the character {{output[-1].name}} (the {{char_type}} from {{output[-1].description}}) a significant but relatable flaw for a 5th grader. Respond in JSON: {\"flaw\": \"character flaw\"}",
 
             # Prompt 3: Create a challenge for the character.
             # "{{output[-2].name}}" uses the 'name' from 2 answers ago.
             # "{{output[-1].flaw}}" uses the 'flaw' from the AI's last answer.
-            "Create a challenge for {{output[-2].name}} (the {{char_type}} with flaw: {{output[-1].flaw}}) that forces them to confront their flaw. Describe the challenge. Respond in JSON: {'challenge': 'challenge_description'}",
+            "Create a challenge for {{output[-2].name}} (the {{char_type}} with flaw: {{output[-1].flaw}}) that forces them to confront their flaw. Describe the challenge. Respond in JSON: {\"challenge\": \"challenge_description\"}",
 
             # Prompt 4: Show how the character grows.
             # This uses the character's name (3 answers ago), the challenge (last answer),
             # and the flaw (2 answers ago).
-            "Show how {{output[-3].name}} (the {{char_type}}) grows by facing the {{output[-1].challenge}} and overcoming their {{output[-2].flaw}}. Describe the growth. Respond in JSON: {'growth': 'description of growth'}",
+            "Show how {{output[-3].name}} (the {{char_type}}) grows by facing the {{output[-1].challenge}} and overcoming their {{output[-2].flaw}}. Describe the growth. Respond in JSON: {\"growth\": \"description of growth\"}",
 
             # Prompt 5: Design a new adventure for the changed character.
             # This uses the character's name (4 answers ago) and their growth (last answer).
-            "Design a new, brief adventure for the now changed {{output[-4].name}} that highlights their growth from {{output[-1].growth}}. Respond in JSON: {'new_adventure': 'description of new adventure'}"
+            "Design a new, brief adventure for the now changed {{output[-4].name}} that highlights their growth from {{output[-1].growth}}. Respond in JSON: {\"new_adventure\": \"description of new adventure\"}"
         ],
     )
 
@@ -104,11 +106,11 @@ if __name__ == "__main__":
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path) # Load the secret key
     else:
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure GOOGLE_API_KEY is set in your environment.")
+        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
     # Check if we have the API key.
-    if not os.getenv("GOOGLE_API_KEY"):
-        print("🚨 GOOGLE_API_KEY not found. Please set it up in the .env file in the project root.") #
+    if not os.getenv("OPENROUTER_API_KEY"):
+        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.") #
     else:
         # If we have the key, let's run our character_evolution_demo recipe!
         character_evolution_demo()

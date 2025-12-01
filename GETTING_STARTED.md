@@ -40,15 +40,15 @@ venv\Scripts\activate     # On Windows
 # Install all the required tools
 pip install -r requirements.txt
 
-# This should download google-generativeai and other tools
+# This should download openai and other tools
 ```
 
 ### Step 5: Get Your AI Key
 
-- [ ] Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-- [ ] Sign in with your Google account
-- [ ] Click "Create API Key"
-- [ ] Copy the key (starts with "AIzaSy...")
+- [ ] Go to [OpenRouter Keys](https://openrouter.ai/keys)
+- [ ] Sign in
+- [ ] Click "Create Key"
+- [ ] Copy the key (starts with "sk-or-...")
 
 ### Step 6: Configure Your Secrets
 
@@ -56,7 +56,7 @@ pip install -r requirements.txt
 # Copy the example environment file
 cp .env.example .env
 
-# Edit .env and replace "your_google_ai_api_key_here" with your real key
+# Edit .env and replace "your_openrouter_key_here" with your real key
 ```
 
 ### Step 7: Test Launch! 🎯
@@ -72,31 +72,9 @@ python main.py
 3. AI creates a hook for that title
 4. AI writes a first paragraph using both
 
----
+### Troubleshooting
 
-## 🐛 Troubleshooting Guide
-
-### "No module named 'google.generativeai'"
-
-**Solution:** Make sure you activated your virtual environment and ran `pip install -r requirements.txt`
-
-### "GOOGLE_API_KEY not found"
-
-**Solution:**
-
-1. Check that you have a `.env` file (not `.env.example`)
-2. Make sure your API key is correctly copied
-3. No spaces around the = sign: `GOOGLE_API_KEY=your_key_here`
-
-### "Permission denied" or "API key invalid"
-
-**Solution:**
-
-1. Double-check your API key in Google AI Studio
-2. Make sure you copied the entire key
-3. Try creating a new API key
-
-### "Connection error" or "Network timeout"
+**"Connection error" or "Network timeout"**
 
 **Solution:**
 

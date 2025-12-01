@@ -2,90 +2,73 @@
 # This file shows how to use our prompt chaining system
 # Think of this as the cookbook that shows you how to cook with our tools
 
-# import os # Helps us read secret keys from the computer
-from typing import List, Dict, Union # Tells Python what types of data we expect
-# from dotenv import load_dotenv # Helps us load secret keys from a file
+from typing import List, Dict, Union, Tuple
 from chain import MinimalChainable, FusionChain # Our magic prompt chaining tools
-import google.generativeai as genai # Google's library that talks to Gemini AI models
+from openai import OpenAI # The tool that lets us talk to AI models via OpenRouter
 import json # Helps us work with data that looks like {"key": "value"}
-
-from dotenv import load_dotenv # Make sure this import is there
-import os # Make sure this import is there
+from dotenv import load_dotenv # Helps us load secret keys from a file
+import os # Helps us read secret keys from the computer
 
 def build_models():
     """
     This function sets up our AI models so we can talk to them.
-    # ... (rest of your docstring)
     """
-
-
     print("Attempting to load .env file...") # DEBUG
     load_dotenv()
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders")
+    OPENROUTER_APP_NAME = os.getenv("OPENROUTER_APP_NAME", "Prompt Chaining for 5th Graders")
 
-    print(f"Loaded GOOGLE_API_KEY: {GOOGLE_API_KEY[:10]}..." if GOOGLE_API_KEY else "GOOGLE_API_KEY is NOT loaded") # DEBUG line - shows first 10 chars
-
-    if not GOOGLE_API_KEY:
-        print("Available models:")
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                print(m.name)
-        
-    # Check if we actually got the key
-    if not GOOGLE_API_KEY:
+    if not OPENROUTER_API_KEY:
         raise ValueError(
             "🔑 Missing API key! Please:\n"
             "   1. Copy .env.example to .env\n"
-            "   2. Get your key from https://makersuite.google.com/app/apikey\n"
-            "   3. Add it to your .env file as GOOGLE_API_KEY=your_key_here"
+            "   2. Get your key from https://openrouter.ai/keys\n"
+            "   3. Add it to your .env file as OPENROUTER_API_KEY=your_key_here"
         )
     
-    # Tell Google's library to use our secret key
-    genai.configure(api_key=GOOGLE_API_KEY)
+    # Set up our connection to OpenRouter
+    client = OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=OPENROUTER_API_KEY,
+    )
 
-    # Set up our three Gemini model friends
-    # They're all fast and affordable - perfect for learning!
-    
-    # Gemini 2.5 Flash - newest stable model, fast and cost-effective
-    # Let's try "gemini-1.5-flash-latest" or just "gemini-1.5-flash"
-    gemini_2_5_flash_model = genai.GenerativeModel("gemini-1.5-flash-latest") # TRY THIS FIRST
-
-    # Gemini 2.5 Pro - more powerful for complex reasoning
-    # Let's try "gemini-1.5-pro-latest" or "gemini-pro" (which is 1.0)
-    gemini_2_5_pro_model = genai.GenerativeModel("gemini-1.5-pro-latest") # TRY THIS
-    
-    # Gemini 1.0 Pro - reliable and well-tested
-    gemini_1_0_pro_model = genai.GenerativeModel("gemini-pro") # This one is likely fine
+    # Return the client and a list of model names we want to use
+    # We return the client as the first item so we can use it later
+    return client, [
+        "openai/gpt-3.5-turbo",
+        "google/gemini-flash-1.5",
+        "google/gemini-pro-1.5"
+    ]
 
 
-    # Return all three models so we can use them later
-    return [gemini_2_5_flash_model, gemini_2_5_pro_model, gemini_1_0_pro_model]
-
-
-def prompt(model: genai.GenerativeModel, prompt: str):
+def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
     """
-    This function sends a message to a Gemini AI model and gets back an answer.
+    This function sends a message to an AI model and gets back an answer.
     
     It's like sending a text message to your smart friend and waiting
     for them to text you back with an answer.
     """
     
+    client, model_name = model_info
+    
     try:
-        # Configure the model settings
-        # Temperature 0.5 means "be creative, but not too crazy"
-        generation_config = genai.types.GenerationConfig(
-            temperature=0.5, # How creative should the AI be? (0 = boring, 1 = very creative)
-            max_output_tokens=1000, # Maximum length of response
-        )
-        
         # Send the prompt to the model and get a response
-        response = model.generate_content(
-            prompt,
-            generation_config=generation_config
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "user", "content": prompt_text}
+            ],
+            temperature=0.5, # How creative should the AI be?
+            max_tokens=1000, # Maximum length of response
+            extra_headers={
+                "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders"),
+                "X-Title": os.getenv("OPENROUTER_APP_NAME", "Prompt Chaining for 5th Graders"),
+            }
         )
         
         # Get just the text part of the response
-        return response.text
+        return response.choices[0].message.content
         
     except Exception as e:
         # If something goes wrong, give a helpful message instead of a scary error
@@ -107,10 +90,12 @@ def prompt_chainable_poc():
     """
     
     # Get our AI models
-    all_models = build_models()
-    # Select the gemini-2.5-flash model for this PoC
-    # The first model returned by build_models() is gemini_2_5_flash_model
-    selected_model = all_models[0] 
+    client, model_names = build_models()
+    # Select the first model for this PoC
+    selected_model_name = model_names[0] 
+    
+    # We pass both the client and the model name as a tuple
+    model_info = (client, selected_model_name)
 
     # Run our prompt chain!
     # This returns two things:
@@ -121,8 +106,8 @@ def prompt_chainable_poc():
         # Our starting context - this is like our bag of ingredients
         context={"topic": "AI Agents"},
         
-        # Which AI model to use - now explicitly using the selected Gemini model
-        model=selected_model, # Changed from gemini_flash_new / sonnet_3_5_model
+        # Which AI model to use - now passing the tuple
+        model=model_info,
         
         # The function that sends prompts to the AI
         callable=prompt,
@@ -131,7 +116,7 @@ def prompt_chainable_poc():
         prompts=[
             # PROMPT #1: Create a blog title
             # {{topic}} gets replaced with "AI Agents"
-            "Generate one blog post title about: {{topic}}. Respond in strictly in JSON in this format: {'title': '<title>'}",
+            "Generate one blog post title about: {{topic}}. Respond in strictly in JSON in this format: {\"title\": \"<title>\"}",
             
             # PROMPT #2: Create a hook for that title
             # {{output[-1].title}} gets the title from the previous response
@@ -179,8 +164,11 @@ def fusion_chain_poc():
     choosing who gave the best response.
     """
     
-    # Get all three of our Gemini AI models
-    all_gemini_models = build_models() # Renamed for clarity
+    # Get our AI models
+    client, model_names = build_models()
+    
+    # Create a list of (client, model_name) tuples for all models
+    all_models = [(client, name) for name in model_names]
 
     def evaluator(outputs: List[str]) -> tuple[str, List[float]]:
         """
@@ -214,8 +202,8 @@ def fusion_chain_poc():
         # Same context as before
         context={"topic": "AI Agents"},
         
-        # Use all three Gemini models - they'll compete!
-        models=all_gemini_models, # Changed from 'models'
+        # Use all three models - they'll compete!
+        models=all_models,
         
         # Function to send prompts
         callable=prompt,
@@ -240,7 +228,7 @@ BLOG_HOOK:
         evaluator=evaluator,
         
         # Function to get model names for the report
-        get_model_name=lambda model: model.model_name,
+        get_model_name=lambda model_info: model_info[1],
     )
 
     # Convert our result to a dictionary so we can save it as JSON
@@ -267,11 +255,11 @@ def verify_setup():
     
     try:
         # Try to build our models and use the first one for testing
-        all_models = build_models()
-        test_model = all_models[0] # Use the first model (gemini_2_5_flash_model)
+        client, model_names = build_models()
+        test_model_info = (client, model_names[0]) # Use the first model
         
         # Send a simple test message
-        test_response = prompt(test_model, "Say 'Hello, young builder!' if you can hear me.")
+        test_response = prompt(test_model_info, "Say 'Hello, young builder!' if you can hear me.")
         
         print("✅ Success! Your AI is ready to chain prompts!")
         print(f"🤖 AI says: {test_response}")
@@ -281,8 +269,8 @@ def verify_setup():
         print("❌ Setup test failed!")
         print(f"🐛 Error: {str(e)}")
         print("\n🔍 Troubleshooting tips:")
-        print("   1. Check that you have a .env file with your GOOGLE_API_KEY")
-        print("   2. Make sure you copied your key correctly from Google AI Studio")
+        print("   1. Check that you have a .env file with your OPENROUTER_API_KEY")
+        print("   2. Make sure you copied your key correctly from OpenRouter")
         print("   3. Verify you have internet connection")
         print("   4. Try running: pip install -r requirements.txt")
         return False

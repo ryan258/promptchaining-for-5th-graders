@@ -65,21 +65,21 @@ venv\Scripts\activate     # On Windows
 # 3. Get all your tools
 pip install -r requirements.txt
 
-# 4. Create a secret file called .env and put your Google AI password in it
-echo "GOOGLE_API_KEY=your_secret_key_here" > .env
+# 4. Create a secret file called .env and put your OpenRouter password in it
+echo "OPENROUTER_API_KEY=your_secret_key_here" > .env
 ```
 
-### Getting Your Google AI Key (It's Free to Start!)
+### Getting Your OpenRouter Key (It's Free to Start!)
 
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
+1. Go to [OpenRouter Keys](https://openrouter.ai/keys)
+2. Sign in with your Google or GitHub account
+3. Click "Create Key"
 4. Copy the key and put it in your .env file
-5. Google gives you free credits to experiment - perfect for learning!
+5. OpenRouter gives you access to many models including free ones!
 
-**Why Gemini?** We switched from expensive AI to Google's Gemini 2.5 Flash because:
+**Why OpenRouter?** We switched to OpenRouter because:
 
-- **It's incredibly affordable** - you can experiment without worrying about cost
+- **It gives you choices** - access to Google, OpenAI, Anthropic and more with one key
 - **It's super fast** - answers come back in milliseconds
 - **It's still amazingly smart** - perfect for learning and building
 - **It teaches you adaptability** - real builders work within constraints

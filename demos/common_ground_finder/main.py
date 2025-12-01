@@ -29,9 +29,10 @@ def common_ground_finder_demo():
     print("🚀 Running: Common Ground Finder Demo")
 
     # First, let's get our AI models ready.
-    all_models = build_models()
+    client, model_names = build_models()
     # We'll pick the first AI friend from the list to help us.
-    selected_model = all_models[0]
+    selected_model_name = model_names[0]
+    model_info = (client, selected_model_name)
 
     # Here are two opposing views on a topic.
     # For 5th graders, let's pick something relatable like homework or screen time.
@@ -47,7 +48,7 @@ def common_ground_finder_demo():
         # 'context' is like giving our AI starting information.
         context={"view_A": viewpoint_A, "view_B": viewpoint_B},
         # 'model' tells it which AI friend to talk to.
-        model=selected_model,
+        model=model_info,
         # 'callable' is the function that actually sends the message to the AI.
         callable=prompt,
         # 'prompts' is a list of questions we'll ask the AI, one after another.
@@ -56,26 +57,26 @@ def common_ground_finder_demo():
             # "{{view_A}}" and "{{view_B}}" will be replaced with our chosen viewpoints.
             "For View A: '{{view_A}}', what are 1-2 important values or beliefs someone holding this view might have? " +
             "For View B: '{{view_B}}', what are 1-2 important values or beliefs someone holding this view might have? " +
-            "Respond in JSON like {'view_A_values': ['value1', 'value2'], 'view_B_values': ['value1', 'value2']}",
+            "Respond in JSON like {\"view_A_values\": [\"value1\", \"value2\"], \"view_B_values\": [\"value1\", \"value2\"]}",
 
             # Prompt 2: Find shared concerns.
             # "{{output[-1].view_A_values}}" and "{{output[-1].view_B_values}}" use values from the AI's last answer.
             "Even though they have different views ('{{view_A}}' vs '{{view_B}}') and values ({{output[-1].view_A_values}} vs {{output[-1].view_B_values}}), " +
             "what are 1-2 shared concerns or worries people on both sides might have about the general topic (e.g., kids' well-being, learning)? " +
-            "Respond in JSON like {'shared_concerns': ['concern1', 'concern2']}",
+            "Respond in JSON like {\"shared_concerns\": [\"concern1\", \"concern2\"]}",
 
             # Prompt 3: Identify common goals.
             # "{{output[-1].shared_concerns}}" uses shared concerns from the AI's last answer.
             "Given the shared concerns ({{output[-1].shared_concerns}}) for people with views '{{view_A}}' and '{{view_B}}', " +
             "what are 1-2 common goals they might both want to achieve, even if they disagree on how? " +
-            "Respond in JSON like {'common_goals': ['goal1', 'goal2']}",
+            "Respond in JSON like {\"common_goals\": [\"goal1\", \"goal2\"]}",
 
             # Prompt 4: Suggest bridge-building ideas.
             # This prompt uses information from previous steps.
             "Considering the different views ('{{view_A}}' and '{{view_B}}'), their underlying values ({{output[-3].view_A_values}} and {{output[-3].view_B_values}}), " +
             "their shared concerns ({{output[-2].shared_concerns}}), and their common goals ({{output[-1].common_goals}}), " +
             "suggest one simple bridge-building idea or a compromise that could help both sides feel understood or work together. " +
-            "Respond in JSON like {'bridge_idea': 'description of the bridge-building idea'}"
+            "Respond in JSON like {\"bridge_idea\": \"description of the bridge-building idea\"}"
         ],
     )
 
@@ -112,12 +113,12 @@ if __name__ == "__main__":
         load_dotenv(dotenv_path) # Load the secret key
     else:
         # If the file isn't there, print a friendly warning.
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure GOOGLE_API_KEY is set in your environment.")
+        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
     # Check if we actually got the API key.
-    if not os.getenv("GOOGLE_API_KEY"):
+    if not os.getenv("OPENROUTER_API_KEY"):
         # If not, tell the user what to do.
-        print("🚨 GOOGLE_API_KEY not found. Please set it up in the .env file in the project root.")
+        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.")
     else:
         # If we have the key, then it's time to run our common_ground_finder_demo recipe!
         common_ground_finder_demo()

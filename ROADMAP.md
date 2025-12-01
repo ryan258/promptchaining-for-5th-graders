@@ -6,6 +6,75 @@ _Every superpower starts with a single spark. Here's how that spark becomes a fl
 
 ---
 
+## 🔧 Immediate Development Tasks
+
+_Before we journey into the circles of mastery, here are the practical improvements we're making to the project right now._
+
+### Core Infrastructure Improvements
+
+**Priority 1: API Provider Migration**
+- [x] Switch from Google Gemini to OpenRouter API
+  - [x] Update `.env.example` with `OPENROUTER_API_KEY`
+  - [x] Update `main.py` to use OpenRouter instead of Google AI
+  - [x] Update `build_models()` function to work with OpenRouter
+  - [x] Update documentation to reflect the change
+  - [x] Migrate core demos (Character Evolution, Common Ground, Historical What-If)
+  - [ ] Migrate remaining demos (Subject Connector, Concept Simplifier, Emergence Simulator, Knowledge Time Machine, Problem Solution Spider)
+  - Benefit: Access to multiple AI models through one API, more flexibility, better pricing options
+
+**Priority 2: Code Quality & Consistency**
+- [ ] Fix model naming confusion (comments say "2.5 Flash" but code uses "1.5")
+  - Clarify which models are actually being used
+  - Update comments to match reality
+- [ ] Clean up debug print statements in production code
+  - Remove or convert to proper logging
+  - Ensure clean output for users
+
+**Priority 3: Documentation Completeness**
+- [x] Create missing `common_ground_finder/README.md` ✅
+- [ ] Add CONTRIBUTING.md for community demo submissions
+- [ ] Create video walkthrough or tutorial
+- [ ] Add troubleshooting guide for common setup issues
+
+**Priority 4: Testing & Quality Assurance**
+- [ ] Add integration tests with real API calls (using rate limits)
+- [ ] Add error handling tests
+- [ ] Add GitHub Actions for automated testing
+- [ ] Test all 8 demos end-to-end with real API
+
+**Priority 5: User Experience Enhancements**
+- [ ] Create demo selector CLI script (choose which demo to run)
+- [ ] Add progress indicators for long-running chains
+- [ ] Improve error messages to be more user-friendly
+- [ ] Add cost estimation/tracking for API usage
+
+**Priority 6: Advanced Features**
+- [ ] Add retry logic for API failures
+- [ ] Implement rate limiting to prevent cost explosions
+- [ ] Add prompt template library for common patterns
+- [ ] Create caching system for expensive API calls during development
+
+### Why These Matter
+
+These aren't just "chores"—each improvement makes the project more:
+- **Accessible**: Easier for newcomers to get started
+- **Reliable**: Fewer errors and better error handling
+- **Affordable**: Better cost management and API options
+- **Extensible**: Easier for others to contribute
+- **Professional**: Industry-standard practices you'll use forever
+
+### The Meta-Lesson
+
+Building great software isn't just about adding new features. It's about:
+- Maintaining what you've built
+- Improving the foundation
+- Making it easier for others to join
+- Balancing innovation with stability
+
+These tasks teach you that **excellence is in the details**, and taking care of your codebase is taking care of everyone who will use it.
+
+---
+
 ## 🎯 The Expanding Circles of Mastery
 
 Think of your growth like ripples in a pond. Each circle represents not just new skills, but a new way of seeing the world. You're not just learning to code—you're learning to think in systems, to see connections, and to build bridges between ideas that no one has connected before.
