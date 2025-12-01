@@ -1,165 +1,137 @@
-# 🚀 Getting Started - Your First 10 Minutes
+# Getting Started
 
-## The Quick Launch Sequence
+## Prerequisites
 
-**For Kids:** Follow these steps and you'll be chaining prompts in 10 minutes!  
-**For Teachers/Parents:** This is your step-by-step guide to help young explorers launch successfully.
+- Python 3.8+
+- OpenRouter API key (free tier available)
 
----
+## Installation
 
-## ✅ Pre-Flight Checklist
-
-### Step 1: Check Your Computer
-
-- [ ] You have Python installed (version 3.8 or newer)
-  - **Test:** Open terminal and type `python --version`
-  - **If missing:** Download from [python.org](https://python.org)
-
-### Step 2: Download the Project
-
-- [ ] Download or clone this project to your computer
-- [ ] Open terminal/command prompt in the project folder
-
-### Step 3: Create Your Workspace
-
+### 1. Clone and setup virtual environment
 ```bash
-# Create a virtual environment (your own private coding space)
 python -m venv venv
-
-# Activate it
-source venv/bin/activate  # On Mac/Linux
-# OR
-venv\Scripts\activate     # On Windows
-
-# You should see (venv) appear in your terminal prompt
+source venv/bin/activate  # Mac/Linux
+# or
+venv\Scripts\activate     # Windows
 ```
 
-### Step 4: Install the Tools
-
+### 2. Install dependencies
 ```bash
-# Install all the required tools
 pip install -r requirements.txt
-
-# This should download openai and other tools
 ```
 
-### Step 5: Get Your AI Key
-
-- [ ] Go to [OpenRouter Keys](https://openrouter.ai/keys)
-- [ ] Sign in
-- [ ] Click "Create Key"
-- [ ] Copy the key (starts with "sk-or-...")
-
-### Step 6: Configure Your Secrets
-
+### 3. Configure API key
 ```bash
-# Copy the example environment file
 cp .env.example .env
-
-# Edit .env and replace "your_openrouter_key_here" with your real key
 ```
 
-### Step 7: Test Launch! 🎯
+Edit `.env` and add your OpenRouter API key:
+```
+OPENROUTER_API_KEY=sk-or-v1-...
+```
 
+Get a key at [openrouter.ai/keys](https://openrouter.ai/keys)
+
+### 4. Verify setup
 ```bash
 python main.py
 ```
 
-**Expected Result:** You should see:
+Expected output:
+- Setup verification message
+- Example prompt chain execution
+- Generated outputs saved to timestamped files
 
-1. A setup verification message
-2. AI creates a blog post title
-3. AI creates a hook for that title
-4. AI writes a first paragraph using both
+## First Steps
 
-### Troubleshooting
+### Run a demo
+```bash
+cd demos/concept_simplifier
+python main.py
+```
 
-**"Connection error" or "Network timeout"**
+### Modify a demo
+Edit the demo's `main.py`:
+- Change the `context` variables
+- Modify the `prompts` list
+- Try different models from `model_names`
 
-**Solution:**
+### Create your own chain
 
-1. Check your internet connection
-2. Some school networks block AI services - try from home
-3. Wait a moment and try again (sometimes services are busy)
+```python
+from chain import MinimalChainable
+from main import build_models, prompt
+
+client, model_names = build_models()
+model_info = (client, model_names[0])
+
+outputs, prompts = MinimalChainable.run(
+    context={"input": "your data here"},
+    model=model_info,
+    callable=prompt,
+    prompts=[
+        "Analyze {{input}}",
+        "Based on {{output[-1]}}, suggest improvements",
+        "Prioritize {{output[-1]}} by impact"
+    ]
+)
+
+for i, output in enumerate(outputs):
+    print(f"\nStep {i+1}:\n{output}")
+```
+
+## Troubleshooting
+
+**"Connection error"**
+- Check internet connection
+- Verify API key is correct in `.env`
+- Try a different model (some may have rate limits)
+
+**"Module not found"**
+- Ensure virtual environment is activated
+- Run `pip install -r requirements.txt` again
+
+**"API key not found"**
+- Check `.env` file exists in project root
+- Verify `OPENROUTER_API_KEY` is set correctly
+- No quotes needed around the key value
+
+**Empty model_names list**
+- Check `build_models()` return value
+- Verify OpenRouter API is accessible
+
+## Next Steps
+
+1. Run all demos to see different patterns
+2. Check `IDEAS.md` for project inspiration
+3. Read `chain.py` to understand the implementation
+4. Experiment with custom evaluator functions
+5. Try multi-model comparison with FusionChain
+
+## Key Concepts
+
+**Context variables**: `{{variable}}` gets replaced from context dict
+
+**Output references**: `{{output[-1]}}` = last output, `{{output[-2]}}` = second-to-last
+
+**JSON field access**: `{{output[-1].field_name}}` extracts fields from JSON responses
+
+**Model info tuple**: `(client, model_name)` required for prompt function
+
+## Cost Management
+
+- OpenRouter shows per-request costs
+- Start with free/cheap models (gemini-flash-1.5)
+- Set up billing alerts in OpenRouter dashboard
+- Use caching during development to avoid repeated calls
+
+## Development Tips
+
+- Save outputs to files for later review
+- Use print statements to debug context substitution
+- Test with mock callables before hitting real APIs
+- Start with short chains, then expand
 
 ---
 
-## 🎓 For Teachers and Parents
-
-### Learning Objectives (10-15 minutes)
-
-By the end of this session, students will:
-
-- ✅ Successfully set up a development environment
-- ✅ Understand the concept of prompt chaining
-- ✅ See how each AI response builds on the previous one
-- ✅ Experience the power of breaking complex tasks into simple steps
-
-### Key Concepts Introduced
-
-- **Variable substitution**: `{{topic}}` becomes "AI Agents"
-- **Reference patterns**: `{{output[-1]}}` gets the previous response
-- **Sequential thinking**: Each prompt builds on what came before
-- **System design**: How simple patterns create complex behaviors
-
-### Extension Questions
-
-- "What other topics would you like to explore with prompt chains?"
-- "How is this similar to how you solve math problems step by step?"
-- "What would happen if we changed the order of the prompts?"
-- "Can you think of other places where you build on previous work?"
-
-### Safety Notes
-
-- API keys should be kept private (like passwords)
-- The AI uses your credits, so monitor usage
-- All generated content should be reviewed by adults
-- This is a learning tool - always think critically about AI outputs
-
----
-
-## 🌟 Success Indicators
-
-### You'll Know It's Working When:
-
-- ✅ The terminal shows no scary red error messages
-- ✅ You see AI responses that reference previous responses
-- ✅ Each response builds naturally on the one before
-- ✅ The final paragraph connects the title and hook cleverly
-
-### You're Ready for More When:
-
-- ✅ You understand what each part of the code does
-- ✅ You can explain prompt chaining to someone else
-- ✅ You're curious about modifying the prompts
-- ✅ You want to try the more advanced experiments
-
----
-
-## 🎯 Your Next Adventures
-
-Once you've got the basic system working:
-
-1. **Experiment with Topics**: Change `{"topic": "AI Agents"}` to something you're interested in
-2. **Modify the Prompts**: Add your own instructions or change the style
-3. **Try the Fusion Mode**: Uncomment `fusion_chain_poc()` to see models compete
-4. **Explore the Ideas**: Check out `IDEAS.md` for 50+ project inspirations
-
----
-
-## 🎪 The Magic You've Just Unlocked
-
-What seems like a simple programming exercise is actually practice for one of the most important skills of the future: **thinking in systems**. Every time you create a prompt chain, you're learning to:
-
-- **Break complex problems into manageable pieces**
-- **Design processes that build on themselves**
-- **Create emergent intelligence from simple rules**
-- **Think like both an engineer and an artist**
-
-You're not just learning to code - you're learning to think like the future.
-
-**Welcome to the journey!** 🚀✨
-
----
-
-_Remember: Every expert was once a beginner who refused to give up. Every amazing discovery started with someone being curious enough to try something new. You have the tools, you have the curiosity, and now you have the first successful experience. What will you explore next?_
+That's it! You're ready to start building prompt chains.
