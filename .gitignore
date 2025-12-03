@@ -2,6 +2,7 @@
 # Every exclusion is a decision about what deserves permanence
 review.md
 logs/
+output/guides
 # ============================================================================
 # SECRETS & CREDENTIALS - Guard the Keys to the Kingdom
 # ============================================================================
