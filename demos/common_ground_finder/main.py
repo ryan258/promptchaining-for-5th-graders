@@ -103,6 +103,10 @@ def common_ground_finder_demo():
     # And tell the user where the files were saved.
     print(f"\n✅ Results saved to {prompts_file_base}.txt and {results_file_base}.txt")
 
+    # Log the run to markdown
+    log_file = MinimalChainable.log_to_markdown("common_ground_finder", context_filled_prompts, result)
+    print(f"✅ Log saved to {log_file}")
+
 # This special code block runs only when you run this file directly.
 if __name__ == "__main__":
     # This part helps load our secret API key from a file named '.env'.

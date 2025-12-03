@@ -43,24 +43,6 @@ All demo runs automatically create timestamped markdown logs in `/logs`:
 logs/2025-12-02_14-30-15_concept_simplifier.md
 ```
 
-## Quick Start
-
-### Setup
-```bash
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure API key
-cp .env.example .env
-# Add your OPENROUTER_API_KEY to .env
-```
-
-Get an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
-
 ### Basic Usage
 ```python
 from chain import MinimalChainable
