@@ -3,6 +3,7 @@
 # Think of tests like quality checks - we try different scenarios to make sure nothing breaks
 
 import random  # Helps us make random choices for testing
+import time  # Lets us simulate different completion speeds
 from chain import FusionChain, FusionChainResult, MinimalChainable  # Our magic tools
 
 
@@ -387,3 +388,50 @@ def test_fusion_chain_run():
     # Show how to convert the result to different formats
     print("result.model_dump: ", result.model_dump())      # Convert to dictionary
     print("result.model_dump_json: ", result.model_dump_json())  # Convert to JSON string
+
+
+def test_fusion_chain_preserves_model_order():
+    """
+    Ensure FusionChain keeps outputs aligned with their originating model even
+    when completion order differs (regression for as_completed ordering).
+    """
+
+    class SlowModel:
+        def __init__(self, name, delay):
+            self.name = name
+            self.delay = delay
+
+    def mock_callable_prompt(model, prompt):
+        # Sleep proportional to delay to force completion out of input order
+        time.sleep(model.delay)
+        return f"{model.name}::{prompt}"
+
+    def mock_evaluator(outputs):
+        # Return a deterministic winner (first output) with dummy scores
+        scores = [len(o) for o in outputs]
+        return outputs[0], scores
+
+    # Model order is fixed, but delays are reversed to flip completion order
+    models = [
+        SlowModel("Model-A", delay=0.3),
+        SlowModel("Model-B", delay=0.1),
+        SlowModel("Model-C", delay=0.2),
+    ]
+
+    result = FusionChain.run(
+        context={"topic": "Ordering"},
+        models=models,
+        callable=mock_callable_prompt,
+        prompts=["Prompt-1"],
+        evaluator=mock_evaluator,
+        get_model_name=lambda m: m.name,
+        num_workers=3,
+    )
+
+    # Model names should match the input order
+    assert result.model_names == ["Model-A", "Model-B", "Model-C"]
+
+    # Outputs should be aligned with model_names, not completion order
+    expected_prefixes = ["Model-A::Prompt-1", "Model-B::Prompt-1", "Model-C::Prompt-1"]
+    for response_list, expected in zip(result.all_prompt_responses, expected_prefixes):
+        assert response_list[0] == expected

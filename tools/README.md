@@ -47,6 +47,105 @@ python tools/content/evergreen_guide.py "Topic" --context "Additional notes here
 
 ---
 
+## Learning Tools
+
+### 🧭 Concept Simplifier
+
+Break complex topics into components, analogies, examples, and a concise explainer.
+
+**Usage:**
+```bash
+python tools/learning/concept_simplifier.py "Diffusion models in AI"
+python tools/learning/concept_simplifier.py "Topic" --context "Audience or constraints"
+```
+
+**Output:**
+- JSON in `output/learning/concept_simplifier/`
+- Components, analogies, examples, explainer, pitfalls, next steps
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Research Tools
+
+### 🕰️ Research Timeline (Knowledge Time Machine, adult mode)
+
+Generate origin → evolution → current frontier timelines with citations and risks.
+
+**Usage:**
+```bash
+python tools/research/timeline.py "CRISPR gene editing"
+cat notes/topic.md | python tools/research/timeline.py --context "Specific angle"
+```
+
+**Output:**
+- Markdown timeline in `output/research/`
+- Origins, breakthroughs, current state, future speculation
+- Risks/limitations and research gaps
+- Logs with token/cost estimates in `logs/`
+
+**Energy Cost**: Low (2-3 minutes)
+**Energy Return**: High (research prep shortcut)
+**Net**: Strongly positive ✅
+
+---
+
+## Development Tools
+
+### 🏗️ Code Architecture Critic
+
+Audit a code snippet for patterns/anti-patterns, smells, refactors, risks, and an improved architecture sketch.
+
+**Usage:**
+```bash
+python tools/dev/code_architecture_critic.py "path/to/file.py"
+python tools/dev/code_architecture_critic.py "inline code" --context "constraints or goals"
+```
+
+**Output:**
+- JSON in `output/dev/code_architecture_critic/`
+- Patterns/anti-patterns, smells, refactor plan, maintenance forecast, architecture sketch
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Collaboration Tools
+
+### 🤝 Common Ground Finder
+
+Map opposing views to values, shared concerns, common goals, and bridge options.
+
+**Usage:**
+```bash
+python tools/collaboration/common_ground_finder.py "View A" --context "View B"
+```
+
+**Output:**
+- JSON in `output/collaboration/common_ground_finder/`
+- Values, shared concerns, common goals, bridge ideas, conversation prompts
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Brainstorming Tools
+
+### 🕷️ Problem–Solution Spider
+
+Clarify a problem, constraints, wild ideas, blended solutions, and a quick test scenario.
+
+**Usage:**
+```bash
+python tools/brainstorm/problem_solution_spider.py "Problem statement"
+python tools/brainstorm/problem_solution_spider.py "Problem" --context "Constraints/stakeholders"
+```
+
+**Output:**
+- JSON in `output/brainstorm/problem_solution_spider/`
+- Defined problem, constraints/resources, wild ideas, solution options, test scenario
+- Logs with token/cost estimates in `logs/`
+
+---
+
 ## Health Tools
 
 ### 🔬 Medical Consensus Parser
@@ -105,12 +204,15 @@ Tools use the same `.env` setup as the main framework:
 ```bash
 # Should already be configured if demos work
 OPENROUTER_API_KEY=your_key_here
+OPENROUTER_MODELS="openai/gpt-3.5-turbo,google/gemini-flash-1.5,google/gemini-pro-1.5"  # Optional: override model list for FusionChain
+RUN_FUSION_CHAIN=0  # Optional: enable multi-model demo (uses more calls)
 ```
 
 ### 3. Run a Tool
 
 ```bash
 python tools/content/evergreen_guide.py "Test topic"
+python tools/research/timeline.py "Test topic"
 ```
 
 ---
@@ -154,6 +256,7 @@ output/
 3. **Output Structure**: Save to appropriate `output/` subdirectory
 4. **Error Handling**: Graceful degradation, partial value
 5. **Energy Test**: Can you use it at 50% capacity?
+6. **Cost Visibility**: Include usage stats in logs; summarize with `python tools/cost_report.py`
 
 ### Tool Template
 

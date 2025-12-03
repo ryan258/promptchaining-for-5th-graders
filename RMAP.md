@@ -19,6 +19,18 @@ Things I might build if they become useful. No timeline, no promises.
 - Cost tracking (shows up in logs)
 - Error handling (try/except, keep going)
 - Variable substitution (`{{var}}` and `{{output[-1]}}`)
+- Usage capture per prompt + markdown log with token/cost estimate
+- FusionChain opt-in via `RUN_FUSION_CHAIN` to avoid surprise spend
+
+---
+
+## Immediate Next Steps (keep it light)
+
+- [x] Harden prompt helper defaults everywhere (explicit `max_tokens`, deterministic temp when desired) — audit any stragglers beyond `main.prompt`
+- [x] Wrap FusionChain ordering bugfix with a quick regression test (model name/output alignment) so it doesn't regress
+- [x] Refresh `tools/README.md` with current tool list + `OPENROUTER_MODELS` env override and Fusion opt-in flag
+- [ ] Finish cost report rollup from logs (simple aggregator script)
+- [ ] Keep logs/outputs under control (prune or rotate; local only so just a reminder)
 
 ---
 
@@ -103,6 +115,16 @@ Use as template for converting other demos → tools when needed.
 
 ---
 
+## Exemplar Readiness (steelman check)
+
+- **Research timeline** (`tools/research/timeline.py`): adult prompts, context loading, structured markdown + JSON logging, usage/cost captured. Good enough to copy for other research tools.
+- **Evergreen guide** (`tools/content/evergreen_guide.py`): adult prompts, context-aware tone, structured outline + audit + log with usage. Good template for content tools.
+- **FusionChain demo** (`main.py`): kept as opt-in showcase; retains max token/usage capture. Use as pattern only when multi-model competition is necessary (rare).
+
+Verdict: Exemplars are sufficiently steelmanned for local use; no enterprise hardening needed. Reuse patterns, avoid overbuilding.
+
+---
+
 ## Things to Consider Before Mass Conversion
 
 ### 1. Code Duplication
@@ -174,9 +196,9 @@ If it ain't broke, don't fix it.
 | `campaign_promise_tracker` | Skip | Too specific |
 | `character_evolution_engine` | Convert | Good for writing |
 | `coalition_fracture_simulator` | Maybe | Advanced analysis |
-| `code_architecture_critic` | Convert | Dev tool |
-| `common_ground_finder` | Convert | Negotiation/Conflict resolution |
-| `concept_simplifier` | Convert | Learning tool |
+| `code_architecture_critic` | Done | Tool: `tools/dev/code_architecture_critic.py` |
+| `common_ground_finder` | Done | Tool: `tools/collaboration/common_ground_finder.py` |
+| `concept_simplifier` | Done | Tool: `tools/learning/concept_simplifier.py` |
 | `consensus_manufacturing_detective` | Maybe | Media analysis |
 | `corporate_theater_director` | Skip | Satire |
 | `credential_inflation_analyzer` | Skip | Niche |
@@ -194,11 +216,10 @@ If it ain't broke, don't fix it.
 | `narrative_warfare_analyst` | Maybe | Advanced |
 | `negotiation_strategy_builder` | Convert | Business |
 | `platform_lock_in_forensics` | Skip | Niche |
-| `problem_solution_spider` | Convert | Brainstorming |
+| `problem_solution_spider` | Done | Tool: `tools/brainstorm/problem_solution_spider.py` |
 | `proxy_war_analyst` | Skip | Niche |
 | `regulatory_capture_mapper` | Skip | Niche |
 | `revealed_preference_detective` | Convert | Psychology |
 | `status_game_decoder` | Convert | Social dynamics |
 | `subject_connector` | Convert | Learning/Creativity |
 | `viral_hook_laboratory` | Skip | Marketing (maybe) |
-
