@@ -35,11 +35,18 @@ def build_models():
 
     # Return the client and a list of model names we want to use
     # We return the client as the first item so we can use it later
-    model_names = [
-        "openai/gpt-3.5-turbo",
-        "google/gemini-flash-1.5",
-        "google/gemini-pro-1.5"
-    ]
+    
+    # Try to get models from environment variable
+    env_models = os.getenv("OPENROUTER_MODELS")
+    if env_models:
+        model_names = [m.strip() for m in env_models.split(",") if m.strip()]
+    else:
+        # Fallback to default models
+        model_names = [
+            "openai/gpt-3.5-turbo",
+            "google/gemini-flash-1.5",
+            "google/gemini-pro-1.5"
+        ]
 
     if not model_names:
         raise ValueError("No models configured. Please check your model list.")
@@ -54,36 +61,37 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
     It's like sending a text message to your smart friend and waiting
     for them to text you back with an answer.
     """
-    
     client, model_name = model_info
     
     try:
-        # Send the prompt to the model and get a response
         response = client.chat.completions.create(
             model=model_name,
             messages=[
                 {"role": "user", "content": prompt_text}
             ],
-            temperature=0.5, # How creative should the AI be?
-            max_tokens=1000, # Maximum length of response
+            # We need to set these to avoid the default 16-token limit!
+            max_tokens=1000, 
+            temperature=0.7,
             extra_headers={
                 "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders"),
                 "X-Title": os.getenv("OPENROUTER_APP_NAME", "Prompt Chaining for 5th Graders"),
             }
         )
         
-        # Get just the text part of the response
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        usage = response.usage
+        
+        # Return both content and usage
+        return content, usage
         
     except Exception as e:
-        # If something goes wrong, give a helpful message instead of a scary error
-        return f"Oops! Something went wrong talking to the AI: {str(e)}\nCheck your API key in the .env file!"
+        print(f"⚠️ API call failed: {e}")
+        # Return empty content and None for usage so the chain can continue (or fail gracefully)
+        return f"Error: {str(e)}", None
 
 
 def prompt_chainable_poc():
     """
-    This function shows how to use MinimalChainable to chain prompts together.
-    
     POC means "Proof of Concept" - we're proving that our idea works!
     
     We're going to:
@@ -106,7 +114,7 @@ def prompt_chainable_poc():
     # This returns two things:
     # - result: the answers from each prompt
     # - context_filled_prompts: the actual prompts we sent (with variables filled in)
-    result, context_filled_prompts = MinimalChainable.run(
+    result, context_filled_prompts, usage_stats = MinimalChainable.run(
         
         # Our starting context - this is like our bag of ingredients
         context={"topic": "AI Agents"},
@@ -136,6 +144,7 @@ BLOG_TITLE:
 BLOG_HOOK:
 {{output[-1]}}""",
         ],
+        return_usage=True,
     )
 
     # Save our results to text files so we can see what happened
@@ -156,6 +165,9 @@ BLOG_HOOK:
     # Print everything to the screen so we can see what happened
     print(f"\n\n📖 Prompts~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n{chained_prompts}")
     print(f"\n\n📊 Results~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n{chainable_result}")
+
+    # Log to markdown for cost reporting
+    MinimalChainable.log_to_markdown("poc_demo", context_filled_prompts, result, usage_stats)
 
 
 def fusion_chain_poc():
@@ -237,7 +249,25 @@ BLOG_HOOK:
     )
 
     # Convert our result to a dictionary so we can save it as JSON
-    result_dump = result.model_dump() # Pydantic v2 uses model_dump() instead of dict()
+    try:
+        # Try model_dump first (Pydantic v2)
+        result_dump = result.model_dump()
+    except Exception as e:
+        print(f"⚠️ model_dump failed: {e}")
+        try:
+            # Try dict (Pydantic v1 or fallback)
+            result_dump = result.dict()
+        except Exception as e2:
+            print(f"⚠️ dict failed: {e2}")
+            # Manual fallback
+            result_dump = {
+                "top_response": result.top_response,
+                "all_prompt_responses": result.all_prompt_responses,
+                "all_context_filled_prompts": result.all_context_filled_prompts,
+                "performance_scores": result.performance_scores,
+                "model_names": result.model_names,
+                "all_usage_stats": result.all_usage_stats
+            }
 
     # Print the results to the screen
     print("\n\n📊 FusionChain Results~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
@@ -265,9 +295,18 @@ def verify_setup():
         
         # Send a simple test message
         test_response = prompt(test_model_info, "Say 'Hello, young builder!' if you can hear me.")
+
+        # Handle both tuple and string responses
+        if isinstance(test_response, tuple):
+            content, usage = test_response
+        else:
+            content, usage = test_response, None
         
+        if usage is None or (isinstance(content, str) and content.startswith("Error:")):
+            raise Exception(f"Prompt failed: {content}")
+
         print("✅ Success! Your AI is ready to chain prompts!")
-        print(f"🤖 AI says: {test_response}")
+        print(f"🤖 AI says: {content}")
         return True
         
     except Exception as e:
@@ -301,12 +340,15 @@ def main():
     # Show how basic prompt chaining works
     prompt_chainable_poc()
 
-    # Uncomment the next line if you want to see fusion chaining too!
-    # (We comment it out because it uses more AI calls and potentially costs more)
-    # print("\n" + "="*60)
-    # print("🔥 Now for the FusionChain Competition!")
-    # print("="*60)
-    # fusion_chain_poc()
+    # FusionChain is opt-in because it uses more AI calls (higher cost)
+    run_fusion = os.getenv("RUN_FUSION_CHAIN", "").lower() in ("1", "true", "yes")
+    if run_fusion:
+        print("\n" + "="*60)
+        print("🔥 Now for the FusionChain Competition!")
+        print("="*60)
+        fusion_chain_poc()
+    else:
+        print("\n💡 Skipping FusionChain by default to save cost. Set RUN_FUSION_CHAIN=1 to enable.")
 
 
 # This special code means "only run main() if this file is being run directly"

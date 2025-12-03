@@ -4,7 +4,7 @@
 
 import json  # Helps us work with data that looks like {"key": "value"}
 import re    # Helps us find patterns in text (like finding JSON in markdown)
-from typing import List, Dict, Callable, Any, Union  # These tell Python what types of data we expect
+from typing import List, Dict, Callable, Any, Union, Tuple  # These tell Python what types of data we expect
 from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
 import os
@@ -22,6 +22,7 @@ class FusionChainResult(BaseModel):
     all_context_filled_prompts: List[List[str]]
     performance_scores: List[float]
     model_names: List[str]
+    all_usage_stats: List[List[Any]]
 
 class FusionChain:
     """
@@ -50,28 +51,33 @@ class FusionChain:
             This little function runs the prompt chain for one model.
             We need this because of how parallel processing works.
             """
-            outputs, context_filled_prompts = MinimalChainable.run(
-                context, model, callable, prompts
+            outputs, context_filled_prompts, usage_stats = MinimalChainable.run(
+                context, model, callable, prompts, return_usage=True
             )
-            return outputs, context_filled_prompts
+            return outputs, context_filled_prompts, usage_stats
 
         # Create empty lists to store results
-        all_outputs = []
-        all_context_filled_prompts = []
+        # Pre-size the result lists so we can populate them by model index
+        all_outputs = [None] * len(models)
+        all_context_filled_prompts = [None] * len(models)
+        all_usage_stats = [None] * len(models)
 
         # This is the parallel magic - we create a "thread pool"
         # Think of it like having multiple workers who can all work at the same time
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
-            # Give each worker a model to process
-            future_to_model = {
-                executor.submit(process_model, model): model for model in models
+            # Submit tasks and remember which future belongs to which model index
+            future_to_index = {
+                executor.submit(process_model, model): idx
+                for idx, model in enumerate(models)
             }
             
-            # Collect the results as workers finish
-            for future in concurrent.futures.as_completed(future_to_model):
-                outputs, context_filled_prompts = future.result()
-                all_outputs.append(outputs)
-                all_context_filled_prompts.append(context_filled_prompts)
+            # Collect the results as workers finish, storing them by index to preserve ordering
+            for future in concurrent.futures.as_completed(future_to_index):
+                idx = future_to_index[future]
+                outputs, context_filled_prompts, usage_stats = future.result()
+                all_outputs[idx] = outputs
+                all_context_filled_prompts[idx] = context_filled_prompts
+                all_usage_stats[idx] = usage_stats
 
         # The rest is the same as the regular run() function
         # Judge the results and package them up
@@ -85,6 +91,7 @@ class FusionChain:
             all_context_filled_prompts=all_context_filled_prompts,
             performance_scores=performance_scores,
             model_names=model_names,
+            all_usage_stats=all_usage_stats,
         )
 
 class MinimalChainable:
@@ -104,19 +111,25 @@ class MinimalChainable:
         context: Dict[str, Any],    # Variables to use in prompts (like {{topic}})
         model: Any,                 # The AI model to use
         callable: Callable,        # Function that sends prompts to the AI
-        prompts: List[str]          # List of prompts to run in order
-    ) -> List[Any]:
+        prompts: List[str],         # List of prompts to run in order
+        return_usage: bool = False  # Whether to return usage stats
+    ) -> Union[List[Any], Tuple[List[Any], List[str], List[Any]]]:
         """
         This is where the magic happens!
         
         Think of this like following a recipe where each step uses ingredients
         from previous steps. We start with our context (ingredients) and
         each prompt (recipe step) can use what we made before.
+
+        Returns:
+            - If return_usage=False: (outputs, context_filled_prompts)
+            - If return_usage=True: (outputs, context_filled_prompts, usage_stats)
         """
         
         # Create empty lists to store our results
         output = []                    # Stores AI responses
         context_filled_prompts = []    # Stores the actual prompts we sent
+        usage_stats_list = []          # Stores usage stats
 
         # Go through each prompt one by one
         for i, prompt in enumerate(prompts):
@@ -168,7 +181,14 @@ class MinimalChainable:
             context_filled_prompts.append(prompt)
 
             # STEP 3: Send the prompt to the AI model
-            result = callable(model, prompt)
+            # We expect the callable to return (content, usage) or just content
+            result_raw = callable(model, prompt)
+            
+            usage = None
+            if isinstance(result_raw, tuple) and len(result_raw) == 2:
+                result, usage = result_raw
+            else:
+                result = result_raw
 
             # STEP 4: Try to parse JSON responses
             # Sometimes AIs return JSON data, and we want to handle it smartly
@@ -190,9 +210,25 @@ class MinimalChainable:
 
             # Save this result so future prompts can reference it
             output.append(result)
+            
+            # Store usage if available
+            if usage:
+                # Convert usage object to dict if possible to ensure JSON serializability
+                if hasattr(usage, "model_dump"):
+                    usage_dict = usage.model_dump()
+                elif hasattr(usage, "dict"):
+                    usage_dict = usage.dict()
+                elif hasattr(usage, "__dict__"):
+                    usage_dict = usage.__dict__
+                else:
+                    usage_dict = usage
+                
+                usage_stats_list.append(usage_dict)
 
-        # Return both the outputs and the filled-in prompts
-        # This gives us the answers AND lets us see exactly what we asked
+        # Return outputs, filled-in prompts, and usage stats (if requested)
+        if return_usage:
+            return output, context_filled_prompts, usage_stats_list
+            
         return output, context_filled_prompts
 
     @staticmethod
@@ -232,7 +268,12 @@ class MinimalChainable:
         return result_string
 
     @staticmethod
-    def log_to_markdown(demo_name: str, prompts: List[str], responses: List[Any]) -> str:
+    def log_to_markdown(
+        demo_name: str, 
+        prompts: List[str], 
+        responses: List[Any], 
+        usage_stats: List[Any] = None
+    ) -> str:
         """
         Logs the run results to a markdown file in the /logs directory.
         """
@@ -251,6 +292,36 @@ class MinimalChainable:
         
         markdown_content = f"# 🪵 Log: {demo_name}\n\n"
         markdown_content += f"**Date:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        
+        # Calculate cost if usage stats are available
+        total_cost = 0.0
+        if usage_stats:
+            # Approximate pricing (e.g. GPT-4o-mini / Gemini Flash levels)
+            # NOTE: This is a hardcoded approximation. Real costs vary by model.
+            # Input: $0.15 / 1M tokens
+            # Output: $0.60 / 1M tokens
+            INPUT_PRICE = 0.15 / 1_000_000
+            OUTPUT_PRICE = 0.60 / 1_000_000
+            
+            total_input_tokens = 0
+            total_output_tokens = 0
+            
+            for usage in usage_stats:
+                # Handle both object and dict access
+                if isinstance(usage, dict):
+                    prompt_tokens = usage.get('prompt_tokens', 0)
+                    completion_tokens = usage.get('completion_tokens', 0)
+                else:
+                    prompt_tokens = getattr(usage, 'prompt_tokens', 0)
+                    completion_tokens = getattr(usage, 'completion_tokens', 0)
+                    
+                total_input_tokens += prompt_tokens
+                total_output_tokens += completion_tokens
+                
+            total_cost = (total_input_tokens * INPUT_PRICE) + (total_output_tokens * OUTPUT_PRICE)
+            
+            markdown_content += f"**Total Cost**: ${total_cost:.6f}\n"
+            markdown_content += f"**Tokens**: {total_input_tokens} in / {total_output_tokens} out\n\n"
         
         markdown_content += "## 🗣️ Prompts Sent\n\n"
         for i, prompt in enumerate(prompts, 1):

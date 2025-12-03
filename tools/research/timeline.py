@@ -18,32 +18,20 @@ Usage:
 
 import sys
 import os
-import argparse
-import json
-import tempfile
-import subprocess
 from datetime import datetime
 
-# Add project root to sys.path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Setup project root and import shared tools
+try:
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+except ImportError:
+    # Fallback if running directly from tools/research/
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+
+project_root = setup_project_root(__file__)
 
 from chain import MinimalChainable
 from main import build_models, prompt
-
-def load_user_context():
-    """Load user profile for context-aware generation"""
-    context_path = os.path.join(project_root, 'context', 'user_profile.json')
-    try:
-        with open(context_path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print("⚠️  No user profile found. Using defaults.")
-        return {
-            "research_interests": [],
-            "expertise_level": "General"
-        }
 
 def research_timeline_tool(topic, additional_context=""):
     """Generate research-grade timeline for a topic"""
@@ -52,7 +40,7 @@ def research_timeline_tool(topic, additional_context=""):
     print(f"Topic: {topic}\n")
 
     # Load user context
-    user_profile = load_user_context()
+    user_profile = load_user_context(project_root)
     
     client, model_names = build_models()
     selected_model_name = model_names[0]
@@ -65,7 +53,7 @@ def research_timeline_tool(topic, additional_context=""):
         "user_expertise": user_profile.get('expertise_level', 'General')
     }
 
-    result, context_filled_prompts = MinimalChainable.run(
+    result, context_filled_prompts, usage_stats = MinimalChainable.run(
         context=context_data,
         model=model_info,
         callable=prompt,
@@ -164,7 +152,7 @@ def research_timeline_tool(topic, additional_context=""):
     print(f"\n✅ Timeline saved to: {output_file}")
     
     # Log
-    log_file = MinimalChainable.log_to_markdown("research_timeline", context_filled_prompts, result)
+    log_file = MinimalChainable.log_to_markdown("research_timeline", context_filled_prompts, result, usage_stats)
     print(f"✅ Full chain log saved to: {log_file}")
     
     return output_file
@@ -255,69 +243,11 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}
 
     return md
 
-def open_in_editor():
-    """Open a temporary file in the user's default editor"""
-    editor = os.environ.get('EDITOR', 'vi')
-
-    with tempfile.NamedTemporaryFile(mode='w+', suffix='.txt', delete=False) as tf:
-        tf.write("# Enter your research topic below\n")
-        tf.write("# Lines starting with # will be ignored\n\n")
-        temp_path = tf.name
-
-    try:
-        subprocess.run([editor, temp_path], check=True)
-
-        with open(temp_path, 'r') as f:
-            content = f.read()
-
-        # Remove comment lines
-        lines = [line for line in content.split('\n') if not line.strip().startswith('#')]
-        return '\n'.join(lines).strip()
-    finally:
-        os.unlink(temp_path)
-
-def read_interactive_input():
-    """Prompt user to paste multi-line content"""
-    print("⏳ Research Timeline Tool - Interactive Mode")
-    print("=" * 60)
-    print("Enter your research topic.")
-    print("Press Ctrl+D (or Ctrl+Z on Windows) when finished.")
-    print("=" * 60)
-    print()
-
-    try:
-        content = sys.stdin.read().strip()
-        return content
-    except KeyboardInterrupt:
-        print("\n\n❌ Cancelled")
-        sys.exit(0)
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate research-grade timelines",
-        formatter_class=argparse.RawDescriptionHelpFormatter
+    topic, context = get_input_from_args(
+        description="Generate research-grade timelines"
     )
-    parser.add_argument('topic', nargs='?', help='Topic for the timeline')
-    parser.add_argument('--context', default='', help='Additional context')
-    parser.add_argument('--editor', action='store_true', help='Open editor for input')
-
-    args = parser.parse_args()
-
-    topic = None
-    if args.editor:
-        topic = open_in_editor()
-    elif args.topic:
-        topic = args.topic
-    elif not sys.stdin.isatty():
-        topic = sys.stdin.read().strip()
-    else:
-        topic = read_interactive_input()
-
-    if not topic:
-        print("❌ Error: No topic provided")
-        sys.exit(1)
-
-    research_timeline_tool(topic, args.context)
+    research_timeline_tool(topic, context)
 
 if __name__ == "__main__":
     main()

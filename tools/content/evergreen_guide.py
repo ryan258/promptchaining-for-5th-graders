@@ -24,32 +24,20 @@ Usage:
 
 import sys
 import os
-import argparse
-import json
-import tempfile
-import subprocess
 from datetime import datetime
 
-# Add project root to sys.path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+# Setup project root and import shared tools
+try:
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+except ImportError:
+    # Fallback if running directly from tools/content/
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+
+project_root = setup_project_root(__file__)
 
 from chain import MinimalChainable
 from main import build_models, prompt
-
-def load_user_context():
-    """Load user profile for context-aware generation"""
-    context_path = os.path.join(project_root, 'context', 'user_profile.json')
-    try:
-        with open(context_path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print("⚠️  No user profile found. Using defaults.")
-        return {
-            "writing_style": {"tone": "Practical, evidence-based"},
-            "content_goals": {"primary": "Evergreen, useful guides"}
-        }
 
 def evergreen_guide_architect(topic, additional_context=""):
     """Generate evergreen guide outline optimized for depth and longevity"""
@@ -58,7 +46,7 @@ def evergreen_guide_architect(topic, additional_context=""):
     print(f"📝 Topic: {topic}\n")
 
     # Load user context
-    user_profile = load_user_context()
+    user_profile = load_user_context(project_root)
     writing_style = user_profile.get('writing_style', {})
     tone = writing_style.get('tone', 'Practical')
 
@@ -75,7 +63,7 @@ def evergreen_guide_architect(topic, additional_context=""):
         "prefer": ", ".join(writing_style.get('prefer', []))
     }
 
-    result, context_filled_prompts = MinimalChainable.run(
+    result, context_filled_prompts, usage_stats = MinimalChainable.run(
         context=context_data,
         model=model_info,
         callable=prompt,
@@ -225,6 +213,7 @@ Respond in JSON: {
   "estimated_reading_time": "10-12 minutes"
 }"""
         ],
+        return_usage=True,
     )
 
     # Save output
@@ -247,7 +236,7 @@ Respond in JSON: {
     print(f"\n✅ Guide outline saved to: {output_file}")
 
     # Also log to standard logging
-    log_file = MinimalChainable.log_to_markdown("evergreen_guide", context_filled_prompts, result)
+    log_file = MinimalChainable.log_to_markdown("evergreen_guide", context_filled_prompts, result, usage_stats)
     print(f"✅ Full chain log saved to: {log_file}")
 
     # Print summary to console
@@ -425,104 +414,11 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}
 
     return md
 
-def open_in_editor():
-    """Open a temporary file in the user's default editor"""
-    editor = os.environ.get('EDITOR', 'vi')
-
-    with tempfile.NamedTemporaryFile(mode='w+', suffix='.txt', delete=False) as tf:
-        tf.write("# Enter your topic or notes below\n")
-        tf.write("# Lines starting with # will be ignored\n\n")
-        temp_path = tf.name
-
-    try:
-        subprocess.run([editor, temp_path], check=True)
-
-        with open(temp_path, 'r') as f:
-            content = f.read()
-
-        # Remove comment lines
-        lines = [line for line in content.split('\n') if not line.strip().startswith('#')]
-        return '\n'.join(lines).strip()
-    finally:
-        os.unlink(temp_path)
-
-def read_interactive_input():
-    """Prompt user to paste multi-line content"""
-    print("🌲 Evergreen Guide Architect - Interactive Mode")
-    print("=" * 60)
-    print("Paste your topic or notes below.")
-    print("Press Ctrl+D (or Ctrl+Z on Windows) when finished.")
-    print("=" * 60)
-    print()
-
-    try:
-        content = sys.stdin.read().strip()
-        return content
-    except KeyboardInterrupt:
-        print("\n\n❌ Cancelled")
-        sys.exit(0)
-
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate evergreen guide outlines optimized for depth and longevity",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Interactive mode (paste multi-line content)
-  python evergreen_guide.py
-
-  # Open in text editor
-  python evergreen_guide.py --editor
-
-  # From command-line argument
-  python evergreen_guide.py "Progressive overload for MS patients"
-
-  # From pipe
-  cat notes.txt | python evergreen_guide.py
-
-  # With additional context
-  python evergreen_guide.py "Topic" --context "Extra notes"
-        """
+    topic, context = get_input_from_args(
+        description="Generate evergreen guide outlines optimized for depth and longevity"
     )
-    parser.add_argument(
-        'topic',
-        nargs='?',
-        help='Topic for the guide (omit for interactive mode)'
-    )
-    parser.add_argument(
-        '--context',
-        default='',
-        help='Additional context or notes'
-    )
-    parser.add_argument(
-        '--editor',
-        action='store_true',
-        help='Open your default text editor ($EDITOR) to enter content'
-    )
-
-    args = parser.parse_args()
-
-    # Determine input method
-    topic = None
-
-    if args.editor:
-        # Editor mode
-        topic = open_in_editor()
-    elif args.topic:
-        # Command-line argument
-        topic = args.topic
-    elif not sys.stdin.isatty():
-        # Piped input
-        topic = sys.stdin.read().strip()
-    else:
-        # Interactive mode
-        topic = read_interactive_input()
-
-    if not topic:
-        print("❌ Error: No topic provided")
-        sys.exit(1)
-
-    evergreen_guide_architect(topic, args.context)
+    evergreen_guide_architect(topic, context)
 
 if __name__ == "__main__":
     main()
