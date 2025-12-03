@@ -191,29 +191,29 @@ If it ain't broke, don't fix it.
 
 | Demo Name | Status | Notes |
 |-----------|--------|-------|
-| `astroturf_detector` | Maybe | Useful for media analysis |
+| `astroturf_detector` | Done | Tool: `tools/media/astroturf_detector.py` |
 | `bill_pork_barrel_finder` | Skip | Too specific |
 | `campaign_promise_tracker` | Skip | Too specific |
 | `character_evolution_engine` | Done | Tool: `tools/writing/character_evolution_engine.py` |
-| `coalition_fracture_simulator` | Maybe | Advanced analysis |
+| `coalition_fracture_simulator` | Done | Tool: `tools/strategy/coalition_fracture_simulator.py` |
 | `code_architecture_critic` | Done | Tool: `tools/dev/code_architecture_critic.py` |
 | `common_ground_finder` | Done | Tool: `tools/collaboration/common_ground_finder.py` |
 | `concept_simplifier` | Done | Tool: `tools/learning/concept_simplifier.py` |
-| `consensus_manufacturing_detective` | Maybe | Media analysis |
+| `consensus_manufacturing_detective` | Done | Tool: `tools/media/consensus_manufacturing_detective.py` |
 | `corporate_theater_director` | Skip | Satire |
 | `credential_inflation_analyzer` | Skip | Niche |
 | `crisis_opportunity_scanner` | Done | Tool: `tools/strategy/crisis_opportunity_scanner.py` |
 | `diplomatic_subtext_decoder` | Done | Tool: `tools/strategy/diplomatic_subtext_decoder.py` |
 | `dream_job_reverse_engineer` | Done | Tool: `tools/career/dream_job_reverse_engineer.py` |
-| `emergence_simulator` | Maybe | Abstract |
+| `emergence_simulator` | Done | Tool: `tools/research/emergence_simulator.py` |
 | `euphemism_decoder` | Done | Tool: `tools/media/euphemism_decoder.py` |
 | `goodharts_law_predictor` | Done | Tool: `tools/strategy/goodharts_law_predictor.py` |
 | `historical_what_if_machine` | Skip | Entertainment |
-| `ideological_consistency_test` | Maybe | Self-reflection |
+| `ideological_consistency_test` | Done | Tool: `tools/psychology/ideological_consistency_test.py` |
 | `knowledge_time_machine` | Done | `research/timeline.py` |
 | `media_bias_triangulator` | Done | Tool: `tools/media/media_bias_triangulator.py` |
 | `meeting_dynamics_forensics` | Done | Tool: `tools/career/meeting_dynamics_forensics.py` |
-| `narrative_warfare_analyst` | Maybe | Advanced |
+| `narrative_warfare_analyst` | Done | Tool: `tools/media/narrative_warfare_analyst.py` |
 | `negotiation_strategy_builder` | Done | Tool: `tools/business/negotiation_strategy_builder.py` |
 | `platform_lock_in_forensics` | Skip | Niche |
 | `problem_solution_spider` | Done | Tool: `tools/brainstorm/problem_solution_spider.py` |

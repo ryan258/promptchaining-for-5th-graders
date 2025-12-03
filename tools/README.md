@@ -220,6 +220,48 @@ cat event.txt | python tools/media/media_bias_triangulator.py
 - Biased headlines, omissions, ground truth synthesis
 - Logs with token/cost estimates in `logs/`
 
+### 🌾 Astroturf Detector
+
+Assess whether messaging shows signs of astroturfing/coordination.
+
+**Usage:**
+```bash
+python tools/media/astroturf_detector.py "Thread/post text"
+```
+
+**Output:**
+- JSON in `output/media/astroturf_detector/`
+- Signals, likely origin/motives, confidence, verdict/watch-next
+- Logs with token/cost estimates in `logs/`
+
+### 🧠 Consensus Manufacturing Detective
+
+Spot framing/repetition/omissions used to manufacture consensus and who benefits.
+
+**Usage:**
+```bash
+python tools/media/consensus_manufacturing_detective.py "Campaign text"
+```
+
+**Output:**
+- JSON in `output/media/consensus_manufacturing_detective/`
+- Frames, omissions, beneficiaries, counter-frames
+- Logs with token/cost estimates in `logs/`
+
+### 🛡️ Narrative Warfare Analyst
+
+Analyze competing narratives, techniques, escalation risks, and counters.
+
+**Usage:**
+```bash
+python tools/media/narrative_warfare_analyst.py "Narrative summary or quotes"
+```
+
+**Output:**
+- JSON in `output/media/narrative_warfare_analyst/`
+- Narratives, techniques, counters, monitoring signals
+- Logs with token/cost estimates in `logs/`
+
 ---
 
 ## Social Dynamics Tools
