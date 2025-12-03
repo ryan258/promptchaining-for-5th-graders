@@ -3,13 +3,8 @@
 import sys
 import os
 
-# This next part figures out where our main project folder is.
-# It's like finding the main entrance to our project's "house."
+# Add project root to sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-# This 'if' block makes sure Python looks in our main project folder first
-# when we ask it to 'import' (bring in) tools.
-# It's like saying, "Hey Python, check the main project folder for tools first!"
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 elif sys.path[0] != project_root:
@@ -102,21 +97,7 @@ def knowledge_time_machine_demo():
 
 # This special code block runs only when you run this file directly.
 if __name__ == "__main__":
-    # This part helps load our secret API key from a file named '.env'.
-    # The API key is like a password to talk to AI models through OpenRouter.
-    from dotenv import load_dotenv
-    # We need to find the '.env' file, which is in our main project folder.
-    dotenv_path = os.path.join(project_root, '.env')
-    if os.path.exists(dotenv_path):
-        load_dotenv(dotenv_path) # Load the secret key
-    else:
-        # If the file isn't there, print a friendly warning.
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
+    from demo_utils import setup_demo_env
 
-    # Check if we actually got the API key.
-    if not os.getenv("OPENROUTER_API_KEY"):
-        # If not, tell the user what to do.
-        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.")
-    else:
-        # If we have the key, then it's time to run our knowledge_time_machine_demo recipe!
+    if setup_demo_env():
         knowledge_time_machine_demo()

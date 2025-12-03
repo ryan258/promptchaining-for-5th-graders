@@ -22,30 +22,6 @@ elif sys.path[0] != project_root:
 from chain import MinimalChainable # Our magic prompt chaining tool
 from main import build_models, prompt # Tools from our main project file
 
-# These lines at the top are like telling Python where to find its tools.
-# 'import sys' and 'import os' help us work with the computer's files and settings.
-import sys
-import os
-
-# This next part figures out where our main project folder is.
-# It's like finding the main entrance to our project's "house."
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-# This 'if' block makes sure Python looks in our main project folder first
-# when we ask it to 'import' (bring in) tools.
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-elif sys.path[0] != project_root:
-    sys.path.remove(project_root)
-    sys.path.insert(0, project_root)
-
-# Now we're importing our special tools!
-# 'MinimalChainable' is our main LEGO builder for prompts.
-# 'build_models' helps set up our AI friends (the Gemini models).
-# 'prompt' is the function that sends our message to the AI.
-from chain import MinimalChainable # Our magic prompt chaining tool
-from main import build_models, prompt # Tools from our main project file
-
 # This is our Historical What-If Machine adventure!
 # A 'def' creates a function, which is like a recipe for the computer.
 def historical_what_if_demo():
@@ -128,24 +104,9 @@ def historical_what_if_demo():
 
     # Log the run to markdown
     log_file = MinimalChainable.log_to_markdown("historical_what_if_machine", context_filled_prompts, result)
-    print(f"✅ Log saved to {log_file}")
 
-# This special code block runs only when you run this file directly.
 if __name__ == "__main__":
-    # This part helps load our secret API key from a file named '.env'.
-    from dotenv import load_dotenv
-    # We need to find the '.env' file, which is in our main project folder.
-    dotenv_path = os.path.join(project_root, '.env')
-    if os.path.exists(dotenv_path):
-        load_dotenv(dotenv_path) # Load the secret key
-    else:
-        # If the file isn't there, print a friendly warning.
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
+    from demo_utils import setup_demo_env
 
-    # Check if we actually got the API key.
-    if not os.getenv("OPENROUTER_API_KEY"):
-        # If not, tell the user what to do.
-        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.")
-    else:
-        # If we have the key, then it's time to run our historical_what_if_demo recipe!
+    if setup_demo_env():
         historical_what_if_demo()

@@ -1,4 +1,3 @@
-# These lines at the top are like telling Python where to find its tools.
 import sys
 import os
 
@@ -103,19 +102,7 @@ def character_evolution_demo():
 
 # This special code runs if you start this Python file directly.
 if __name__ == "__main__":
-    # This part helps load our secret API key.
-    # The API key is like a password to talk to Google's AI.
-    from dotenv import load_dotenv
-    # Find the '.env' file in our main project folder.
-    dotenv_path = os.path.join(project_root, '.env')
-    if os.path.exists(dotenv_path):
-        load_dotenv(dotenv_path) # Load the secret key
-    else:
-        print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
+    from demo_utils import setup_demo_env
 
-    # Check if we actually got the API key.
-    if not os.getenv("OPENROUTER_API_KEY"):
-        print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.") #
-    else:
-        # If we have the key, let's run our character_evolution_demo recipe!
+    if setup_demo_env():
         character_evolution_demo()

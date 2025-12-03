@@ -60,12 +60,7 @@ def consensus_detective_demo():
     print(f"✅ Log saved to {log_file}")
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-    dotenv_path = os.path.join(project_root, '.env')
-    if os.path.exists(dotenv_path):
-        load_dotenv(dotenv_path)
-    
-    if not os.getenv("OPENROUTER_API_KEY"):
-        print("🚨 OPENROUTER_API_KEY not found.")
-    else:
+    from demo_utils import setup_demo_env
+
+    if setup_demo_env():
         consensus_detective_demo()
