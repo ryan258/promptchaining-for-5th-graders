@@ -97,8 +97,12 @@ def subject_connector_demo():
     # And tell the user where the files were saved.
     print(f"\n✅ Results saved to {prompts_file_base}.txt and {results_file_base}.txt")
 
-# This special code block runs only when you run this file directly
-# (not when it's imported as a tool by another file).
+    # Also log to markdown for history
+    log_file = MinimalChainable.log_to_markdown("subject_connector", context_filled_prompts, result)
+    print(f"✅ Log saved to {log_file}")
+
+
+# This special code block runs only when you run this file directly.
 if __name__ == "__main__":
     # This part helps load our secret API key from a file named '.env'.
     # The API key is like a password to talk to AI models through OpenRouter.

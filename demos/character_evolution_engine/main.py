@@ -96,6 +96,11 @@ def character_evolution_demo():
     # Tell the user where the files are saved.
     print(f"\n✅ Results saved to {prompts_file_base}.txt and {results_file_base}.txt")
 
+    # Also log to markdown for history
+    log_file = MinimalChainable.log_to_markdown("character_evolution", context_filled_prompts, result)
+    print(f"✅ Log saved to {log_file}")
+
+
 # This special code runs if you start this Python file directly.
 if __name__ == "__main__":
     # This part helps load our secret API key.
@@ -108,7 +113,7 @@ if __name__ == "__main__":
     else:
         print(f"Warning: .env file not found at {dotenv_path}. Make sure OPENROUTER_API_KEY is set in your environment.")
 
-    # Check if we have the API key.
+    # Check if we actually got the API key.
     if not os.getenv("OPENROUTER_API_KEY"):
         print("🚨 OPENROUTER_API_KEY not found. Please set it up in the .env file in the project root.") #
     else:

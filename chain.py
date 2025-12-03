@@ -7,7 +7,8 @@ import re    # Helps us find patterns in text (like finding JSON in markdown)
 from typing import List, Dict, Callable, Any, Union  # These tell Python what types of data we expect
 from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
-
+import os
+import datetime
 
 # This is like a report card that tells us how our fusion chain did
 class FusionChainResult(BaseModel):
@@ -16,79 +17,18 @@ class FusionChainResult(BaseModel):
     When we run multiple AI models and make them compete,
     this holds who won and how everyone did.
     """
-    top_response: Union[str, Dict[str, Any]]  # The best answer we got
-    all_prompt_responses: List[List[Any]]     # Every answer from every model
-    all_context_filled_prompts: List[List[str]]  # The actual prompts we sent
-    performance_scores: List[float]           # Scores from 0 to 1 for each model
-    model_names: List[str]                    # Names of all the models we used
-
+    top_response: str
+    all_prompt_responses: List[List[Any]]
+    all_context_filled_prompts: List[List[str]]
+    performance_scores: List[float]
+    model_names: List[str]
 
 class FusionChain:
     """
-    FusionChain is like having multiple students answer the same test,
-    then picking the best answer. It runs the same prompts through
-    different AI models and chooses the winner.
-    
-    This is the "ensemble method" - when you're not sure which approach
-    is best, try them all and let them compete!
+    FusionChain runs multiple AI models in parallel and makes them compete!
     """
-
     @staticmethod
     def run(
-        context: Dict[str, Any],           # The variables we want to use in our prompts
-        models: List[Any],                 # List of AI models to compete
-        callable: Callable,               # The function that talks to the AI
-        prompts: List[str],               # The chain of prompts to run
-        evaluator: Callable[[List[str]], List[float]],  # Function that judges who won
-        get_model_name: Callable[[Any], str],           # Function to get model names
-    ) -> FusionChainResult:
-        """
-        This is the main competition function.
-        
-        Imagine you have 3 friends, and you want to ask them all the same
-        series of questions. Each friend builds on their own previous answers.
-        At the end, you decide which friend gave the best final answer.
-        
-        That's exactly what this function does with AI models!
-        """
-        
-        # Create empty lists to store results from each model
-        all_outputs = []                    # Every response from every model
-        all_context_filled_prompts = []     # The actual prompts sent to each model
-
-        # Loop through each AI model and run the prompt chain
-        for model in models:
-            # Run the full prompt chain for this model
-            # This returns two things: the outputs and the filled-in prompts
-            outputs, context_filled_prompts = MinimalChainable.run(
-                context, model, callable, prompts
-            )
-            
-            # Save this model's results
-            all_outputs.append(outputs)
-            all_context_filled_prompts.append(context_filled_prompts)
-
-        # Now we need to judge who did best
-        # We only look at the final answer from each model
-        last_outputs = [outputs[-1] for outputs in all_outputs]
-        
-        # Ask our evaluator function to pick the winner and give scores
-        top_response, performance_scores = evaluator(last_outputs)
-
-        # Get the names of all our models so we can remember who did what
-        model_names = [get_model_name(model) for model in models]
-
-        # Package everything up in our result object
-        return FusionChainResult(
-            top_response=top_response,                      # The winning answer
-            all_prompt_responses=all_outputs,               # All answers from all models
-            all_context_filled_prompts=all_context_filled_prompts,  # All the prompts we sent
-            performance_scores=performance_scores,          # How well each model did
-            model_names=model_names,                        # Names of all the models
-        )
-
-    @staticmethod
-    def run_parallel(
         context: Dict[str, Any],
         models: List[Any],
         callable: Callable,
@@ -146,7 +86,6 @@ class FusionChain:
             performance_scores=performance_scores,
             model_names=model_names,
         )
-
 
 class MinimalChainable:
     """
@@ -291,3 +230,48 @@ class MinimalChainable:
                 result_string += chain_text_delim + item + "\n\n"
 
         return result_string
+
+    @staticmethod
+    def log_to_markdown(demo_name: str, prompts: List[str], responses: List[Any]) -> str:
+        """
+        Logs the run results to a markdown file in the /logs directory.
+        """
+        # Get the project root directory (where this file is)
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        logs_dir = os.path.join(project_root, "logs")
+        
+        # Create logs directory if it doesn't exist
+        if not os.path.exists(logs_dir):
+            os.makedirs(logs_dir)
+            
+        # Generate timestamped filename
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"{timestamp}_{demo_name}.md"
+        filepath = os.path.join(logs_dir, filename)
+        
+        markdown_content = f"# 🪵 Log: {demo_name}\n\n"
+        markdown_content += f"**Date:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        
+        markdown_content += "## 🗣️ Prompts Sent\n\n"
+        for i, prompt in enumerate(prompts, 1):
+            markdown_content += f"### Prompt #{i}\n"
+            markdown_content += f"```text\n{prompt}\n```\n\n"
+            
+        markdown_content += "## 🤖 AI Responses\n\n"
+        for i, response in enumerate(responses, 1):
+            markdown_content += f"### Response #{i}\n"
+            
+            # Format response nicely
+            if isinstance(response, (dict, list)):
+                formatted_response = json.dumps(response, indent=2)
+                markdown_content += f"```json\n{formatted_response}\n```\n\n"
+            else:
+                markdown_content += f"{response}\n\n"
+        
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(markdown_content)
+            return filepath
+        except Exception as e:
+            print(f"⚠️ Failed to save log file: {e}")
+            return ""
