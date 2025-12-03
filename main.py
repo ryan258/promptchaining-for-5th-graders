@@ -13,7 +13,7 @@ def build_models():
     """
     This function sets up our AI models so we can talk to them.
     """
-    print("Attempting to load .env file...") # DEBUG
+    # print("Attempting to load .env file...") # DEBUG removed
     load_dotenv()
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders")
@@ -35,11 +35,16 @@ def build_models():
 
     # Return the client and a list of model names we want to use
     # We return the client as the first item so we can use it later
-    return client, [
+    model_names = [
         "openai/gpt-3.5-turbo",
         "google/gemini-flash-1.5",
         "google/gemini-pro-1.5"
     ]
+
+    if not model_names:
+        raise ValueError("No models configured. Please check your model list.")
+
+    return client, model_names
 
 
 def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
