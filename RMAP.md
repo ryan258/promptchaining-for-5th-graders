@@ -59,11 +59,56 @@ This is for local dev, not production services.
 
 ---
 
+## Next: Demo → Tool Conversion Pattern
+
+### Exemplar: Knowledge Time Machine → Research Timeline Tool
+
+**Source**: `demos/knowledge_time_machine/main.py`
+**Target**: `tools/research/timeline.py`
+
+**Why this one first:**
+- Already traces concept evolution (origins → current → future)
+- Clear transformation path from kid-friendly to research-grade
+- Good template for converting other demos
+
+**Conversion Plan:**
+
+1. **Strip kid explanations** - Remove comment cruft
+2. **Add CLI + multi-line input** - Same pattern as evergreen_guide
+3. **Adult-focused prompts**:
+   - Historical origins → Include contradicting theories, uncertain attributions
+   - Evolution points → Breakthrough moments with impact assessment
+   - Current state → Frontier research, unresolved questions
+   - Future → Expert speculation + risks/limitations
+4. **Output format**: Research-grade markdown
+   - Proper citations format
+   - Uncertainty indicators
+   - Research gaps highlighted
+5. **Context loading** - Pull user profile preferences
+
+**Expected Usage:**
+```bash
+python tools/research/timeline.py "CRISPR gene editing"
+# or
+python tools/research/timeline.py --editor
+```
+
+**Success criteria:**
+- Would actually use for research/writing prep
+- Output quality matches cognitive exoskeleton standards
+- < 3 min runtime
+
+**After this works:**
+Use as template for converting other demos → tools when needed.
+
+---
+
 ## Current Priorities
 
-1. **Cognitive exoskeleton tools** (`tools/`) - These directly help output
-2. **Fix annoying bugs** - As they come up
-3. **Add features when blocked** - Only when current approach doesn't work
+1. **Knowledge time machine tool** - Prove the demo→tool pattern works
+2. **Cognitive exoskeleton tools** (`tools/`) - Only build what directly helps output
+3. **Fix annoying bugs** - As they come up
+4. **Add features when blocked** - Only when current approach doesn't work
 
 If it ain't broke, don't fix it.
 

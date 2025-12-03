@@ -3,6 +3,7 @@
 review.md
 logs/
 output/guides
+output/research
 # ============================================================================
 # SECRETS & CREDENTIALS - Guard the Keys to the Kingdom
 # ============================================================================
@@ -231,4 +232,4 @@ memory_dumps/
 #
 # This file is itself a kind of prompt chain - each pattern
 # anticipates a future possibility and prepares a response.
-# ============================================================================
+# ============================================================================output/research
