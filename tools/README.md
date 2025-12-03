@@ -133,6 +133,77 @@ python tools/collaboration/common_ground_finder.py "View A" --context "View B"
 
 Clarify a problem, constraints, wild ideas, blended solutions, and a quick test scenario.
 
+---
+
+## Career Tools
+
+### 🎯 Dream Job Reverse Engineer
+
+Decode a job posting into hidden priorities, pain points, application strategy, resume bullets, and STAR stories.
+
+**Usage:**
+```bash
+python tools/career/dream_job_reverse_engineer.py "path/to/job.txt"
+python tools/career/dream_job_reverse_engineer.py "Job text" --context "Your profile/angle"
+```
+
+**Output:**
+- JSON in `output/career/dream_job_reverse_engineer/`
+- Hidden priorities, pain points, strategy, bullets, STAR outlines
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Media Literacy Tools
+
+### 🧹 Euphemism Decoder
+
+Turn sanitized language into plain English, expose intent, and flag manipulation.
+
+**Usage:**
+```bash
+python tools/media/euphemism_decoder.py "Quoted text"
+cat speech.txt | python tools/media/euphemism_decoder.py
+```
+
+**Output:**
+- JSON in `output/media/euphemism_decoder/`
+- Euphemism mappings, plain-English rewrite, intent/beneficiaries
+- Logs with token/cost estimates in `logs/`
+
+### 🧭 Media Bias Triangulator
+
+Generate polarized framings, surface omissions, and synthesize ground truth.
+
+**Usage:**
+```bash
+python tools/media/media_bias_triangulator.py "Event description"
+cat event.txt | python tools/media/media_bias_triangulator.py
+```
+
+**Output:**
+- JSON in `output/media/media_bias_triangulator/`
+- Biased headlines, omissions, ground truth synthesis
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Social Dynamics Tools
+
+### 🧠 Status Game Decoder
+
+Parse social interactions for signals, hierarchy, and the real game being played.
+
+**Usage:**
+```bash
+python tools/social/status_game_decoder.py "Describe the scene"
+```
+
+**Output:**
+- JSON in `output/social/status_game_decoder/`
+- Surface analysis, signals, hierarchy, real game, countermoves
+- Logs with token/cost estimates in `logs/`
+
 **Usage:**
 ```bash
 python tools/brainstorm/problem_solution_spider.py "Problem statement"

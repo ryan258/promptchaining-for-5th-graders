@@ -204,14 +204,14 @@ If it ain't broke, don't fix it.
 | `credential_inflation_analyzer` | Skip | Niche |
 | `crisis_opportunity_scanner` | Convert | Strategy |
 | `diplomatic_subtext_decoder` | Convert | Communication |
-| `dream_job_reverse_engineer` | Convert | Career |
+| `dream_job_reverse_engineer` | Done | Tool: `tools/career/dream_job_reverse_engineer.py` |
 | `emergence_simulator` | Maybe | Abstract |
-| `euphemism_decoder` | Convert | Writing/Reading |
+| `euphemism_decoder` | Done | Tool: `tools/media/euphemism_decoder.py` |
 | `goodharts_law_predictor` | Convert | Strategy/Policy |
 | `historical_what_if_machine` | Skip | Entertainment |
 | `ideological_consistency_test` | Maybe | Self-reflection |
 | `knowledge_time_machine` | Done | `research/timeline.py` |
-| `media_bias_triangulator` | Convert | Media literacy |
+| `media_bias_triangulator` | Done | Tool: `tools/media/media_bias_triangulator.py` |
 | `meeting_dynamics_forensics` | Convert | Career |
 | `narrative_warfare_analyst` | Maybe | Advanced |
 | `negotiation_strategy_builder` | Convert | Business |
@@ -220,6 +220,6 @@ If it ain't broke, don't fix it.
 | `proxy_war_analyst` | Skip | Niche |
 | `regulatory_capture_mapper` | Skip | Niche |
 | `revealed_preference_detective` | Convert | Psychology |
-| `status_game_decoder` | Convert | Social dynamics |
+| `status_game_decoder` | Done | Tool: `tools/social/status_game_decoder.py` |
 | `subject_connector` | Convert | Learning/Creativity |
 | `viral_hook_laboratory` | Skip | Marketing (maybe) |
