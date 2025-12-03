@@ -4,6 +4,36 @@
 
 ### Recently Completed ✅
 
+**Political & Media Metagames** (Dec 2024)
+- [x] Campaign Promise Tracker
+- [x] Euphemism Decoder
+- [x] Coalition Fracture Simulator
+- [x] Media Bias Triangulator
+- [x] Proxy War Analyst
+- [x] Crisis Opportunity Scanner
+- [x] Astroturf Detector
+- [x] Diplomatic Subtext Decoder
+- [x] Bill Pork Barrel Finder
+- [x] Ideological Consistency Test
+
+**Metagame X-Ray Vision** (Dec 2024)
+- [x] Status Game Decoder
+- [x] Credential Inflation Analyzer
+- [x] Corporate Theater Director
+- [x] Meeting Dynamics Forensics
+- [x] Revealed Preference Detective
+- [x] Regulatory Capture Mapper
+- [x] Platform Lock-In Forensics
+- [x] Goodhart's Law Predictor
+- [x] Narrative Warfare Analyst
+- [x] Consensus Manufacturing Detective
+
+**Monetizable Skills** (Dec 2024)
+- [x] Dream Job Reverse Engineer
+- [x] Viral Hook Laboratory
+- [x] Negotiation Strategy Builder
+- [x] Code Architecture Critic
+
 **OpenRouter API Migration** (Nov 2024)
 - [x] Migrated from Google Gemini to OpenRouter API
 - [x] Updated all 8 demos to use OpenRouter
@@ -18,18 +48,13 @@
 - [x] Create HAPPY-PATH.md beginner guide
 - [x] Add error handling to log_to_markdown()
 - [x] Simplify FusionChain to parallel-only execution
-- [x] Add logging to 6/8 demos
+- [x] Add logging to all 32 demos
 
 ---
 
 ## Current Priorities
 
 ### High Priority
-
-**Complete Demo Logging**
-- [ ] Add logging to `common_ground_finder`
-- [ ] Add logging to `historical_what_if_machine`
-- [ ] Ensure all 8 demos have consistent output format
 
 **Code Quality**
 - [x] ~~Remove debug print statements (main.py line 16)~~ (verified removed)
@@ -102,17 +127,49 @@
 
 ## Demo Evolution
 
-### Existing Demos (8)
+### Existing Demos (32)
+
+#### Educational Foundations (8)
 1. ✅ Character Evolution Engine - narrative development (with logging)
-2. ⏳ Common Ground Finder - conflict resolution (needs logging)
+2. ✅ Common Ground Finder - conflict resolution (with logging)
 3. ✅ Concept Simplifier - explanatory chains (with logging)
 4. ✅ Emergence Simulator - complex systems (with logging)
-5. ⏳ Historical What-If Machine - counterfactual reasoning (needs logging)
+5. ✅ Historical What-If Machine - counterfactual reasoning (with logging)
 6. ✅ Knowledge Time Machine - temporal analysis (with logging)
 7. ✅ Problem-Solution Spider - creative problem-solving (with logging)
 8. ✅ Subject Connector - interdisciplinary thinking (with logging)
 
-### Potential New Demos (20 Exceptional Use Cases)
+#### Monetizable Skills (4)
+1. ✅ Dream Job Reverse Engineer
+2. ✅ Viral Hook Laboratory
+3. ✅ Negotiation Strategy Builder
+4. ✅ Code Architecture Critic
+
+#### Metagame X-Ray Vision (10)
+1. ✅ Status Game Decoder
+2. ✅ Credential Inflation Analyzer
+3. ✅ Corporate Theater Director
+4. ✅ Meeting Dynamics Forensics
+5. ✅ Revealed Preference Detective
+6. ✅ Regulatory Capture Mapper
+7. ✅ Platform Lock-In Forensics
+8. ✅ Goodhart's Law Predictor
+9. ✅ Narrative Warfare Analyst
+10. ✅ Consensus Manufacturing Detective
+
+#### Political & Media Metagames (10)
+1. ✅ Campaign Promise Tracker
+2. ✅ Euphemism Decoder
+3. ✅ Coalition Fracture Simulator
+4. ✅ Media Bias Triangulator
+5. ✅ Proxy War Analyst
+6. ✅ Crisis Opportunity Scanner
+7. ✅ Astroturf Detector
+8. ✅ Diplomatic Subtext Decoder
+9. ✅ Bill Pork Barrel Finder
+10. ✅ Ideological Consistency Test
+
+### Potential New Demos (Future Ideas)
 
 > **What makes these exceptional**: Each demo leverages prompt chaining to achieve insights impossible with single prompts. They build complexity through iteration, self-critique, perspective shifting, and emergent reasoning.
 
@@ -332,20 +389,6 @@ Pick demos that:
    - *Chaining Power*: The fight over framing determines the fight over policy
    - *Uncomfortable Truth*: He who controls the frame controls the game
    - *Example*: "Pro-life" vs "Pro-choice" - neither side accepts the other's frame because that concedes the game
-
-10. **Consensus Manufacturing Detective** - "everyone knows" claim → trace to origin → identify amplification network → map incentives → reveal how "consensus" was created
-    - *X-Ray Vision*: "Everyone knows X" often means "People with platforms repeated it until it seemed true"
-    - *Chaining Power*: Backtrack from consensus to creation moment to see the machinery
-    - *Uncomfortable Truth*: Many "obvious truths" are successful propaganda
-    - *Example*: "Diamonds are forever" - manufactured scarcity + manufactured tradition = manufactured desire
-
----
-
-### Why These Metagame Demos Are Different
-
-**Other demos**: Solve problems
-**Metagame demos**: Reveal the real problem is different than stated
-
 **What makes these X-ray vision:**
 - 🎭 **Surface vs Reality Gap** - Stated game vs actual game
 - 💡 **Incentive Forensics** - What's rewarded reveals what's valued

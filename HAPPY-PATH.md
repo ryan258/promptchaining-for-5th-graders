@@ -77,28 +77,31 @@ python demos/character_evolution_engine/main.py
 python demos/concept_simplifier/main.py
 ```
 
-**3. Emergence Simulator 🐜**
-*Simulate simple agents and see what complex behaviors emerge.*
+### 🆕 Metagame & Political Demos (Advanced)
+These demos reveal hidden layers in society, politics, and business.
+
+**3. Status Game Decoder 🎭**
+*Analyze a social situation to see who is actually winning the status game.*
 ```bash
-python demos/emergence_simulator/main.py
+python demos/status_game_decoder/main.py
 ```
 
-**4. Knowledge Time Machine ⏳**
-*Explore the history, present, and future of a topic.*
+**4. Media Bias Triangulator 📰**
+*See how Left, Right, and Center outlets would spin the same event.*
 ```bash
-python demos/knowledge_time_machine/main.py
+python demos/media_bias_triangulator/main.py
 ```
 
-**5. Problem-Solution Spider 🕸️**
-*Brainstorm creative solutions to everyday problems.*
+**5. Dream Job Reverse Engineer 💼**
+*Decode a job posting to find what the hiring manager really wants.*
 ```bash
-python demos/problem_solution_spider/main.py
+python demos/dream_job_reverse_engineer/main.py
 ```
 
-**6. Subject Connector 🔗**
-*Find surprising connections between two different school subjects.*
+**6. Revealed Preference Detective 🕵️‍♀️**
+*Find out what people actually value based on where they spend money.*
 ```bash
-python demos/subject_connector/main.py
+python demos/revealed_preference_detective/main.py
 ```
 
 ## 4. Checking Your Results 📂
