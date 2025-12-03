@@ -11,6 +11,7 @@ This project implements prompt chaining patterns for AI model interactions:
 1. **MinimalChainable**: Sequential prompt execution with context variables and output references
 2. **FusionChain**: Parallel execution across multiple models with comparative evaluation
 3. **Automatic Logging**: Timestamped markdown logs of all runs for history tracking
+4. **Metagame Analysis**: Demos that reveal hidden strategic layers and uncomfortable truths
 
 ## Core Features
 
@@ -118,16 +119,30 @@ print(result.performance_scores)
 ├── chain_test.py         # Unit tests
 ├── HAPPY-PATH.md         # Beginner-friendly getting started guide
 ├── GETTING_STARTED.md    # Technical setup guide
-├── ROADMAP.md            # Project roadmap and priorities
-├── demos/                # Example implementations
-│   ├── character_evolution_engine/    ✅ with logging
-│   ├── common_ground_finder/
-│   ├── concept_simplifier/            ✅ with logging
-│   ├── emergence_simulator/           ✅ with logging
-│   ├── historical_what_if_machine/
-│   ├── knowledge_time_machine/        ✅ with logging
-│   ├── problem_solution_spider/       ✅ with logging
-│   └── subject_connector/             ✅ with logging
+├── ROADMAP.md            # Project roadmap and demo ideas (40+ concepts!)
+├── demos/                # 18 example implementations
+│   ├── Educational Foundations (8 demos)
+│   │   ├── character_evolution_engine/    ✅ with logging
+│   │   ├── common_ground_finder/
+│   │   ├── concept_simplifier/            ✅ with logging
+│   │   ├── emergence_simulator/           ✅ with logging
+│   │   ├── historical_what_if_machine/
+│   │   ├── knowledge_time_machine/        ✅ with logging
+│   │   ├── problem_solution_spider/       ✅ with logging
+│   │   └── subject_connector/             ✅ with logging
+│   │
+│   └── Metagame X-Ray Vision (10 demos) 🔥
+│       ├── consensus_manufacturing_detective/  ✅ NEW
+│       ├── corporate_theater_director/         ✅ NEW
+│       ├── credential_inflation_analyzer/      ✅ NEW
+│       ├── goodharts_law_predictor/            ✅ NEW
+│       ├── meeting_dynamics_forensics/         ✅ NEW
+│       ├── narrative_warfare_analyst/          ✅ NEW
+│       ├── platform_lock_in_forensics/         ✅ NEW
+│       ├── regulatory_capture_mapper/          ✅ NEW
+│       ├── revealed_preference_detective/      ✅ NEW
+│       └── status_game_decoder/                ✅ NEW
+│
 ├── logs/                 # Auto-generated timestamped logs
 └── requirements.txt
 ```
@@ -145,7 +160,9 @@ Get an API key at [openrouter.ai/keys](https://openrouter.ai/keys)
 
 ## Demos
 
-Each demo shows a different prompt chaining pattern:
+### Educational Foundations (8 demos)
+
+Classic prompt chaining patterns for learning and exploration:
 
 | Demo | Pattern | Use Case | Logging |
 |------|---------|----------|---------|
@@ -158,13 +175,53 @@ Each demo shows a different prompt chaining pattern:
 | problem_solution_spider | Divergent→convergent | Creative problem solving | ✅ |
 | subject_connector | Cross-domain linking | Interdisciplinary thinking | ✅ |
 
+### Metagame X-Ray Vision (10 demos) 🔥
+
+**NEW**: Demos that reveal the hidden games beneath surface games. These expose uncomfortable truths about how systems actually work vs. how they claim to work.
+
+> "The game about the game. Understanding metagames is the ultimate strategic edge."
+
+| Demo | Reveals | Example Insight |
+|------|---------|-----------------|
+| **status_game_decoder** | Social power dynamics | "They're debating ideas" → Actually battling for who defines "smart" |
+| **credential_inflation_analyzer** | Signaling arms races | Bachelor's (2000) → Master's (2010) → PhD (2025) for same job |
+| **corporate_theater_director** | Stated vs actual values | "We value innovation" → Actually punish all failures |
+| **meeting_dynamics_forensics** | Real power structures | Org chart vs interruption patterns = who has actual power |
+| **revealed_preference_detective** | True values via behavior | "I care about privacy" → Uses services that sell data |
+| **regulatory_capture_mapper** | Who regulations really serve | "Consumer protection" → Barriers to entry for competition |
+| **platform_lock_in_forensics** | Strategic traps | Free tier → network effects → price increase (you're trapped) |
+| **goodharts_law_predictor** | Metric gaming | "Lines of code" metric → Verbose code, lower productivity |
+| **narrative_warfare_analyst** | Frame control battles | "Tax relief" vs "Tax cuts for rich" = same policy, frame war |
+| **consensus_manufacturing_detective** | How "truth" gets created | "Everyone knows X" = platforms repeated it until it seemed true |
+
+**What makes metagame demos different:**
+- 🎭 Surface game vs actual game analysis
+- 💡 Incentive forensics - what's rewarded reveals what's valued
+- 🔍 Pattern recognition across domains
+- 🎯 Predictive power from understanding real games
+- ⚡ Uncomfortable truths that make you slightly queasy (means they're working)
+
+**Metagame Principles Taught:**
+1. Revealed Preferences > Stated Preferences
+2. Incentives > Intentions
+3. Frame Control = Game Control
+4. Exceptions Reveal Rules (who can break them = who has power)
+5. Metrics Shape Reality (Goodhart's Law)
+6. The Real Game is Meta
+
+See [ROADMAP.md](ROADMAP.md) for 20+ more exceptional demo concepts!
+
 ### Running Demos
 ```bash
 # Run the main proof-of-concept
 python main.py
 
-# Run a specific demo
+# Run a classic demo
 python demos/concept_simplifier/main.py
+
+# Run a metagame demo (reveals uncomfortable truths)
+python demos/revealed_preference_detective/main.py
+python demos/status_game_decoder/main.py
 
 # Check the outputs
 cat demos/concept_simplifier/concept_simplifier_results.txt
@@ -202,8 +259,11 @@ Tests use mock callables to avoid API costs during development.
 
 **Educational**: Code is heavily commented to explain concepts to learners.
 
+**Truth-seeking**: Metagame demos reveal uncomfortable realities about power and strategy.
+
 ## Use Cases
 
+### Classic Applications
 - Multi-step reasoning tasks
 - Content generation with refinement
 - Research and analysis workflows
@@ -211,6 +271,15 @@ Tests use mock callables to avoid API costs during development.
 - Creative writing assistance
 - Decision-making frameworks
 - Experiment tracking and logging
+
+### Metagame Analysis (NEW)
+- Decode hidden power dynamics in organizations
+- Understand incentive structures vs stated values
+- Predict how metrics will be gamed
+- Analyze narrative framing battles
+- Identify platform lock-in traps
+- Map regulatory capture patterns
+- Develop immunity to manipulation
 
 ## Technical Notes
 
@@ -223,19 +292,57 @@ Tests use mock callables to avoid API costs during development.
 
 ## Recent Updates
 
+### December 2024 - Metagame X-Ray Vision
+- ✅ Added 10 metagame analysis demos that reveal hidden strategic layers
+- ✅ Status Game Decoder, Revealed Preference Detective, Goodhart's Law Predictor, and more
+- ✅ Each demo exposes gap between stated game and actual game
+- ✅ Teaches critical thinking about power, incentives, and manipulation
+
+### November 2024 - Logging & Documentation
 - ✅ Added automatic markdown logging to all demos
 - ✅ Simplified FusionChain to parallel-only execution
 - ✅ Added HAPPY-PATH.md beginner guide
 - ✅ Improved error handling in logging
 - ✅ Migrated from Google Gemini to OpenRouter API
 
-See [ROADMAP.md](ROADMAP.md) for upcoming features.
+See [ROADMAP.md](ROADMAP.md) for 20+ exceptional demo concepts and future plans.
 
 ## Documentation
 
 - **[HAPPY-PATH.md](HAPPY-PATH.md)** - Beginner-friendly getting started guide
 - **[GETTING_STARTED.md](GETTING_STARTED.md)** - Technical setup and concepts
-- **[ROADMAP.md](ROADMAP.md)** - Project roadmap and learning goals
+- **[ROADMAP.md](ROADMAP.md)** - Project roadmap with 40+ demo concepts
+  - 20 Exceptional Use Cases (monetizable skills, cognitive amplification, pattern recognition, futures, creative synthesis)
+  - 10 Metagame X-Ray Demos (reveal hidden strategic layers)
+  - Implementation priorities and selection framework
+
+## Why Prompt Chaining?
+
+**Single Prompts**: Limited to what AI can think through in one step
+
+**Prompt Chains**:
+- ✨ Build complexity through iteration
+- 🔄 Self-critique and refinement loops
+- 🧬 Emergent insights impossible from single prompts
+- 🎯 Progressive abstraction from specific to universal
+- 🔀 Multiple perspectives synthesized
+- 💡 Later steps couldn't exist without earlier discoveries
+
+**Example**: Metagame demos CANNOT work as single prompts because:
+1. First must map the surface game
+2. Then identify contradictions (behavior vs stated rules)
+3. Then reverse-engineer actual incentives
+4. Only then reveal the real game
+
+The chain IS the insight.
+
+## Ethical Note
+
+Some demos (especially metagame analysis) reveal uncomfortable truths about power, manipulation, and strategic deception.
+
+**Understanding ≠ Endorsing**
+
+These patterns exist whether you acknowledge them or not. Knowledge is for defense (see through BS) and awareness (make better decisions), not offense (deploy BS).
 
 ## License
 
@@ -244,3 +351,7 @@ Personal learning project - private repository
 ## Acknowledgments
 
 Built with OpenRouter API for multi-model access.
+
+---
+
+**18 demos and counting. See what prompt chaining can unlock.**

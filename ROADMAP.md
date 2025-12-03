@@ -269,6 +269,149 @@ Pick demos that:
 
 ---
 
+### Metagame X-Ray Demos (10 Demos That Reveal Hidden Strategic Layers)
+
+> **What are metagames?** The game about the game. The unwritten rules, hidden incentives, and strategic patterns that govern how systems actually work vs. how they claim to work. These demos reveal uncomfortable truths.
+
+#### 🎭 Social & Professional Metagames
+
+1. **Status Game Decoder** - social situation → identify status signals → map dominance hierarchy → decode who's actually winning → reveal the real game being played
+   - *X-Ray Vision*: "They're debating ideas" is surface game. Real game: "Who gets to define what counts as smart"
+   - *Chaining Power*: Can't see the meta-game without first mapping the surface game
+   - *Uncomfortable Truth*: Most "intellectual debates" are status battles in disguise
+   - *Example*: Meeting where everyone agrees but nothing happens → reveals who has veto power nobody admits to
+
+2. **Credential Inflation Analyzer** - requirement "10 years experience" → trace historical requirement → identify inflation rate → predict future → reveal the signaling arms race
+   - *X-Ray Vision*: Job requirements aren't about skills, they're about filtering and signaling
+   - *Chaining Power*: Historical analysis reveals the accelerating treadmill
+   - *Uncomfortable Truth*: More education doesn't mean more skilled, just more competitive signaling
+   - *Insight*: "Bachelor's required" (2000) → "Master's preferred" (2010) → "PhD or equivalent" (2025) for same job
+
+3. **Corporate Theater Director** - stated company value → actual behavior → identify gap → decode real incentive structure → predict what actually gets rewarded
+   - *X-Ray Vision*: "We value innovation" vs "We punish failure"
+   - *Chaining Power*: Gap between stated and revealed preferences exposes the real game
+   - *Uncomfortable Truth*: Company values are marketing; incentive structures are truth
+   - *Example*: "Flat hierarchy" company where only CEO's friends get promoted
+
+4. **Meeting Dynamics Forensics** - meeting transcript → identify who interrupts whom → map who defers to whom → reveal actual power structure → compare to org chart
+   - *X-Ray Vision*: Org chart shows claimed structure; interruption patterns show real power
+   - *Chaining Power*: Behavioral micro-patterns reveal macro power dynamics
+   - *Uncomfortable Truth*: The person running the meeting isn't always the person with the power
+   - *Pattern*: Person who can violate rules without consequence = actual authority
+
+#### 💰 Economic & Market Metagames
+
+5. **Revealed Preference Detective** - what people say they value → what they actually pay for → identify contradictions → decode real values → predict future behavior
+   - *X-Ray Vision*: "I care about privacy" but uses free services that sell data
+   - *Chaining Power*: Stated preferences lie; revealed preferences tell truth
+   - *Uncomfortable Truth*: People don't know their own values; their purchases do
+   - *Example*: "Support local businesses" but Amazon Prime delivery daily
+
+6. **Regulatory Capture Mapper** - regulation text → identify who wrote it → trace lobbying money → find exceptions that matter → reveal who really wins
+   - *X-Ray Vision*: Regulations that claim to protect consumers often protect incumbents
+   - *Chaining Power*: Follow the exceptions to find the real beneficiaries
+   - *Uncomfortable Truth*: Many regulations are barriers to entry disguised as consumer protection
+   - *Pattern*: "Licensing for public safety" = "Preventing competition"
+
+7. **Platform Lock-In Forensics** - user-friendly feature → identify switching cost → calculate lock-in value → predict extraction timeline → see the trap
+   - *X-Ray Vision*: Free tier → network effects → proprietary format → price increase
+   - *Chaining Power*: Each convenience feature is actually a moat deepener
+   - *Uncomfortable Truth*: "For your convenience" often means "to trap you"
+   - *Example*: Cloud photo storage → all photos there → can't switch → price increase
+
+8. **Goodhart's Law Predictor** - new metric announced → predict how it will be gamed → identify unintended consequences → simulate optimization → show the distortion
+   - *X-Ray Vision*: "When a measure becomes a target, it ceases to be a good measure"
+   - *Chaining Power*: Can't predict gaming without first understanding the incentive structure
+   - *Uncomfortable Truth*: Every metric creates its own distortion
+   - *Example*: "Lines of code" metric → developers write verbose code → productivity decreases
+
+#### 🧠 Information & Narrative Metagames
+
+9. **Narrative Warfare Analyst** - competing narratives → identify frame battles → map who benefits from each frame → predict which wins → reveal the real conflict
+   - *X-Ray Vision*: "Tax relief" vs "Tax cuts for the rich" - same policy, different frames, different winners
+   - *Chaining Power*: The fight over framing determines the fight over policy
+   - *Uncomfortable Truth*: He who controls the frame controls the game
+   - *Example*: "Pro-life" vs "Pro-choice" - neither side accepts the other's frame because that concedes the game
+
+10. **Consensus Manufacturing Detective** - "everyone knows" claim → trace to origin → identify amplification network → map incentives → reveal how "consensus" was created
+    - *X-Ray Vision*: "Everyone knows X" often means "People with platforms repeated it until it seemed true"
+    - *Chaining Power*: Backtrack from consensus to creation moment to see the machinery
+    - *Uncomfortable Truth*: Many "obvious truths" are successful propaganda
+    - *Example*: "Diamonds are forever" - manufactured scarcity + manufactured tradition = manufactured desire
+
+---
+
+### Why These Metagame Demos Are Different
+
+**Other demos**: Solve problems
+**Metagame demos**: Reveal the real problem is different than stated
+
+**What makes these X-ray vision:**
+- 🎭 **Surface vs Reality Gap** - Stated game vs actual game
+- 💡 **Incentive Forensics** - What's rewarded reveals what's valued
+- 🔍 **Pattern Recognition** - Same metagame across different domains
+- 🎯 **Predictive Power** - Understanding metagames predicts behavior
+- 🧠 **Mental Models** - Changes how you see power and strategy
+- ⚡ **Uncomfortable Truths** - Real insights make you slightly queasy
+
+### Metagame Principles These Demos Teach
+
+1. **Revealed Preferences > Stated Preferences** - Watch what people do, not what they say
+2. **Incentives > Intentions** - Good intentions without aligned incentives fail
+3. **Second-Order Effects > First-Order** - The game after the game matters more
+4. **Frame Control = Game Control** - Who defines terms wins before the debate starts
+5. **Exceptions Reveal Rules** - Who can break rules shows who has power
+6. **Metrics Shape Reality** - Measuring changes what's measured (Goodhart's Law)
+7. **Friction = Moat** - Every inconvenience might be strategic lock-in
+8. **Consensus is Manufactured** - "Everyone knows" is often "someone decided"
+9. **Status Battles Masquerade** - Most conflicts are about status, not the stated topic
+10. **The Real Game is Meta** - Understanding the game about the game is the ultimate edge
+
+### Implementation Notes
+
+**Ethical Considerations:**
+- These demos reveal uncomfortable truths about power and manipulation
+- Can be used for defense (see through BS) or offense (deploy BS)
+- Include ethical framing: "Understanding ≠ Endorsing"
+- Add disclaimer: "These patterns exist whether you acknowledge them or not"
+
+**Educational Value:**
+- Teaches critical thinking at the highest level
+- Reveals systems thinking patterns
+- Shows game theory in the wild
+- Develops immunity to manipulation
+- Builds strategic awareness
+
+**Prompt Chain Pattern:**
+Most metagame demos follow this structure:
+1. Observe surface game
+2. Identify contradictions/gaps
+3. Map actual incentive structure
+4. Reveal hidden strategic layer
+5. Predict behavior from meta-understanding
+
+**Why Chaining is Essential:**
+You cannot see the metagame directly - you must:
+1. First map the surface game
+2. Then identify anomalies (why doesn't behavior match stated rules?)
+3. Then reverse-engineer the actual incentive structure
+4. Only then can you see the real game
+
+Single prompt: "What's the real game here?" → superficial answer
+Chain: Surface → Contradictions → Incentives → Real Game → profound insight
+
+### Start Here:
+- **Revealed Preference Detective** (easiest to implement, universally applicable)
+- **Status Game Decoder** (immediate social value, teaches pattern recognition)
+- **Goodhart's Law Predictor** (simple concept, powerful implications)
+
+### Most Mind-Bending:
+- **Narrative Warfare Analyst** (changes how you read news forever)
+- **Consensus Manufacturing Detective** (questions "obvious truths")
+- **Platform Lock-In Forensics** (reveals traps you're already in)
+
+---
+
 ## Architecture Improvements
 
 ### Recently Completed ✅
