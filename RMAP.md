@@ -202,7 +202,7 @@ If it ain't broke, don't fix it.
 | `consensus_manufacturing_detective` | Maybe | Media analysis |
 | `corporate_theater_director` | Skip | Satire |
 | `credential_inflation_analyzer` | Skip | Niche |
-| `crisis_opportunity_scanner` | Convert | Strategy |
+| `crisis_opportunity_scanner` | Done | Tool: `tools/strategy/crisis_opportunity_scanner.py` |
 | `diplomatic_subtext_decoder` | Convert | Communication |
 | `dream_job_reverse_engineer` | Done | Tool: `tools/career/dream_job_reverse_engineer.py` |
 | `emergence_simulator` | Maybe | Abstract |
@@ -212,14 +212,14 @@ If it ain't broke, don't fix it.
 | `ideological_consistency_test` | Maybe | Self-reflection |
 | `knowledge_time_machine` | Done | `research/timeline.py` |
 | `media_bias_triangulator` | Done | Tool: `tools/media/media_bias_triangulator.py` |
-| `meeting_dynamics_forensics` | Convert | Career |
+| `meeting_dynamics_forensics` | Done | Tool: `tools/career/meeting_dynamics_forensics.py` |
 | `narrative_warfare_analyst` | Maybe | Advanced |
-| `negotiation_strategy_builder` | Convert | Business |
+| `negotiation_strategy_builder` | Done | Tool: `tools/business/negotiation_strategy_builder.py` |
 | `platform_lock_in_forensics` | Skip | Niche |
 | `problem_solution_spider` | Done | Tool: `tools/brainstorm/problem_solution_spider.py` |
 | `proxy_war_analyst` | Skip | Niche |
 | `regulatory_capture_mapper` | Skip | Niche |
-| `revealed_preference_detective` | Convert | Psychology |
+| `revealed_preference_detective` | Done | Tool: `tools/psychology/revealed_preference_detective.py` |
 | `status_game_decoder` | Done | Tool: `tools/social/status_game_decoder.py` |
 | `subject_connector` | Convert | Learning/Creativity |
 | `viral_hook_laboratory` | Skip | Marketing (maybe) |

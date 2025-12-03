@@ -152,6 +152,21 @@ python tools/career/dream_job_reverse_engineer.py "Job text" --context "Your pro
 - Hidden priorities, pain points, strategy, bullets, STAR outlines
 - Logs with token/cost estimates in `logs/`
 
+### 🔎 Meeting Dynamics Forensics
+
+Analyze meeting transcripts for interruptions, deference, and the real power hierarchy.
+
+**Usage:**
+```bash
+python tools/career/meeting_dynamics_forensics.py "Transcript text"
+cat meeting.txt | python tools/career/meeting_dynamics_forensics.py
+```
+
+**Output:**
+- JSON in `output/career/meeting_dynamics_forensics/`
+- Interruptions, deference markers, inferred hierarchy, red flags
+- Logs with token/cost estimates in `logs/`
+
 ---
 
 ## Media Literacy Tools
@@ -202,6 +217,61 @@ python tools/social/status_game_decoder.py "Describe the scene"
 **Output:**
 - JSON in `output/social/status_game_decoder/`
 - Surface analysis, signals, hierarchy, real game, countermoves
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Strategy Tools
+
+### ⚡ Crisis Opportunity Scanner
+
+Spot agenda-driven moves during a crisis: actors, overreach solutions, and the bypass mechanism.
+
+**Usage:**
+```bash
+python tools/strategy/crisis_opportunity_scanner.py "Describe the crisis"
+```
+
+**Output:**
+- JSON in `output/strategy/crisis_opportunity_scanner/`
+- Actors, overreach solutions, bypass mechanism, guardrails
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Business Tools
+
+### 🤝 Negotiation Strategy Builder
+
+Analyze leverage, BATNAs, anchors, objections, and counter-scripts for a negotiation scenario.
+
+**Usage:**
+```bash
+python tools/business/negotiation_strategy_builder.py "Scenario description"
+python tools/business/negotiation_strategy_builder.py "Scenario" --context "Role, constraints, numbers"
+```
+
+**Output:**
+- JSON in `output/business/negotiation_strategy_builder/`
+- Leverage/BATNA, anchor, objections, scripts, guardrails
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Psychology Tools
+
+### 🕵️ Revealed Preference Detective
+
+Contrast stated preferences with revealed behavior to infer real values and likely choices.
+
+**Usage:**
+```bash
+python tools/psychology/revealed_preference_detective.py "Stated pref" --context "Revealed behavior"
+```
+
+**Output:**
+- JSON in `output/psychology/revealed_preference_detective/`
+- Contradiction severity, actual value hierarchy, predicted choice
 - Logs with token/cost estimates in `logs/`
 
 **Usage:**
