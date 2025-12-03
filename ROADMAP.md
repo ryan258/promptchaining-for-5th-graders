@@ -58,7 +58,8 @@
 
 **Code Quality**
 - [x] ~~Remove debug print statements (main.py line 16)~~ (verified removed)
-- [ ] Add defensive programming (check empty model_names list)
+- [x] ~~Add defensive programming (check empty model_names list)~~ (completed Dec 2024)
+- [x] ~~Reduce demo boilerplate with demo_utils~~ (all 31 demos refactored Dec 2024)
 - [ ] Improve error messages for edge cases
 - [ ] Consider removing duplicate GETTING_STARTED.md vs HAPPY-PATH.md
 
@@ -86,6 +87,8 @@
 - [ ] Consider max logs per demo (e.g., keep last 10)
 
 **Testing**
+- [x] ~~Unit tests for demo_utils.py~~ (3/3 tests passing, Dec 2024)
+- [x] ~~Automated demo verification script~~ (verify_demos.sh, Dec 2024)
 - [ ] Integration tests with real API calls
 - [ ] Unit tests for error handling scenarios
 - [ ] Unit tests for log_to_markdown()
@@ -496,6 +499,8 @@ Chain: Surface → Contradictions → Incentives → Real Game → profound insi
 ## Technical Debt
 
 ### Known Issues
+- [x] ~~Demo code duplication~~ (fixed with demo_utils, Dec 2024)
+- [x] ~~Flaky FusionChain test~~ (fixed Dec 2024)
 - [ ] GETTING_STARTED.md and HAPPY-PATH.md have significant overlap
 - [ ] Some demos missing comprehensive docstrings
 - [ ] No integration tests with real API
@@ -503,6 +508,7 @@ Chain: Surface → Contradictions → Incentives → Real Game → profound insi
 - [ ] No caching mechanism for development iterations
 
 ### Code Cleanup
+- [x] ~~Remove duplicate boilerplate from all demos~~ (168 lines removed, Dec 2024)
 - [ ] Remove commented-out code in main.py
 - [ ] Standardize import ordering across files
 - [ ] Add type hints to all functions
@@ -538,6 +544,10 @@ The framework is intentionally minimal to keep the focus on core concepts rather
 - Created HAPPY-PATH.md guide
 - Simplified FusionChain architecture
 - Enhanced error handling
+- Refactored all 31 demos to use demo_utils (168 lines removed)
+- Added automated demo verification script
+- Added comprehensive test suite for demo_utils
+- Fixed flaky FusionChain test
 
 ### v0.2 - November 2024
 - Migrated to OpenRouter API
