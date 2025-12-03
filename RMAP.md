@@ -194,7 +194,7 @@ If it ain't broke, don't fix it.
 | `astroturf_detector` | Maybe | Useful for media analysis |
 | `bill_pork_barrel_finder` | Skip | Too specific |
 | `campaign_promise_tracker` | Skip | Too specific |
-| `character_evolution_engine` | Convert | Good for writing |
+| `character_evolution_engine` | Done | Tool: `tools/writing/character_evolution_engine.py` |
 | `coalition_fracture_simulator` | Maybe | Advanced analysis |
 | `code_architecture_critic` | Done | Tool: `tools/dev/code_architecture_critic.py` |
 | `common_ground_finder` | Done | Tool: `tools/collaboration/common_ground_finder.py` |
@@ -203,11 +203,11 @@ If it ain't broke, don't fix it.
 | `corporate_theater_director` | Skip | Satire |
 | `credential_inflation_analyzer` | Skip | Niche |
 | `crisis_opportunity_scanner` | Done | Tool: `tools/strategy/crisis_opportunity_scanner.py` |
-| `diplomatic_subtext_decoder` | Convert | Communication |
+| `diplomatic_subtext_decoder` | Done | Tool: `tools/strategy/diplomatic_subtext_decoder.py` |
 | `dream_job_reverse_engineer` | Done | Tool: `tools/career/dream_job_reverse_engineer.py` |
 | `emergence_simulator` | Maybe | Abstract |
 | `euphemism_decoder` | Done | Tool: `tools/media/euphemism_decoder.py` |
-| `goodharts_law_predictor` | Convert | Strategy/Policy |
+| `goodharts_law_predictor` | Done | Tool: `tools/strategy/goodharts_law_predictor.py` |
 | `historical_what_if_machine` | Skip | Entertainment |
 | `ideological_consistency_test` | Maybe | Self-reflection |
 | `knowledge_time_machine` | Done | `research/timeline.py` |
@@ -221,5 +221,5 @@ If it ain't broke, don't fix it.
 | `regulatory_capture_mapper` | Skip | Niche |
 | `revealed_preference_detective` | Done | Tool: `tools/psychology/revealed_preference_detective.py` |
 | `status_game_decoder` | Done | Tool: `tools/social/status_game_decoder.py` |
-| `subject_connector` | Convert | Learning/Creativity |
+| `subject_connector` | Done | Tool: `tools/learning/subject_connector.py` |
 | `viral_hook_laboratory` | Skip | Marketing (maybe) |

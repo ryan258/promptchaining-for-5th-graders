@@ -64,6 +64,20 @@ python tools/learning/concept_simplifier.py "Topic" --context "Audience or const
 - Components, analogies, examples, explainer, pitfalls, next steps
 - Logs with token/cost estimates in `logs/`
 
+### 🔗 Subject Connector
+
+Find surprising links between two subjects, why they matter, and design a project that uses both.
+
+**Usage:**
+```bash
+python tools/learning/subject_connector.py "Subject A" --context "Subject B"
+```
+
+**Output:**
+- JSON in `output/learning/subject_connector/`
+- Connections, importance, project idea with expected outputs
+- Logs with token/cost estimates in `logs/`
+
 ---
 
 ## Research Tools
@@ -132,6 +146,11 @@ python tools/collaboration/common_ground_finder.py "View A" --context "View B"
 ### 🕷️ Problem–Solution Spider
 
 Clarify a problem, constraints, wild ideas, blended solutions, and a quick test scenario.
+
+**Output:**
+- JSON in `output/brainstorm/problem_solution_spider/`
+- Defined problem, constraints/resources, wild ideas, solution options, test scenario
+- Logs with token/cost estimates in `logs/`
 
 ---
 
@@ -237,6 +256,34 @@ python tools/strategy/crisis_opportunity_scanner.py "Describe the crisis"
 - Actors, overreach solutions, bypass mechanism, guardrails
 - Logs with token/cost estimates in `logs/`
 
+### 📈 Goodhart's Law Predictor
+
+Stress-test a metric for gaming strategies, unintended consequences, and long-term distortion.
+
+**Usage:**
+```bash
+python tools/strategy/goodharts_law_predictor.py "Metric description"
+```
+
+**Output:**
+- JSON in `output/strategy/goodharts_law_predictor/`
+- Gaming strategies, unintended consequences, long-term distortion, mitigations
+- Logs with token/cost estimates in `logs/`
+
+### 🕊️ Diplomatic Subtext Decoder
+
+Translate diplomatese into real intent, predict responses, and surface political purpose.
+
+**Usage:**
+```bash
+python tools/strategy/diplomatic_subtext_decoder.py "Statement text"
+```
+
+**Output:**
+- JSON in `output/strategy/diplomatic_subtext_decoder/`
+- Plain translation, action level, predicted response, political purpose
+- Logs with token/cost estimates in `logs/`
+
 ---
 
 ## Business Tools
@@ -254,6 +301,42 @@ python tools/business/negotiation_strategy_builder.py "Scenario" --context "Role
 **Output:**
 - JSON in `output/business/negotiation_strategy_builder/`
 - Leverage/BATNA, anchor, objections, scripts, guardrails
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Psychology Tools
+
+### 🕵️ Revealed Preference Detective
+
+Contrast stated preferences with revealed behavior to infer real values and likely choices.
+
+**Usage:**
+```bash
+python tools/psychology/revealed_preference_detective.py "Stated pref" --context "Revealed behavior"
+```
+
+**Output:**
+- JSON in `output/psychology/revealed_preference_detective/`
+- Contradiction severity, actual value hierarchy, predicted choice
+- Logs with token/cost estimates in `logs/`
+
+---
+
+## Writing Tools
+
+### 🎭 Character Evolution Engine
+
+Generate a character arc (trait, flaw, crucible challenge, growth, new adventure).
+
+**Usage:**
+```bash
+python tools/writing/character_evolution_engine.py "Character type" --context "Genre, tone, constraints"
+```
+
+**Output:**
+- JSON in `output/writing/character_evolution_engine/`
+- Character baseline, flaw, challenge, growth, new adventure hook
 - Logs with token/cost estimates in `logs/`
 
 ---
