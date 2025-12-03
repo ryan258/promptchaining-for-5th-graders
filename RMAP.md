@@ -192,34 +192,34 @@ If it ain't broke, don't fix it.
 | Demo Name | Status | Notes |
 |-----------|--------|-------|
 | `astroturf_detector` | Done | Tool: `tools/media/astroturf_detector.py` |
-| `bill_pork_barrel_finder` | Skip | Too specific |
-| `campaign_promise_tracker` | Skip | Too specific |
+| `bill_pork_barrel_finder` | Done | Tool: `tools/policy/bill_pork_barrel_finder.py` |
+| `campaign_promise_tracker` | Done | Tool: `tools/politics/campaign_promise_tracker.py` |
 | `character_evolution_engine` | Done | Tool: `tools/writing/character_evolution_engine.py` |
 | `coalition_fracture_simulator` | Done | Tool: `tools/strategy/coalition_fracture_simulator.py` |
 | `code_architecture_critic` | Done | Tool: `tools/dev/code_architecture_critic.py` |
 | `common_ground_finder` | Done | Tool: `tools/collaboration/common_ground_finder.py` |
 | `concept_simplifier` | Done | Tool: `tools/learning/concept_simplifier.py` |
 | `consensus_manufacturing_detective` | Done | Tool: `tools/media/consensus_manufacturing_detective.py` |
-| `corporate_theater_director` | Skip | Satire |
-| `credential_inflation_analyzer` | Skip | Niche |
+| `corporate_theater_director` | Done | Tool: `tools/culture/corporate_theater_director.py` |
+| `credential_inflation_analyzer` | Done | Tool: `tools/career/credential_inflation_analyzer.py` |
 | `crisis_opportunity_scanner` | Done | Tool: `tools/strategy/crisis_opportunity_scanner.py` |
 | `diplomatic_subtext_decoder` | Done | Tool: `tools/strategy/diplomatic_subtext_decoder.py` |
 | `dream_job_reverse_engineer` | Done | Tool: `tools/career/dream_job_reverse_engineer.py` |
 | `emergence_simulator` | Done | Tool: `tools/research/emergence_simulator.py` |
 | `euphemism_decoder` | Done | Tool: `tools/media/euphemism_decoder.py` |
 | `goodharts_law_predictor` | Done | Tool: `tools/strategy/goodharts_law_predictor.py` |
-| `historical_what_if_machine` | Skip | Entertainment |
+| `historical_what_if_machine` | Done | Tool: `tools/history/historical_what_if_machine.py` |
 | `ideological_consistency_test` | Done | Tool: `tools/psychology/ideological_consistency_test.py` |
 | `knowledge_time_machine` | Done | `research/timeline.py` |
 | `media_bias_triangulator` | Done | Tool: `tools/media/media_bias_triangulator.py` |
 | `meeting_dynamics_forensics` | Done | Tool: `tools/career/meeting_dynamics_forensics.py` |
 | `narrative_warfare_analyst` | Done | Tool: `tools/media/narrative_warfare_analyst.py` |
 | `negotiation_strategy_builder` | Done | Tool: `tools/business/negotiation_strategy_builder.py` |
-| `platform_lock_in_forensics` | Skip | Niche |
+| `platform_lock_in_forensics` | Done | Tool: `tools/strategy/platform_lock_in_forensics.py` |
 | `problem_solution_spider` | Done | Tool: `tools/brainstorm/problem_solution_spider.py` |
-| `proxy_war_analyst` | Skip | Niche |
-| `regulatory_capture_mapper` | Skip | Niche |
+| `proxy_war_analyst` | Done | Tool: `tools/geopolitics/proxy_war_analyst.py` |
+| `regulatory_capture_mapper` | Done | Tool: `tools/policy/regulatory_capture_mapper.py` |
 | `revealed_preference_detective` | Done | Tool: `tools/psychology/revealed_preference_detective.py` |
 | `status_game_decoder` | Done | Tool: `tools/social/status_game_decoder.py` |
 | `subject_connector` | Done | Tool: `tools/learning/subject_connector.py` |
-| `viral_hook_laboratory` | Skip | Marketing (maybe) |
+| `viral_hook_laboratory` | Done | Tool: `tools/marketing/viral_hook_laboratory.py` |

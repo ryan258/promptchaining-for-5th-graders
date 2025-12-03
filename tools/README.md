@@ -419,6 +419,82 @@ python tools/brainstorm/problem_solution_spider.py "Problem" --context "Constrai
 
 Parse research studies with built-in skepticism and synthesis.
 
+---
+
+## New Additions (Policy, Politics, Strategy, Geo, Marketing)
+
+### 📋 Campaign Promise Tracker
+- Usage: `python tools/politics/campaign_promise_tracker.py "Speech/manifesto text"`
+- Output: `output/politics/campaign_promise_tracker/` — promises, feasibility/blockers, verification hooks
+
+### 🐖 Bill Pork Barrel Finder
+- Usage: `python tools/policy/bill_pork_barrel_finder.py "Bill text or summary"`
+- Output: `output/policy/bill_pork_barrel_finder/` — pork items, beneficiaries/payers, red flags
+
+### 🏛️ Regulatory Capture Mapper
+- Usage: `python tools/policy/regulatory_capture_mapper.py "Agency/industry description"`
+- Output: `output/policy/regulatory_capture_mapper/` — capture signals, incentives, mitigations
+
+### 🔒 Platform Lock-in Forensics
+- Usage: `python tools/strategy/platform_lock_in_forensics.py "Platform description"`
+- Output: `output/strategy/platform_lock_in_forensics/` — lock-in mechanisms, switching costs, mitigations
+
+### 🧩 Coalition Fracture Simulator
+- Usage: `python tools/strategy/coalition_fracture_simulator.py "Describe the coalition"`
+- Output: `output/strategy/coalition_fracture_simulator/` — fault lines, triggers, scenarios, mitigations
+
+### 🛰️ Proxy War Analyst
+- Usage: `python tools/geopolitics/proxy_war_analyst.py "Conflict description"`
+- Output: `output/geopolitics/proxy_war_analyst/` — actors/objectives, escalation paths, off-ramps
+
+### 🌌 Emergence Simulator
+- Usage: `python tools/research/emergence_simulator.py "System description"`
+- Output: `output/research/emergence_simulator/` — agents/rules, emergent behaviors, experiments
+
+### 📈 Goodhart's Law Predictor
+- Usage: `python tools/strategy/goodharts_law_predictor.py "Metric description"`
+- Output: `output/strategy/goodharts_law_predictor/` — gaming strategies, unintended outcomes, mitigations
+
+### 🧪 Viral Hook Laboratory
+- Usage: `python tools/marketing/viral_hook_laboratory.py "Product/message"`
+- Output: `output/marketing/viral_hook_laboratory/` — hooks, risk/ethics analysis, guardrails
+
+### 🌾 Astroturf Detector
+- Usage: `python tools/media/astroturf_detector.py "Thread/post text"`
+- Output: `output/media/astroturf_detector/` — signals, likely origin/motives, verdict
+
+### 🧠 Consensus Manufacturing Detective
+- Usage: `python tools/media/consensus_manufacturing_detective.py "Campaign text"`
+- Output: `output/media/consensus_manufacturing_detective/` — frames, omissions, beneficiaries, counter-frames
+
+### 🛡️ Narrative Warfare Analyst
+- Usage: `python tools/media/narrative_warfare_analyst.py "Narrative summary or quotes"`
+- Output: `output/media/narrative_warfare_analyst/` — narratives, techniques, counters, monitoring
+
+### 🎭 Corporate Theater Director
+- Usage: `python tools/culture/corporate_theater_director.py "Describe the ritual/town hall/email"`
+- Output: `output/culture/corporate_theater_director/` — performative moves, incentives, honest alternative
+
+### 🎓 Credential Inflation Analyzer
+- Usage: `python tools/career/credential_inflation_analyzer.py "Job/role description"`
+- Output: `output/career/credential_inflation_analyzer/` — inflation signals, skill substitutes, advice
+
+### 🧭 Ideological Consistency Test
+- Usage: `python tools/psychology/ideological_consistency_test.py "Stated beliefs text"`
+- Output: `output/psychology/ideological_consistency_test/` — claims/premises, contradictions, behaviors, self-test
+
+### 🧠 Subject Connector
+- Usage: `python tools/learning/subject_connector.py "Subject A" --context "Subject B"`
+- Output: `output/learning/subject_connector/` — connections, importance, project idea
+
+### 🎭 Character Evolution Engine
+- Usage: `python tools/writing/character_evolution_engine.py "Character type" --context "Genre, tone, constraints"`
+- Output: `output/writing/character_evolution_engine/` — arc with flaw, challenge, growth, new adventure
+
+### 🧪 Historical What-If Machine
+- Usage: `python tools/history/historical_what_if_machine.py "What if..." --context "Lens/constraints"`
+- Output: `output/history/historical_what_if_machine/` — branch point, ripple effects, caveats/hooks
+
 ### 📊 Symptom Correlator
 *Coming soon*
 
