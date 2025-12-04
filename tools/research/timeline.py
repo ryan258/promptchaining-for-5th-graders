@@ -223,7 +223,8 @@ Respond in JSON:
 }
 
 Wildcards should be surprising but not science fiction. Risks should be systemic/structural, not obvious."""
-        ]
+        ],
+        return_usage=True
     )
 
     # Save output
