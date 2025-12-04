@@ -51,56 +51,76 @@ def emergence_simulator(system: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Define agents and rules
-            """You are a systems thinker. Define agent types and simple rules/interactions for the system.
+            """You are a Complexity Theorist and Agent-Based Modeler. Design a "Generative System" to simulate this phenomenon.
+
+Define the "Micro-Foundations" (simple rules) that create macro-complexity.
 Tone: {{tone}}
 
 System: {{system}}
 Context: {{additional_context}}
 
-Keep agents/rules to 3-5 total. Be concrete (verbs, thresholds, interactions).
+Perspective Framework:
+- Boids Algorithm: Separation, Alignment, Cohesion.
+- Game Theory: Payoff matrices for interaction.
+
+Constraints:
+- Agents: Exactly 2 distinct types.
+- Rules: Exactly 3 interaction rules (If X, then Y).
+- Environment: One key constraint (e.g., "Limited resources").
 
 Respond in JSON:
 {
-  "agents": ["agent1", "agent2"],
-  "rules": ["rule1", "rule2"],
-  "environment": "constraints"
+  "agents": ["Agent Type A", "Agent Type B"],
+  "rules": ["Rule 1 (e.g., 'If neighbor is close, move away')", "Rule 2", "Rule 3"],
+  "environment": "Description of the boundary condition"
 }""",
             # Interaction loop
-            """Describe an interaction loop (tick) and likely short-term patterns.
-Limit patterns to 3; make loop steps explicit.
-Example loop: "Each tick: agents move toward neighbors; if too close, they repel; apply friction."
+            """Simulate the "Feedback Loop". What happens in one "Tick"?
 
 Rules: {{output[-1].rules}}
 
+Constraints:
+- Loop: Step-by-step execution order (Max 3 steps).
+- Patterns: Exactly 2 short-term results (e.g., "Oscillation").
+
 Respond in JSON:
 {
-  "loop": "step description",
-  "short_term_patterns": ["pattern1", "pattern2"]
+  "loop": "Step 1 -> Step 2 -> Step 3",
+  "short_term_patterns": ["Pattern 1", "Pattern 2"]
 }""",
             # Emergent behaviors
-            """Hypothesize emergent behaviors over time and conditions that amplify/suppress them.
-Give 2-3 behaviors max. Include one amplifier and one damper each.
+            """Predict the "Macro-State". What properties emerge that are not in the rules?
 
+Look for "Phase Transitions" and "Self-Organization".
 Patterns: {{output[-1].short_term_patterns}}
+
+Constraints:
+- Behaviors: Exactly 2 emergent properties.
+- Amplifiers: One factor that speeds this up.
+- Dampers: One factor that slows it down.
 
 Respond in JSON:
 {
   "emergent_behaviors": [
-    {"behavior": "description", "amplifiers": ["amp1"], "dampers": ["damp1"]}
+    {"behavior": "Description of macro-phenomenon", "amplifiers": ["Factor A"], "dampers": ["Factor B"]}
   ]
 }""",
             # Experiments
-            """Propose simple experiments to probe or steer emergence.
-Provide 2 experiments max; each with a measurable signal.
+            """Design "Perturbation Experiments". How do we break or steer the system?
 
 Emergent behaviors: {{output[-1].emergent_behaviors}}
+
+Constraints:
+- Experiments: Exactly 2 interventions.
+- Measure: Specific metric to track.
+- Risks: Exactly 2 unintended consequences (e.g., "System collapse").
 
 Respond in JSON:
 {
   "experiments": [
-    {"experiment": "what to change", "measure": "what to observe"}
+    {"experiment": "Change parameter X to Y", "measure": "Track variable Z"}
   ],
-  "risks": ["risk1", "risk2"]
+  "risks": ["Risk 1", "Risk 2"]
 }"""
         ],
         return_usage=True,

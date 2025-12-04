@@ -51,77 +51,112 @@ def problem_solution_spider(problem: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Define the problem crisply
-            """You are a pragmatic facilitator. Define the problem succinctly for an adult operator.
-Include who is affected, what breaks, and why it matters.
+            """You are a Senior Product Manager and Crisis Fixer. Your goal is to define the problem with absolute clarity for an executive audience.
+
+Analyze the input to identify the core dysfunction, the specific victims, and the business/operational impact.
 Tone: {{tone}}
 Context: {{additional_context}}
 
 Problem: {{problem}}
 
-Keep it to 2-3 sentences.
+Perspective Framework:
+- Who: The specific user or system segment affected.
+- What: The precise mechanism of failure.
+- Why: The quantifiable cost or risk (time, money, reputation).
+
+Constraints:
+- Maximum 3 sentences.
+- No jargon unless strictly necessary.
+- Focus on root cause, not symptoms.
 
 Respond in JSON:
 {
-  "defined_problem": "crisp definition",
-  "stakes": ["stake 1", "stake 2"]
+  "defined_problem": "A single, punchy definition of the core issue.",
+  "stakes": ["Specific consequence 1 (e.g., 'Losing $5k/day')", "Specific consequence 2"]
 }""",
             # Constraints and resources
-            """List constraints and available resources for tackling the problem.
-Be realistic; avoid generic answers.
+            """You are a Logistics & Operations Strategist. Map the battlefield constraints and available arsenal.
+
+Identify the hard limits (budget, time, physics, policy) and the usable assets (people, tools, data, leverage).
+Avoid generic answers like "time" or "money"—be specific (e.g., "Must launch by Q3", "$50k budget cap").
 
 Problem: {{output[-1].defined_problem}}
 Context: {{additional_context}}
 
-Provide 3-5 constraints and 3-5 resources max.
+Constraints:
+- List exactly 3-5 hard constraints.
+- List exactly 3-5 usable resources.
+- Each item must be under 10 words.
 
 Respond in JSON:
 {
-  "constraints": ["constraint1", "constraint2"],
-  "resources": ["resource1", "resource2"]
+  "constraints": ["Hard constraint 1", "Hard constraint 2", "Hard constraint 3"],
+  "resources": ["Resource 1", "Resource 2", "Resource 3"]
 }""",
             # Wild ideas
-            """Brainstorm 4-5 unconventional ideas to solve the problem within/around the constraints.
-Signal feasibility at a glance.
+            """You are a Radical Innovation Consultant. Generate unconventional, high-leverage solutions that bypass standard bottlenecks.
 
-Example GOOD wild idea: "Swap paper for SMS to bypass app deployment; volunteer hotline to triage"
-Example BAD wild idea: "Be more innovative" (too vague)
+Use the "Lateral Thinking" framework:
+- Inversion: What if we did the opposite?
+- Exaggeration: What if we had infinite resources?
+- Substitution: What if we replaced the core mechanism?
 
 Constraints: {{output[-1].constraints}}
 Resources: {{output[-1].resources}}
 
+Example GOOD Idea: "Automate the entire intake via SMS bot to bypass the broken web portal."
+Example BAD Idea: "Fix the website." (Too obvious/conventional)
+
+Constraints:
+- Generate exactly 5 wild ideas.
+- Each idea must be feasible within physics, even if politically difficult.
+- "Feasibility" score: Low, Medium, High.
+
 Respond in JSON:
 {
   "wild_ideas": [
-    {"idea": "description", "feasibility": "low/med/high", "why_it_might_work": "reason"}
+    {"idea": "Description of the wild idea", "feasibility": "High", "why_it_might_work": "Specific mechanism of action"}
   ]
 }""",
             # Combine and shape
-            """Combine the best parts of the wild ideas into 1-2 pragmatic solution options.
-Show why they are better than the originals.
+            """You are a Pragmatic Systems Architect. Synthesize the wild ideas into viable, robust solution options.
+
+Combine the most promising elements of the wild ideas into 1-2 coherent strategies.
+Focus on "Pareto Efficiency"—80% of the benefit for 20% of the effort.
 
 Wild ideas: {{output[-1].wild_ideas}}
+
+Constraints:
+- Create exactly 2 distinct solution options.
+- "Edge cases" must be specific failure modes (e.g., "User loses internet connection").
+- "Tradeoffs" must be real costs (e.g., "Higher latency", "Requires manual review").
 
 Respond in JSON:
 {
   "solution_options": [
-    {"option": "description", "edge_cases": ["case1"], "tradeoffs": ["tradeoff1"]}
+    {"option": "Name and description of the solution", "edge_cases": ["Edge case 1"], "tradeoffs": ["Tradeoff 1"]}
   ]
 }""",
             # Test scenario
-            """Draft a quick test scenario to validate the leading option.
-Include success/failure signals and next steps.
+            """You are a QA Lead and Experiment Designer. Design a "Smoke Test" to validate the best solution option immediately.
+
+Create a test that requires minimal build time but yields high signal.
+Focus on "Falsifiability"—how can we prove this fails quickly?
 
 Solutions: {{output[-1].solution_options}}
 Problem: {{output[-4].defined_problem}}
 
-Keep scenario to 3-5 sentences; 3 signals each.
+Constraints:
+- Scenario must be testable in < 24 hours.
+- Maximum 4 sentences for the scenario.
+- List exactly 3 success signals and 3 failure signals.
 
 Respond in JSON:
 {
-  "test_scenario": "short scenario",
-  "success_signals": ["signal1", "signal2"],
-  "failure_signals": ["signal1", "signal2"],
-  "next_steps": ["step1", "step2"]
+  "test_scenario": "Step-by-step description of the quick test.",
+  "success_signals": ["Signal 1 (e.g., 'Conversion > 5%')", "Signal 2"],
+  "failure_signals": ["Signal 1 (e.g., 'Server crash')", "Signal 2"],
+  "next_steps": ["Immediate next action 1", "Immediate next action 2"]
 }"""
         ],
         return_usage=True,

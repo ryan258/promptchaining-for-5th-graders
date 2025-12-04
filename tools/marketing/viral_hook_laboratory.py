@@ -51,38 +51,60 @@ def viral_hook_laboratory(topic: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Hooks
-            """Generate 5 viral hook angles for {{topic}} tailored to audience/channel if given.
+            """You are a Growth Hacker and Viral Engineer. Generate high-conversion hooks using "Curiosity Gaps" and "Pattern Interrupts".
+
+Avoid clickbait (over-promising); focus on "High-Signal" intrigue.
 Tone: {{tone}}
 Context: {{additional_context}}
+
+Perspective Framework:
+- Contrarian: "Why everyone is wrong about X."
+- Data-Driven: "The one metric that matters."
+- Story: "How I lost everything and gained it back."
+
+Constraints:
+- Generate exactly 5 viral hooks.
+- "Angle": The psychological lever used (e.g., "FOMO", "Status").
+- "Headline": Max 12 words.
 
 Respond in JSON:
 {
   "hooks": [
-    {"angle": "idea", "headline": "headline"}
+    {"angle": "Angle used", "headline": "The actual headline"}
   ]
 }""",
             # Risks and ethics
-            """Assess risks/ethics for each hook (backlash, misinformation, manipulation).
-Keep to 3 hooks max (the best ones).
+            """You are a Brand Safety Officer and Ethics Compliance Officer. Stress-test these hooks for "Reputational Risk".
 
+Which hooks are "Engagement Bait" that will destroy trust long-term?
 Hooks: {{output[-1].hooks}}
+
+Constraints:
+- Analyze exactly 3 hooks (the most risky ones).
+- "Risk": Specific backlash scenario (e.g., "Audience feels tricked").
+- "Ethics": Is this manipulative or just persuasive?
 
 Respond in JSON:
 {
   "risk_analysis": [
-    {"hook": "ref", "risk": "risk description", "ethics": "concern if any"}
+    {"hook": "Ref to headline", "risk": "Specific backlash risk", "ethics": "Ethical verdict (Pass/Fail)"}
   ]
 }""",
             # Top picks
-            """Select top 2 hooks balancing virality and acceptable risk; propose guardrails.
+            """You are a Chief Marketing Officer. Select the "Winning Campaign" that balances Virality and Brand Equity.
 
+We want attention, but not at the cost of trust.
 Hooks: {{output[-2].hooks}}
 Risks: {{output[-1].risk_analysis}}
+
+Constraints:
+- Select exactly 2 top hooks.
+- "Guardrails": Specific instructions to the content team to keep it safe (e.g., "Must cite data source").
 
 Respond in JSON:
 {
   "top_hooks": [
-    {"hook": "headline", "why": "reason", "guardrails": ["guardrail1"]}
+    {"hook": "Winning headline", "why": "Why it wins", "guardrails": ["Guardrail 1"]}
   ]
 }"""
         ],

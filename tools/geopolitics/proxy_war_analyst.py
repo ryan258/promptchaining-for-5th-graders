@@ -47,39 +47,58 @@ def proxy_war_analyst(conflict: str):
         callable=prompt,
         prompts=[
             # Proxies and sponsors
-            """List likely proxies and sponsors, and what each side wants.
+            """You are a Geopolitical Intelligence Analyst. Map the "Conflict Ecosystem" to identify who is fighting and who is paying.
+
+Distinguish between "Proxies" (fighting on behalf of others) and "Sponsors" (providing resources).
 Tone: {{tone}}
 
 Conflict:
 {{conflict}}
 
-Limit to top 6 actors. Be explicit on role (proxy/sponsor/primary).
+Perspective Framework:
+- Principal-Agent Problem: Do the proxies have different goals than their sponsors?
+- Plausible Deniability: How are sponsors hiding their involvement?
+
+Constraints:
+- Identify exactly 6 key actors.
+- "Role": Must be specific (e.g., "State Sponsor", "Non-State Proxy").
+- "Objective": What is their specific end-game? (Max 10 words).
 
 Respond in JSON:
 {
   "actors": [
-    {"actor": "name", "role": "proxy/sponsor/primary", "objective": "goal"}
+    {"actor": "Name", "role": "Role", "objective": "Specific goal"}
   ]
 }""",
             # Escalation paths
-            """Map plausible escalation paths and triggers.
-Provide 2-3 paths; each with trigger and short sequence.
+            """You are a Crisis Simulation Expert. Model the "Escalation Ladder" to predict how this gets worse.
+
+Focus on "Flashpoints"—events that force a response.
+Constraints:
+- Identify exactly 3 escalation paths.
+- "Trigger": A specific event (e.g., "Sinking of a naval vessel").
+- "Risk": Low, Medium, High.
 
 Respond in JSON:
 {
   "escalation_paths": [
-    {"trigger": "event", "path": "steps", "risk": "Low/Med/High"}
+    {"trigger": "Specific event", "path": "Sequence of retaliation", "risk": "High"}
   ]
 }""",
             # Off-ramps and constraints
-            """Identify off-ramps, constraints, and leverage points to reduce risk.
-Provide 2-3 off-ramps and 2-3 monitoring signals.
+            """You are a Diplomatic Strategist. Identify "Off-Ramps" and "Stabilizers".
+
+How do we de-escalate without either side losing face?
+Constraints:
+- Off-ramps: Exactly 3 diplomatic options.
+- Constraints: Exactly 3 limiting factors (e.g., "Economic exhaustion").
+- Monitoring Signals: Exactly 3 indicators to watch.
 
 Respond in JSON:
 {
-  "off_ramps": ["option1", "option2"],
-  "constraints": ["constraint1", "constraint2"],
-  "monitoring_signals": ["signal1", "signal2"]
+  "off_ramps": ["Option 1 (e.g., 'Ceasefire for hostage exchange')", "Option 2"],
+  "constraints": ["Constraint 1", "Constraint 2"],
+  "monitoring_signals": ["Signal 1 (e.g., 'Troop withdrawal')", "Signal 2"]
 }"""
         ],
         return_usage=True,

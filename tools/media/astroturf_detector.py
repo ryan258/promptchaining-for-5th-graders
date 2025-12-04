@@ -47,51 +47,73 @@ def astroturf_detector(text: str):
         callable=prompt,
         prompts=[
             # Signals and coordination
-            """Identify signals of astroturfing/coordination in the text.
+            """You are a Disinformation Analyst and Forensic Linguist. Detect "Inauthentic Coordinated Behavior" (Astroturfing).
+
+Look for "Scripted Language", "Temporal Anomalies", and "Persona Inconsistencies".
 Tone: {{tone}}
 
 Text:
 {{text}}
 
-Provide top 5 signals max; include snippet evidence.
+Perspective Framework:
+- Linguistic Fingerprinting: Are different accounts using the same unique phrases?
+- Sentiment Analysis: Is the outrage/praise disproportionate to the event?
+
+Constraints:
+- Identify exactly 5 specific signals.
+- "Pattern": Name the technique (e.g., "Copypasta", "Strawman Army").
+- "Evidence": Quote the exact text snippet.
 
 Respond in JSON:
 {
   "signals": [
-    {"pattern": "tell", "evidence": "snippet"}
+    {"pattern": "Pattern Name", "evidence": "Quote from text"}
   ],
-  "claimed_origin": "stated origin if any"
+  "claimed_origin": "Who they claim to be (e.g., 'Concerned Parents')"
 }""",
             # Likely origin and motives
-            """Hypothesize likely originators, funding sources, and motives based on patterns.
-Keep lists to top 3; include confidence (Low/Med/High).
+            """Hypothesize the "Dark Money" or "State Actor" behind this. Who benefits?
 
 Signals: {{output[-1].signals}}
 
+Constraints:
+- List exactly 3 likely origins.
+- "Confidence": Low, Medium, High.
+- "Motives": Cui Bono? (Who benefits?).
+
 Respond in JSON:
 {
-  "likely_origin": ["actor1", "actor2"],
-  "motives": ["motive1", "motive2"],
-  "confidence": "Low/Med/High"
+  "likely_origin": ["Actor 1 (e.g., 'Competitor X')", "Actor 2"],
+  "motives": ["Motive 1", "Motive 2"],
+  "confidence": "High"
 }""",
             # Confidence and alternatives
-            """Provide confidence and alternative explanations to avoid false positives.
+            """You are a Skeptical Peer Reviewer. Play "Devil's Advocate".
 
+Could this be organic viral behavior?
 Origins: {{output[-1].likely_origin}}
 
-Respond in JSON:
-{
-  "confidence": "Low/Med/High",
-  "alternative_explanations": ["alt1", "alt2"]
-}""",
-            # Concise verdict
-            """Give a concise verdict and what to watch for next.
-Limit verdict to 2 sentences; provide 2-3 watch-next signals.
+Constraints:
+- Confidence: Re-evaluate based on alternative explanations.
+- Alternatives: Exactly 2 innocent explanations.
 
 Respond in JSON:
 {
-  "verdict": "short verdict",
-  "watch_next": ["signal1", "signal2"]
+  "confidence": "Medium",
+  "alternative_explanations": ["Alternative 1 (e.g., 'Genuine viral outrage')", "Alternative 2"]
+}""",
+            # Concise verdict
+            """Issue a final "Forensic Verdict". Is this Astroturf or Grassroots?
+
+Limit verdict to 2 sentences.
+Constraints:
+- Verdict: Definitive statement.
+- Watch Next: Exactly 3 specific things to monitor to confirm.
+
+Respond in JSON:
+{
+  "verdict": "This is likely a coordinated campaign by...",
+  "watch_next": ["Signal 1", "Signal 2", "Signal 3"]
 }"""
         ],
         return_usage=True,

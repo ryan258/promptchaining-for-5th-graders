@@ -51,55 +51,73 @@ def goodharts_law_predictor(metric: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Gaming strategy
-            """Given the metric, predict how rational actors will game it for maximum reward/minimum effort.
+            """You are an Incentive Designer and Systems Theorist. Stress-test this metric for "Gaming" and "Goal Displacement".
+
+Predict how rational actors will optimize for the metric at the expense of the goal.
 Tone: {{tone}} | Context: {{additional_context}}
 
 Metric: {{metric}}
 
-Give 2-4 tactics; include one GOOD vs BAD example:
-GOOD: "Report easy bugs to inflate counts; avoid hard fixes" (specific)
-BAD: "Work harder" (not gaming)
+Perspective Framework:
+- Campbell's Law: "The more any quantitative social indicator is used for social decision-making, the more subject it will be to corruption pressures."
+- Principal-Agent Problem: The agent (employee) has different incentives than the principal (employer).
+
+Constraints:
+- Tactics: Exactly 3 specific gaming strategies.
+- "Effort Level": Low, Medium, High (how hard is it to cheat?).
+- "Tactic": Description of the behavior (e.g., "Cherry-picking easy cases").
 
 Respond in JSON:
 {
-  "gaming_strategy": "description",
-  "effort_level": "Low/Med/High"
+  "gaming_strategy": "Description of the most likely gaming loop",
+  "tactics": ["Tactic 1", "Tactic 2", "Tactic 3"],
+  "effort_level": "Low"
 }""",
             # Unintended consequences
-            """If the gaming strategy spreads, what happens to the true objective?
-Keep to 3-5 sentences; call out at least one negative externality explicitly.
+            """Simulate the "Second-Order Effects". What breaks when everyone games the metric?
 
 Strategy: {{output[-1].gaming_strategy}}
 
+Constraints:
+- "Actual Outcome": What happens to the real-world goal? (Max 1 sentence).
+- "Externalities": Exactly 2 negative side effects (e.g., "Customer trust erodes").
+- Quality Impact: Positive, Negative, Neutral.
+
 Respond in JSON:
 {
-  "actual_outcome": "description",
-  "quality_impact": "Positive/Negative/Unknown",
-  "externalities": ["ext1", "ext2"]
+  "actual_outcome": "The metric goes up, but the goal collapses.",
+  "quality_impact": "Negative",
+  "externalities": ["Externality 1", "Externality 2"]
 }""",
             # Long-term distortion and culture
-            """Simulate the long-term distortion: codebase/process/data quality/culture.
-Limit to 2-3 key effects; note confidence if low.
+            """Project the "Cultural Drift". How does this metric reshape the organization over 5 years?
 
 Outcome: {{output[-1].actual_outcome}}
 
+Constraints:
+- "Long Term Effect": Structural damage (Max 1 sentence).
+- "Culture Shift": How values change (e.g., "From craftsmanship to speed").
+
 Respond in JSON:
 {
-  "long_term_effect": "description",
-  "culture_shift": "description"
+  "long_term_effect": "The codebase becomes unmaintainable.",
+  "culture_shift": "Mercenary culture where only measured tasks matter."
 }""",
             # Mitigations
-            """Suggest mitigations or counter-metrics to reduce gaming while keeping signal.
-Provide 2-3 mitigations and 2-3 alternative signals; keep each to one sentence.
+            """Design "Counter-Metrics" and "Guardrails". How do we align incentives?
 
 Metric: {{metric}}
 Known gaming: {{output[-3].gaming_strategy}}
 Outcomes: {{output[-1].long_term_effect}}
 
+Constraints:
+- Mitigations: Exactly 2 structural fixes (e.g., "Pair metrics").
+- Better Signals: Exactly 2 alternative ways to measure success.
+
 Respond in JSON:
 {
-  "mitigations": ["mitigation1", "mitigation2"],
-  "better_signals": ["alternate metric1", "alternate metric2"]
+  "mitigations": ["Mitigation 1 (e.g., 'Measure latency AND error rate')", "Mitigation 2"],
+  "better_signals": ["Signal 1", "Signal 2"]
 }"""
         ],
         return_usage=True,

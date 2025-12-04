@@ -47,39 +47,54 @@ def regulatory_capture_mapper(text: str):
         callable=prompt,
         prompts=[
             # Capture signals
-            """Identify signals of regulatory capture (revolving doors, self-regulation, lobbying asymmetry, budget dependence).
+            """You are an Antitrust Lawyer and Institutional Economist. Detect "Regulatory Capture" and "Rent-Seeking".
+
+Identify mechanisms where the regulator serves the industry it regulates.
 Tone: {{tone}}
 
 Target:
 {{text}}
 
-Provide 3-7 signals; include evidence snippets.
+Perspective Framework:
+- Revolving Door: Are regulators future employees of the industry?
+- Information Asymmetry: Does the regulator rely on industry data?
+
+Constraints:
+- Identify exactly 5 capture signals.
+- "Signal": Name the mechanism (e.g., "Cultural Capture").
+- "Evidence": Quote the snippet.
 
 Respond in JSON:
 {
   "capture_signals": [
-    {"signal": "what", "evidence": "short note/snippet"}
+    {"signal": "Signal Name", "evidence": "Quote snippet"}
   ]
 }""",
             # Incentives and beneficiaries
-            """Map incentives and who benefits from the current setup.
-Limit to top 3 beneficiaries and incentives.
+            """Map the "Incentive Structure". Why is capture rational for these actors?
 
 Signals: {{output[-1].capture_signals}}
 
-Respond in JSON:
-{
-  "beneficiaries": ["actor1", "actor2"],
-  "incentives": ["incentive1", "incentive2"]
-}""",
-            # Mitigations
-            """Propose mitigation ideas or governance tweaks to reduce capture risk.
-Provide 3-5 mitigations and 3-5 monitoring signals. Keep each to one sentence.
+Constraints:
+- Beneficiaries: Exactly 3 actors.
+- Incentives: Exactly 3 reasons (e.g., "Job security").
 
 Respond in JSON:
 {
-  "mitigations": ["mitigation1", "mitigation2"],
-  "monitoring": ["signal1", "signal2"]
+  "beneficiaries": ["Actor 1", "Actor 2", "Actor 3"],
+  "incentives": ["Incentive 1", "Incentive 2", "Incentive 3"]
+}""",
+            # Mitigations
+            """You are a Governance Designer. Propose "Structural Reforms" to break the capture.
+
+Constraints:
+- Mitigations: Exactly 3 structural changes (e.g., "Cooling-off periods").
+- Monitoring: Exactly 3 metrics to watch.
+
+Respond in JSON:
+{
+  "mitigations": ["Reform 1 (e.g., 'Ban on stock trading')", "Reform 2"],
+  "monitoring": ["Metric 1 (e.g., 'Waiver approval rate')", "Metric 2"]
 }"""
         ],
         return_usage=True,

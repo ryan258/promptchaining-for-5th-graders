@@ -47,49 +47,70 @@ def narrative_warfare_analyst(narratives: str):
         callable=prompt,
         prompts=[
             # Map competing narratives
-            """Extract the main competing narratives, target audiences, and objectives.
+            """You are an Information Warfare Specialist and PsyOps Analyst. Map the "Battle of Narratives".
+
+Identify the "Strategic Narratives" deployed by each side.
 Tone: {{tone}}
 
 Text:
 {{narratives}}
 
-Provide top 3-5 narratives max; keep objectives concise.
+Perspective Framework:
+- Hero/Villain/Victim: Who plays what role in each story?
+- Casus Belli: What is the justification for conflict?
+
+Constraints:
+- Identify exactly 3 competing narratives.
+- "Target Audience": Be specific (e.g., "Disaffected youth").
+- "Objective": What action do they want the target to take? (Max 10 words).
 
 Respond in JSON:
 {
   "narratives": [
-    {"label": "A", "message": "summary", "target": "who", "objective": "goal"}
+    {"label": "Narrative A (e.g., 'Freedom Fighter')", "message": "Core message summary", "target": "Target demographic", "objective": "Specific goal"}
   ]
 }""",
             # Escalation and techniques
-            """Identify escalation moves and techniques used (fear, appeal to authority, doubt seeding, etc).
-Provide 3-5 techniques total; include snippet examples.
+            """Analyze the "Escalation Ladder". How are they raising the stakes?
+
+Identify "Cognitive Hacks" (e.g., Fearmongering, Gaslighting).
+Constraints:
+- Identify exactly 3 specific techniques.
+- "Technique": Name the PsyOp tactic.
+- "Example": Quote the snippet.
 
 Respond in JSON:
 {
   "techniques": [
-    {"narrative": "A", "technique": "type", "example": "snippet"}
+    {"narrative": "Ref to Narrative A", "technique": "Technique Name", "example": "Quote snippet"}
   ],
-  "escalation_risks": ["risk1", "risk2"]
+  "escalation_risks": ["Risk 1 (e.g., 'Violence in the streets')", "Risk 2"]
 }""",
             # Counters
-            """Offer counter-messaging ideas or inoculation prompts to reduce the impact of the narratives.
-Provide 3-5 counters; keep each to one sentence.
+            """You are a Counter-Narrative Strategist. How do we "Inoculate" the audience?
+
+Propose "Pre-bunking" or "Reframing" strategies.
+Constraints:
+- Counter-moves: Exactly 3 specific counters.
+- Inoculation: Exactly 2 questions to plant doubt.
 
 Respond in JSON:
 {
   "counter_moves": [
-    {"narrative": "A", "counter": "idea"}
+    {"narrative": "Ref to Narrative A", "counter": "Specific counter-message"}
   ],
-  "inoculation_prompts": ["prompt1", "prompt2"]
+  "inoculation_prompts": ["Question 1 (e.g., 'Who benefits if you believe this?')", "Question 2"]
 }""",
             # Monitoring
-            """Suggest monitoring signals to track narrative shifts over time.
-Provide 3-5 signals.
+            """Establish "Early Warning Indicators". What signals a shift in the information war?
+
+Constraints:
+- Identify exactly 3 specific signals to watch.
+- Must be observable (e.g., "Hashtag volume spikes").
 
 Respond in JSON:
 {
-  "monitoring_signals": ["signal1", "signal2"]
+  "monitoring_signals": ["Signal 1", "Signal 2", "Signal 3"]
 }"""
         ],
         return_usage=True,

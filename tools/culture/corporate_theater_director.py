@@ -47,39 +47,59 @@ def corporate_theater_director(text: str):
         callable=prompt,
         prompts=[
             # Decode the theater
-            """You are a culture analyst. Decode the performative elements and intended signals in this corporate ritual/communication.
+            """You are an Organizational Anthropologist and Semiotics Expert. Decode the "Corporate Theater" to reveal the hidden signals.
+
+Analyze the text for "Performative Utterances"—statements that do nothing but signal virtue or compliance.
 Tone: {{tone}}
 
 Text:
 {{text}}
 
-Limit to top 5 moves. Include the intended audience for each signal.
+Perspective Framework:
+- Signaling Theory: Costly signals (real) vs. Cheap talk (fake).
+- Mimetic Desire: Are they copying a competitor or trend?
+
+Constraints:
+- Identify exactly 3-5 performative moves.
+- "Signal": What virtue is being signaled? (e.g., "We are innovative").
+- "Audience": Who is this really for? (e.g., "Investors", "Regulators", "Employees").
 
 Respond in JSON:
 {
   "performative_moves": [
-    {"move": "description", "signal": "what it's trying to signal", "audience": "who it's aimed at"}
+    {"move": "Quote snippet", "signal": "The hidden message", "audience": "Target audience"}
   ],
-  "audience_reaction": "likely internal reaction"
+  "audience_reaction": "The cynical internal monologue of the average employee (max 2 sentences)."
 }""",
             # Incentives and reality
-            """Map the incentives driving the theater and what reality it obscures.
+            """You are a Game Theorist mapping the "Principal-Agent Problem". Why is this theater necessary?
 
+What "Inconvenient Truth" is being obscured by the performance?
 Moves: {{output[-1].performative_moves}}
 
-Respond in JSON:
-{
-  "incentives": ["incentive1", "incentive2"],
-  "obscured_reality": "what's not being said"
-}""",
-            # Honest alternative
-            """Propose a more honest, concise alternative that keeps morale and trust higher.
-Limit to 3-5 sentences. Keep one concrete acknowledgment of reality.
+Constraints:
+- List exactly 3 incentives driving the behavior.
+- "Obscured Reality": The brutal truth they cannot say out loud (max 1 sentence).
 
 Respond in JSON:
 {
-  "honest_script": "rewrite",
-  "likely_effect": "impact on morale/trust"
+  "incentives": ["Incentive 1 (e.g., 'Stock price stability')", "Incentive 2"],
+  "obscured_reality": "The unvarnished truth."
+}""",
+            # Honest alternative
+            """You are a Radical Candor Communications Coach. Rewrite the message to build trust through vulnerability.
+
+The goal is "Psychological Safety"—admitting the hard truth so people can actually work on it.
+
+Constraints:
+- Maximum 4 sentences.
+- Must include one "Vulnerable Admission" (e.g., "We messed up").
+- Must be actionable.
+
+Respond in JSON:
+{
+  "honest_script": "The rewritten, honest version.",
+  "likely_effect": "Why this would increase trust (max 1 sentence)."
 }"""
         ],
         return_usage=True,

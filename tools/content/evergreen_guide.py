@@ -68,159 +68,305 @@ def evergreen_guide_architect(topic, additional_context=""):
         model=model_info,
         callable=prompt,
         prompts=[
-            # Prompt 1: User Intent & Pain Points Analysis
-            """You are a content strategist (10 years in SEO + user research). Analyze '{{topic}}' strictly through reader intent.
+            # Prompt 1: User Intent Analysis with real search psychology
+            """You are a content strategist with 10+ years in audience research and search intent analysis.
 
-Provide 3-5 pain points and search patterns for three modes:
-- Beginner panic (first time searching)
-- Stuck/frustrated practitioner (mid-way, hitting blockers)
-- Optimizer/refiner (improving an existing approach)
+Analyze '{{topic}}' by thinking through what brings people to search for this information.
 
-Show one GOOD vs BAD intent example:
-GOOD: "I keep breaking form on rep #6; how do I stop that?" (specific, stakes)
-BAD: "Tell me about fitness" (too broad)
+Consider THREE specific user modes:
 
-Respond in JSON (keep lists 3-5 items each):
+**Mode 1: Discovery/Panic** (just realized they need this)
+- What problem just surfaced? (broke something, got feedback, saw competitor doing it)
+- What's their emotional state? (confused, overwhelmed, urgent need)
+- What false assumptions do they hold?
+
+**Mode 2: Stuck/Frustrated** (tried something, hit a wall)
+- What specific step are they failing at?
+- What worked in theory but failed in practice?
+- What error messages or symptoms are they seeing?
+
+**Mode 3: Optimization** (doing it now, seeking mastery)
+- What separates "good enough" from "great"?
+- What edge cases or tradeoffs matter?
+- What tribal knowledge isn't in the docs?
+
+Example pain point for "Database Indexing":
+✅ GOOD: "Query was fast in dev (1000 rows) but times out in production (10M rows). Don't know if it's indexing, query structure, or both."
+❌ BAD: "Databases are slow" (too vague, no context)
+
+Example search query:
+✅ GOOD: "postgres index not being used explain analyze"
+❌ BAD: "how to use database" (too generic)
+
+Respond in JSON:
 {
-  "user_intent": "Primary problem they're solving",
-  "search_patterns": ["query 1", "query 2", "query 3"],
-  "pain_points": ["pain point 1", "pain point 2", "pain point 3"],
-  "knowledge_gaps": ["gap 1", "gap 2"],
+  "user_intent": "The core problem in 1-2 sentences with emotional context (max 50 words)",
+  "search_patterns": [
+    "Actual frustrated search query 1 (something real users would type)",
+    "Query 2 (different angle)...",
+    "(provide exactly 5 search patterns covering all 3 user modes)"
+  ],
+  "pain_points": [
+    "Specific pain point 1 with context (max 35 words)",
+    "Pain point 2...",
+    "(provide exactly 5 pain points, at least one per user mode)"
+  ],
+  "knowledge_gaps": [
+    "Specific gap 1 (max 25 words)",
+    "Gap 2...",
+    "(provide exactly 4 gaps)"
+  ],
   "audience_segments": [
-    {"segment": "Beginner panic", "needs": "2-3 needs"},
-    {"segment": "Stuck practitioner", "needs": "2-3 needs"},
-    {"segment": "Optimizer", "needs": "2-3 needs"}
+    {"segment": "Discovery/Panic", "needs": "What they need to move forward (max 35 words)"},
+    {"segment": "Stuck/Frustrated", "needs": "What will unstick them (max 35 words)"},
+    {"segment": "Optimization", "needs": "What will level them up (max 35 words)"}
   ]
-}""",
+}
 
-            # Prompt 2: Competition Steel-Man & Differentiation
-            """You are comparing against the top 3 guides on '{{topic}}'.
-Steel-man them (assume competence). Then find gaps.
+Be ruthlessly specific. Use real scenarios with context, not abstract statements.""",
 
-Example of steel-man strength: "Great walkthrough with screenshots for setup"
-Example of gap: "No troubleshooting section; assumes ideal path"
+            # Prompt 2: Competitive Analysis with steel-manning
+            """You are a content analyst evaluating the top existing guides on '{{topic}}'.
 
-Respond in JSON (keep 3-5 items max per list):
+Use the "steel-man" technique: Assume the best existing content was created by competent people solving real problems. What did they get RIGHT? Only then identify gaps.
+
+For existing content, analyze:
+1. **Strengths**: What do good guides do well? Be specific.
+2. **Weaknesses**: Where do they fall short? Not malice, but gaps.
+3. **Overused angles**: What approaches are tired/saturated?
+
+Then identify differentiation:
+- What unique value can we add?
+- What perspective is missing?
+- Why would someone bookmark THIS guide vs existing ones?
+
+Example strength for "Git Tutorials":
+✅ GOOD: "Interactive visualizations showing how branches diverge and merge make concepts tangible"
+❌ BAD: "Good explanations" (too vague)
+
+Example gap:
+✅ GOOD: "Tutorials assume linear progression but never cover recovering from common mistakes (wrong branch, committed secrets, rebased published history)"
+❌ BAD: "Not detailed enough" (not actionable)
+
+Example differentiation:
+✅ GOOD: "We'll provide a 'troubleshooting decision tree' for the 10 most common mistakes, linking to recovery steps"
+❌ BAD: "We'll be better" (empty promise)
+
+Respond in JSON:
 {
   "what_exists": {
-    "strengths": ["What good guides do well"],
-    "weaknesses": ["Common gaps or superficial treatments"],
-    "overused_angles": ["Tired approaches"]
+    "strengths": [
+      "Specific strength 1 with example (max 30 words)",
+      "Strength 2...",
+      "(provide exactly 3-4 strengths)"
+    ],
+    "weaknesses": [
+      "Specific gap 1 with impact (max 30 words)",
+      "Gap 2...",
+      "(provide exactly 3-4 gaps)"
+    ],
+    "overused_angles": [
+      "Tired approach 1 (max 20 words)",
+      "Approach 2...",
+      "(provide exactly 2-3)"
+    ]
   },
-  "differentiation_opportunity": "How we can add unique value",
-  "unique_perspective": "Our specific angle or insight",
-  "why_readers_would_bookmark": "Specific utility this guide provides"
-}""",
+  "differentiation_opportunity": "How we add unique value in 2-3 sentences (max 60 words)",
+  "unique_perspective": "Our specific angle or insight in 1 sentence (max 25 words)",
+  "why_readers_would_bookmark": "Concrete utility (max 30 words) - be specific about what action/outcome they get"
+}
 
-            # Prompt 3: Structure for Utility & Skimmability
-            """Create a structured outline for '{{topic}}' optimized for:
-1. Utility (value even if they read only 20%)
-2. Skimmability (headings that convey meaning; bullets 7 words max)
-3. Depth (go beyond listicles)
-4. Actionability (clear next steps)
+Be specific. Explain WHY something is valuable, not just that it is.""",
 
-Writing tone: {{tone}}
-Avoid: {{avoid}}
-Prefer: {{prefer}}
+            # Prompt 3: Structure with skimmability and utility
+            """You are an information architect specializing in educational content.
 
-Use size budgets:
-- Title options: 3
-- Metaphors: max 3, memorable and specific
+Create a structured outline for '{{topic}}' optimized for FOUR goals:
+
+1. **Utility** - Reader gets value even if they only read 20%
+2. **Skimmability** - Headings convey meaning, not just topics
+3. **Depth** - Goes beyond surface-level listicles
+4. **Actionability** - Every section answers "what should I do?"
+
+Writing constraints:
+- Tone: {{tone}}
+- Avoid: {{avoid}}
+- Prefer: {{prefer}}
+
+Key insights from previous analysis:
+- User intent: {{output[-2].user_intent}}
+- Differentiation: {{output[-1].differentiation_opportunity}}
+
+Output size budgets:
+- Title options: exactly 3
+- Sections: 4-6 major sections
+- Subsections per section: 2-4
 - Key points per section: 2-4
-- Takeaways: 3-5
+- Metaphors: 2-3 total (only for complex concepts)
+- Practical takeaways: 4-6
 
-Include one GOOD vs BAD example of a skimmable heading:
-GOOD: "Diagnose slow queries in 5 minutes"
-BAD: "Performance tips"
+Example of skimmable heading:
+✅ GOOD: "Diagnose slow queries in under 10 minutes (3-step checklist)"
+❌ BAD: "Performance" (no value promised)
 
-Respond in JSON: {
-  "title_options": ["title 1", "title 2", "title 3"],
-  "subtitle": "One-line value proposition",
+Example of metaphor:
+✅ GOOD:
+- Concept: "Database indexes"
+- Metaphor: "Like a book index - you jump to the right page instead of reading cover to cover"
+- Why it works: "Everyone knows book indexes, maps unfamiliar tech to familiar tool"
+
+❌ BAD:
+- Metaphor: "Indexes are like magic" (not concrete)
+
+Respond in JSON:
+{
+  "title_options": [
+    "Title 1 (promise outcome or solve problem)",
+    "Title 2 (alternative angle)...",
+    "(exactly 3 options)"
+  ],
+  "subtitle": "One-line value proposition answering 'what will I gain?' (max 15 words)",
   "outline": [
     {
-      "section": "Section Title",
-      "why_it_matters": "Purpose of this section",
+      "section": "Section heading (promises outcome, max 10 words)",
+      "why_it_matters": "What problem this solves (1 sentence, max 25 words)",
       "subsections": ["Subsection 1", "Subsection 2"],
-      "key_points": ["Point 1", "Point 2"],
-      "metaphor_opportunity": "Where to use analogy",
-      "research_needed": ["Citation 1", "Citation 2"]
-    }
+      "key_points": ["Specific point 1", "Point 2"],
+      "metaphor_opportunity": "Where to use analogy if concept is abstract, or 'None'",
+      "research_needed": ["Citation 1", "Citation 2", "or 'None'"]
+    },
+    "(provide 4-6 major sections)"
   ],
   "key_metaphors": [
     {
-      "concept": "What needs explanation",
-      "metaphor": "Analogy to use",
-      "why_it_works": "Makes X relatable"
-    }
+      "concept": "Abstract concept needing explanation",
+      "metaphor": "Concrete analogy (2-3 sentences)",
+      "why_it_works": "Why this makes it clearer (1 sentence)"
+    },
+    "(provide 2-3 metaphors only for genuinely complex concepts)"
   ],
-  "practical_takeaways": ["Actionable insight 1", "Actionable insight 2"],
-  "skimmability_score": 0-10,
-  "estimated_depth_level": "Intermediate/Advanced/etc"
-}""",
+  "practical_takeaways": [
+    "Actionable takeaway 1 (verb-led, max 15 words)",
+    "Takeaway 2...",
+    "(provide 4-6)"
+  ],
+  "skimmability_score": "7-10 (rate how well headings convey value)",
+  "estimated_depth_level": "Beginner/Intermediate/Advanced"
+}
 
-            # Prompt 4: The Evergreen Audit
-            """Review the outline for '{{topic}}' through the lens of longevity. Label claims as Evergreen vs Time-sensitive.
+Every heading should promise an outcome or answer a question. No generic topic headings.""",
+
+            # Prompt 4: Evergreen Audit with time-sensitivity assessment
+            """You are a content strategist evaluating '{{topic}}' for longevity (will this be useful in 5 years?).
+
+Review the outline from the previous step and categorize every claim as:
+- **Evergreen**: Principle-based, won't change (fundamental truths, human behavior, physics)
+- **Time-sensitive**: Will age (versions, current tools, statistics, "best practices" that shift)
+
+For time-sensitive elements, provide mitigation strategies.
 
 Examples:
-❌ Time-sensitive to flag: "In 2024, React 18 is best-in-class"
-✅ Evergreen to keep: "Readable code beats premature optimization"
 
-For each time-sensitive item, include the exact quote + why it will age + mitigation.
+❌ **Time-sensitive** (needs flagging):
+"In 2024, React 18 is the best frontend framework"
+- Why it ages: Framework popularity shifts every 2-3 years
+- Mitigation: "As of 2024, React dominates (60% market share), but framework choices evolve. Focus on: [timeless principle about component architecture]"
+- Update trigger: "Major new framework gains >20% adoption"
+
+✅ **Evergreen** (keep as-is):
+"Readable code is more valuable than clever code"
+- This is a principle that won't change with technology
+
+Another example:
+
+❌ **Time-sensitive**:
+"ChatGPT costs $20/month for Pro"
+- Mitigation: Add date and link: "Pricing as of Jan 2025 (latest pricing)" with update trigger
+
+✅ **Evergreen**:
+"LLMs have context length limitations that affect conversation design"
+- True regardless of specific models or token counts
 
 Respond in JSON:
 {
-  "evergreen_score": 0-10,
+  "evergreen_score": "7-10 (how much of the guide is principle-based?)",
   "time_sensitive_claims": [
     {
-      "claim": "Exact quote",
-      "why_it_will_age": "Specific reason",
-      "mitigation": "How to reframe or date",
-      "update_trigger": "Event that requires revision"
-    }
+      "claim": "Exact quote from outline that will age",
+      "why_it_will_age": "Specific reason (tech changes/stats update/version releases) (max 25 words)",
+      "mitigation": "How to reframe as principle OR how to date it properly (max 40 words)",
+      "update_trigger": "Specific event requiring revision (max 15 words)"
+    },
+    "(provide 3-6 time-sensitive claims from the outline)"
   ],
   "universal_principles": [
-    "Principle 1 that won't change",
-    "Principle 2 that won't change"
+    "Timeless principle 1 that won't change in 10 years",
+    "Principle 2...",
+    "(provide 4-6 universal principles to emphasize)"
   ],
-  "update_schedule_recommendation": "Review every X months",
+  "update_schedule_recommendation": "Review every [X] months - explain why this cadence",
   "longevity_improvements": [
-    "Suggestion 1 to make more timeless",
-    "Suggestion 2"
+    "Specific suggestion 1 to make more timeless (max 25 words)",
+    "Suggestion 2...",
+    "(provide 3-4 improvements)"
   ]
-}""",
+}
 
-            # Prompt 5: Final Polish & Meta-Quality Check
-            """Final quality check for the '{{topic}}' guide outline.
+Quote actual claims from the outline. Be specific about what will age and why.""",
 
-Use these criteria:
-- Utility: real problems solved, not trivia
-- Clarity: skimmable headings with meaning
-- Depth: beyond listicles; includes trade-offs
-- Actionability: clear next steps
-- Longevity: principles over tactics
+            # Prompt 5: Final quality check with clear success criteria
+            """You are a senior editor evaluating whether '{{topic}}' outline is publish-ready.
 
-Provide one GOOD vs BAD call-to-action example:
-GOOD: "Run this 10-minute diagnostic to find your bottleneck"
-BAD: "Check performance regularly"
+Apply these FIVE quality criteria rigorously:
+
+1. **Utility**: Does this solve real problems (not just educate)?
+2. **Clarity**: Can a skimmer understand value without reading everything?
+3. **Depth**: Does this go beyond surface-level advice? Are tradeoffs discussed?
+4. **Actionability**: Can the reader DO something specific after reading?
+5. **Longevity**: Will this be useful in 3-5 years?
+
+Use the "Would I bookmark this?" test:
+- If I Google this topic again in 6 months, would I come back to THIS guide?
+- What would make me choose this over competitors?
+- Is there a specific problem this solves better than anything else?
+
+Example of actionability:
+✅ GOOD: "Run this 10-minute diagnostic: (1) Check query execution plan, (2) Identify sequential scans, (3) Add indexes for top 3 slowest queries"
+❌ BAD: "Improve your database performance" (no concrete steps)
+
+Example of depth:
+✅ GOOD: "Caching speeds reads but complicates invalidation. Use it when read:write ratio > 10:1. If lower, optimize queries first."
+❌ BAD: "Caching is good for performance" (no tradeoff discussed)
 
 Respond in JSON:
 {
-  "overall_quality_score": 0-10,
-  "would_bookmark": true/false,
-  "strengths": ["Strength 1", "Strength 2"],
-  "gaps_to_address": ["Gap 1", "Gap 2"],
+  "overall_quality_score": "7-10 with brief justification",
+  "would_bookmark": "true/false with 1-sentence reason why or why not",
+  "strengths": [
+    "Specific strength 1 (max 25 words)",
+    "Strength 2...",
+    "(provide exactly 3-4)"
+  ],
+  "gaps_to_address": [
+    "Specific gap 1 with suggested fix (max 30 words)",
+    "Gap 2...",
+    "(provide exactly 2-4 gaps)"
+  ],
   "writing_priorities": [
-    "What to emphasize when writing",
-    "What to de-emphasize"
+    "Specific thing to emphasize when writing (max 20 words)",
+    "Specific thing to de-emphasize or cut (max 20 words)",
+    "(provide exactly 3-4 priorities)"
   ],
   "success_metrics": {
-    "good": "Reader completes one action",
-    "great": "Reader bookmarks for future reference",
-    "exceptional": "Reader shares with others"
+    "good": "Concrete outcome for 'good' (reader does X)",
+    "great": "Concrete outcome for 'great' (reader achieves Y)",
+    "exceptional": "Concrete outcome for 'exceptional' (reader enables Z)"
   },
-  "estimated_word_count": "2000-2500 words",
-  "estimated_reading_time": "10-12 minutes"
-}"""
+  "estimated_word_count": "Range (e.g., 2000-2500 words) based on outline depth",
+  "estimated_reading_time": "X-Y minutes"
+}
+
+Be honest. If it's not bookmark-worthy, explain what's missing specifically."""
         ],
         return_usage=True,
     )

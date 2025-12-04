@@ -51,39 +51,54 @@ def platform_lock_in_forensics(platform: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Lock-in mechanisms
-            """Identify lock-in mechanisms (data moats, APIs, pricing, contracts, ecosystem).
+            """You are a CTO and Antitrust Expert. Audit this platform for "Vendor Lock-in" and "Moats".
+
+Identify technical, legal, and economic barriers to exit.
 Tone: {{tone}}
 
 Platform/use case: {{platform}}
 Context: {{additional_context}}
 
-Provide 3-6 mechanisms; keep each specific.
+Perspective Framework:
+- The "California Hotel" Principle: You can check out any time you like, but you can never leave.
+- Data Gravity: Applications move to where the data resides.
+
+Constraints:
+- Mechanisms: Exactly 3 distinct lock-in types.
+- Evidence: Specific features or terms (e.g., "Egress fees").
+- Severity: Low, Medium, High.
 
 Respond in JSON:
 {
   "lock_in_mechanisms": [
-    {"type": "data/api/pricing/etc", "evidence": "short"}
+    {"type": "Data / API / Pricing / Ecosystem", "evidence": "Description of the trap", "severity": "High"}
   ]
 }""",
             # Incentives and switching costs
-            """Map incentives for the vendor and switching costs for the customer.
-Switching costs: list 3-5, concrete (time $, risk).
+            """Calculate the "Switching Cost" equation. Why is staying easier than leaving?
 
 Mechanisms: {{output[-1].lock_in_mechanisms}}
 
-Respond in JSON:
-{
-  "switching_costs": ["cost1", "cost2"],
-  "vendor_incentives": ["incentive1", "incentive2"]
-}""",
-            # Exit strategies
-            """Suggest exit or mitigation strategies (data portability, abstractions, contract terms).
-Provide 3-5 mitigations; pair each with a monitoring signal.
+Constraints:
+- Costs: Exactly 3 concrete friction points (Time, Money, Risk).
+- Incentives: Why the vendor wants you trapped (e.g., "Upsell path").
 
 Respond in JSON:
 {
-  "mitigations": ["mitigation1", "mitigation2"],
-  "early_warning_signals": ["signal1", "signal2"]
+  "switching_costs": ["Cost 1 (e.g., 'Rewriting all SQL queries')", "Cost 2"],
+  "vendor_incentives": ["Incentive 1", "Incentive 2"]
+}""",
+            # Exit strategies
+            """Design an "Escape Hatch". How do we maintain optionality?
+
+Constraints:
+- Mitigations: Exactly 2 strategic moves (e.g., "Use open standards").
+- Signals: Exactly 2 warning signs to watch for.
+
+Respond in JSON:
+{
+  "mitigations": ["Mitigation 1 (e.g., 'Build an abstraction layer')", "Mitigation 2"],
+  "early_warning_signals": ["Signal 1 (e.g., 'Proprietary API extensions')", "Signal 2"]
 }"""
         ],
         return_usage=True,

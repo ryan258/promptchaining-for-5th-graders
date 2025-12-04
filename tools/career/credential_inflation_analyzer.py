@@ -47,40 +47,68 @@ def credential_inflation_analyzer(text: str):
         callable=prompt,
         prompts=[
             # Identify inflation signals
-            """Identify signs of credential inflation or unnecessary gatekeeping.
+            """You are a Labor Economist and HR Systems Auditor. Detect "Degree Inflation" and "Credential Creep" where requirements exceed actual job functions.
+
+Analyze the text for "Gatekeeping Mechanisms"—arbitrary barriers that filter out qualified talent without degrees.
 Tone: {{tone}}
 
 Text:
 {{text}}
 
-Give 3-5 signals max; include why each is suspect.
+Perspective Framework:
+- Signal vs. Noise: Does the degree predict performance, or just social class?
+- Skill Gap: Is the requirement a lazy proxy for a specific skill (e.g., "CS Degree" vs. "Can code Python")?
+
+Constraints:
+- Identify exactly 3-5 inflation signals.
+- "Why suspect": Must explain the disconnect between the role's output and the input requirement.
+- Max 2 sentences per signal.
 
 Respond in JSON:
 {
   "inflation_signals": [
-    {"requirement": "what", "why_suspect": "reason (1 sentence)"}
+    {"requirement": "Specific text (e.g., 'Masters Degree required for Entry Level')", "why_suspect": "Explanation of why this is likely inflation (e.g., 'Role is administrative; degree is a proxy for conscientiousness, not skill.')"}
   ]
 }""",
             # Skill-based equivalents
-            """Map skills or proofs-of-work that would substitute for inflated credentials.
-Provide 1-2 substitutes per signal; keep concise.
+            """You are a Competency-Based Hiring Strategist. Translate academic credentials into verifiable "Proofs of Work".
+
+For each inflation signal, propose a "Direct Skill Substitute" that proves ability better than the credential.
+Focus on "Portfolio over Pedigree".
 
 Signals: {{output[-1].inflation_signals}}
+
+Example:
+- Requirement: "MBA"
+- Skill: "Financial Modeling & Strategic Planning"
+- Proof: "Track record of managing $50k+ P&L or successful launch of a new business unit."
+
+Constraints:
+- Provide exactly 1 skill substitute per signal.
+- "Proof" must be something a candidate can show, not just say.
+- Max 20 words per field.
 
 Respond in JSON:
 {
   "skill_substitutes": [
-    {"requirement": "ref", "skills": ["skill1"], "proofs": ["portfolio/test"]}
+    {"requirement": "Ref from previous step", "skills": ["Specific skill name"], "proofs": ["Specific portfolio item or test result"]}
   ]
 }""",
             # Impact and advice
-            """Summarize impact on candidates and practical advice to navigate or counter credential creep.
-Impacts: 2-3 bullets. Advice: 3-5 bullets, specific actions.
+            """You are a Career Mobility Coach for non-traditional talent. Summarize the market impact and give tactical advice.
+
+Impacts: Who gets left behind? (e.g., "Excludes 60% of workforce", "Ignores self-taught developers").
+Advice: How to bypass the filter? (e.g., "Network directly", "Build a specific project").
+
+Constraints:
+- Impacts: Exactly 3 bullet points.
+- Advice: Exactly 3 actionable steps.
+- No generic advice like "Keep learning". Be specific.
 
 Respond in JSON:
 {
-  "impacts": ["impact1", "impact2"],
-  "advice": ["step1", "step2"]
+  "impacts": ["Specific impact 1", "Specific impact 2", "Specific impact 3"],
+  "advice": ["Actionable step 1", "Actionable step 2", "Actionable step 3"]
 }"""
         ],
         return_usage=True,

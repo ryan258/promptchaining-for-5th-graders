@@ -49,42 +49,102 @@ def revealed_preference_detective(stated: str, revealed: str):
         callable=prompt,
         prompts=[
             # Contradiction
-            """Identify contradictions between stated preference and revealed behavior.
+            """You are a behavioral economist with 15+ years analyzing preference revelation patterns, specializing in identifying gaps between stated values and actual resource allocation (time, money, attention).
+
+Analyze this preference-behavior mismatch:
+
+**Stated Preference:** {{stated}}
+**Revealed Behavior:** {{revealed}}
+
+Use the preference revelation framework:
+
+**Actions speak louder than words** - Where do they actually spend:
+- Time (hours per week, repeated patterns)
+- Money (budget allocation, recurring purchases)
+- Attention (what they track, measure, optimize)
+- Social capital (who they associate with, what they signal)
+
+**Opportunity cost reveals priority** - What did they give up to do this?
+
+**Example contradiction for "I value work-life balance":**
+✅ GOOD: "Claims to value work-life balance but checks email at 11pm daily (revealed behavior from phone logs), schedules 7am calls (calendar data), and canceled 3 family dinners this month for client meetings (stated by partner). Actual priority: client satisfaction > family time > rest."
+❌ BAD: "Says one thing but does another with work-life balance" (no specific evidence, no measurement, no opportunity cost)
+
 Tone: {{tone}}
 
-Stated: {{stated}}
-Revealed: {{revealed}}
-
-Keep contradiction to 2-3 sentences; severity = High/Med/Low.
-
 Respond in JSON:
 {
-  "contradiction": "description",
-  "severity": "High/Med/Low"
-}""",
+  "contradiction": "Specific description with concrete evidence from behavior (max 50 words). Include measurements, frequencies, or counts where possible.",
+  "severity": "High (directly opposed) / Med (competing priorities) / Low (context-dependent)",
+  "opportunity_cost": "What they sacrificed to reveal this preference (max 20 words)"
+}
+
+Be ruthlessly specific. Cite actual behaviors, not generalizations.""",
             # Value hierarchy
-            """Infer the actual value hierarchy implied by behavior.
-Provide top 3 values; include evidence snippet for each.
+            """You are an organizational psychologist expert in value systems and behavioral pattern analysis.
 
-Contradiction: {{output[-1].contradiction}}
+Based on the contradiction detected, reconstruct the person's TRUE value hierarchy (what they actually optimize for, not what they claim).
+
+**Framework for inferring values:**
+
+1. **Resource allocation** - Where do time/money/energy actually flow?
+2. **Consistency test** - Which behaviors repeat across contexts?
+3. **Tradeoff patterns** - When forced to choose, what wins?
+4. **Stress behavior** - What do they prioritize when under pressure?
+
+**Example value inference:**
+✅ GOOD:
+Value 1: "Status/reputation" - Evidence: Spends 2+ hours daily on LinkedIn self-promotion, name-drops in every meeting (15 times in last team call), hired expensive personal branding consultant ($8k)
+Value 2: "Risk avoidance" - Evidence: Declined 3 higher-paying job offers to stay in comfortable role, always seeks consensus before decisions, avoids controversial projects
+❌ BAD:
+Value 1: "Career success" - Evidence: Works hard (too vague, no specifics)
+Value 2: "Being liked" - Evidence: Friendly to people (describes behavior without revealing preference)
+
+Contradiction detected: {{output[-1].contradiction}}
+Opportunity cost: {{output[-1].opportunity_cost}}
 
 Respond in JSON:
 {
-  "actual_values": ["Value 1", "Value 2"],
-  "evidence": "supporting signals or snippets"
-}""",
+  "actual_values": [
+    "Value 1 (1-4 words)",
+    "Value 2 (1-4 words)",
+    "Value 3 (1-4 words)"
+  ],
+  "evidence": "For each value, cite specific behaviors with measurements/frequencies/counts that reveal this priority. Use numbers wherever possible (times, dollars, percentages). Max 60 words total.",
+  "stated_vs_revealed": "One-sentence summary of the core gap between claimed and actual priorities (max 25 words)"
+}
+
+Provide exactly 3 values in priority order. Be specific with evidence - include metrics.""",
             # Predict a choice
-            """Predict a likely choice in a simple tradeoff scenario given these revealed values.
-Keep reasoning to 2 sentences.
+            """You are a decision science researcher specializing in behavioral prediction using revealed preference theory.
 
-Stated: {{stated}}
+Given these revealed values, predict their ACTUAL choice in a future tradeoff scenario.
+
+**Prediction framework:**
+
+1. **Past predicts future** - Assume revealed values persist unless context changes dramatically
+2. **Intensifying tradeoffs** - When stakes increase, revealed preferences become MORE obvious
+3. **Social desirability gap** - They'll SAY the socially acceptable choice, DO the revealed preference
+
+**Example prediction for someone who revealed "career status > family time":**
+✅ GOOD: "When offered VP promotion requiring 60hr weeks + 40% travel, they'll accept despite promising spouse to reduce hours. Reasoning: They've already sacrificed family time 3x this year for smaller career gains (skipped kid's recital for optional conference, took weekend calls during vacation). Status/advancement wins in past tradeoffs, will win in future."
+❌ BAD: "They'll probably choose work over family. Reasoning: That's what they usually do." (no specific scenario, vague pattern claim, no evidence cited)
+
+Stated preference: {{stated}}
 Revealed values: {{output[-1].actual_values}}
+Evidence: {{output[-1].evidence}}
+
+Create a SPECIFIC future tradeoff scenario based on their domain, then predict their actual choice.
 
 Respond in JSON:
 {
-  "predicted_choice": "description",
-  "reasoning": "why"
-}"""
+  "scenario": "Concrete future dilemma matching their context with specific details (2 clear options, max 30 words)",
+  "predicted_choice": "Which option they'll actually choose and key details (max 25 words)",
+  "stated_choice": "Which option they'd CLAIM to prefer publicly (max 20 words)",
+  "reasoning": "Why revealed preferences predict this, citing specific past behavior patterns (2-3 sentences, max 50 words)"
+}
+
+Make the scenario realistic and testable. Root predictions in actual past behavior."""
         ],
         return_usage=True,
     )

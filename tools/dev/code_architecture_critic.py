@@ -63,9 +63,9 @@ def code_architecture_critic(code_input: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Identify patterns / anti-patterns
-            """You are an experienced software architect.
+            """You are a Principal Software Architect and Code Archaeologist. Audit the codebase for structural integrity and long-term viability.
 
-Analyze the following code for patterns and anti-patterns. Keep it concise and actionable.
+Analyze the code for "Design Patterns" (Gang of Four) and "Anti-Patterns" (e.g., God Object, Shotgun Surgery).
 Tone: {{tone}}
 Priorities: {{priorities}}
 Additional context: {{additional_context}}
@@ -73,69 +73,92 @@ Additional context: {{additional_context}}
 Code:
 {{code}}
 
-Provide 3-7 patterns/anti-patterns total; keep each to one sentence.
+Perspective Framework:
+- SOLID Principles: Are they violated?
+- DRY (Don't Repeat Yourself) vs. WET (Write Everything Twice): Is duplication accidental or intentional?
+- Coupling vs. Cohesion: Is the code loosely coupled but highly cohesive?
+
+Constraints:
+- Identify exactly 3 patterns (Good) and 3 anti-patterns (Bad).
+- "Tech Debt Risks": Must be specific failure scenarios (e.g., "Race condition in auth").
+- Max 1 sentence per item.
 
 Respond in JSON:
 {
-  "patterns": ["pattern 1", "pattern 2"],
-  "anti_patterns": ["anti-pattern 1", "anti-pattern 2"],
-  "tech_debt_risks": ["risk 1", "risk 2"]
+  "patterns": ["Pattern 1 (e.g., 'Factory Method used correctly')", "Pattern 2"],
+  "anti_patterns": ["Anti-pattern 1 (e.g., 'Tight coupling in UI')", "Anti-pattern 2"],
+  "tech_debt_risks": ["Risk 1", "Risk 2"]
 }""",
             # Code smells / hotspots
-            """Detail concrete code smells and hotspots based on the anti-patterns and risks.
+            """You are a Code Quality Auditor. Locate specific "Code Smells" that indicate deeper rot.
 
+Focus on "Hotspots"—areas with high complexity and high churn risk.
 Anti-patterns: {{output[-1].anti_patterns}}
-Tech debt risks: {{output[-1].tech_debt_risks}}
+Tech Debt Risks: {{output[-1].tech_debt_risks}}
 
-Provide top 5 smells; include where + impact.
+Constraints:
+- Identify exactly 5 specific code smells.
+- "Where": Line number range or function name.
+- "Impact": Why this hurts maintainability (max 10 words).
 
 Respond in JSON:
 {
   "code_smells": [
-    {"smell": "name", "where": "file/area", "impact": "short impact", "risk_window": "now/soon/later"}
+    {"smell": "Name (e.g., 'Long Method')", "where": "Function/Area", "impact": "Hard to test", "risk_window": "Immediate/Near-term"}
   ],
-  "gaps": ["missing tests/types/logging/etc"]
+  "gaps": ["Missing Unit Tests", "No Error Handling"]
 }""",
             # Refactor plan
-            """Propose a pragmatic refactor plan for the code.
-Include sequencing, safety nets, and quick wins.
+            """You are a Technical Lead planning a "Strangler Fig" migration or refactor. Create a pragmatic plan.
 
+Prioritize "Quick Wins" (low effort, high impact) to build momentum.
 Code smells: {{output[-1].code_smells}}
 Gaps: {{output[-1].gaps}}
 
-Limit quick_wins to 3; refactor_plan steps to 5; safety_nets to 3.
+Constraints:
+- Quick Wins: Exactly 3 steps.
+- Refactor Plan: Exactly 5 sequential steps.
+- Safety Nets: Exactly 3 protections (e.g., "Feature Flag").
 
 Respond in JSON:
 {
-  "quick_wins": ["step 1", "step 2"],
+  "quick_wins": ["Step 1", "Step 2", "Step 3"],
   "refactor_plan": [
-    {"step": "description", "why": "value", "risk": "low/med/high"}
+    {"step": "Actionable step", "why": "Value proposition", "risk": "Low/Med/High"}
   ],
-  "safety_nets": ["tests or checks to add"]
+  "safety_nets": ["Safety net 1", "Safety net 2", "Safety net 3"]
 }""",
             # Consequence of doing nothing
-            """If we do nothing, what breaks and when?
-Be specific about failure modes and maintenance pain.
+            """You are a Reliability Engineer forecasting the "Cost of Inaction". What happens if we ignore this?
 
+Be specific about "Failure Modes" and "Maintenance Drag".
 Refactor plan: {{output[-1].refactor_plan}}
+
+Constraints:
+- Forecast: Short (1 month), Medium (6 months), Long (1 year).
+- "Pain": Concrete symptoms (e.g., "On-call pages increase 50%").
 
 Respond in JSON:
 {
   "maintenance_forecast": [
-    {"horizon": "short/medium/long", "pain": "description", "who_feels_it": "team/users"}
+    {"horizon": "Short Term", "pain": "Description of pain", "who_feels_it": "Dev Team"}
   ]
 }""",
             # Improved architecture sketch
-            """Describe an improved architecture for this code.
-Prefer a minimal, testable, dependency-light shape.
+            """You are a Systems Designer. Propose the "Ideal State" architecture.
 
-Use Mermaid if natural; otherwise clear text.
+Focus on "Testability" and "Modularity".
+Use Mermaid syntax for the diagram if possible, or clear text description.
+
+Constraints:
+- Principles: Exactly 3 guiding principles for the new design.
+- Checklist: Exactly 3 criteria to approve the refactor.
 
 Respond in JSON:
 {
-  "architecture": "mermaid_or_text",
-  "principles": ["principle 1", "principle 2"],
-  "review_checklist": ["check 1", "check 2"]
+  "architecture": "Mermaid diagram code or text description",
+  "principles": ["Principle 1 (e.g., 'Single Responsibility')", "Principle 2", "Principle 3"],
+  "review_checklist": ["Check 1", "Check 2", "Check 3"]
 }"""
         ],
         return_usage=True,

@@ -47,48 +47,70 @@ def consensus_manufacturing_detective(text: str):
         callable=prompt,
         prompts=[
             # Framing and repetition
-            """Identify framing devices, repeated slogans, and emotional levers used to manufacture consensus.
+            """You are a Media Critic and Propaganda Analyst. Deconstruct the "Manufacturing of Consent" (Chomsky).
+
+Identify "Framing Devices" and "Thought-Terminating Clichés".
 Tone: {{tone}}
 
 Text:
 {{text}}
 
-Provide top 3-5 in each category; include a snippet for evidence.
+Perspective Framework:
+- Agenda Setting: What are they forcing us to think *about*?
+- Priming: How are they pre-loading our emotional response?
+
+Constraints:
+- Identify exactly 3 frames.
+- "Repetition": List exactly 3 phrases repeated for effect.
+- "Emotional Hooks": List exactly 3 specific emotions targeted (e.g., "Fear of missing out").
 
 Respond in JSON:
 {
-  "frames": ["frame1", "frame2"],
-  "repetition": ["phrase1", "phrase2"],
-  "emotional_hooks": ["hook1", "hook2"]
+  "frames": ["Frame 1 (e.g., 'The War on Terror')", "Frame 2"],
+  "repetition": ["Phrase 1", "Phrase 2"],
+  "emotional_hooks": ["Hook 1", "Hook 2"]
 }""",
             # Omissions and skew
-            """Surface key omissions or asymmetries (who/what is minimized or excluded).
-Give 3-5 omissions; note if data/evidence is missing.
+            """Analyze the "Negative Space"—what is deliberately left out?
 
+Focus on "Selective Omission" and "Context Collapse".
 Frames: {{output[-1].frames}}
 
+Constraints:
+- Identify exactly 3 key omissions.
+- "Skew": One sentence summary of the bias direction.
+- "Missing Evidence": What specific data point would disprove this?
+
 Respond in JSON:
 {
-  "omissions": ["omission1", "omission2"],
-  "skew": "short description"
+  "omissions": ["Omission 1 (e.g., 'Civilian casualty counts')", "Omission 2"],
+  "skew": "The narrative skews heavily towards...",
+  "missing_evidence": "Data point X is absent."
 }""",
             # Beneficiaries and risks
-            """Who benefits from this framing, and who is disadvantaged?
-Provide top 3 beneficiaries and top 3 disadvantaged.
+            """Follow the Money/Power. Who benefits from this specific consensus?
+
+Constraints:
+- Beneficiaries: Exactly 3 actors (e.g., "Defense Contractors").
+- Disadvantaged: Exactly 3 actors (e.g., "Privacy Advocates").
 
 Respond in JSON:
 {
-  "beneficiaries": ["actor1", "actor2"],
-  "disadvantaged": ["actor1", "actor2"]
+  "beneficiaries": ["Actor 1", "Actor 2", "Actor 3"],
+  "disadvantaged": ["Actor 1", "Actor 2", "Actor 3"]
 }""",
             # Counter-framing
-            """Offer counter-frames or questions to test the narrative.
-Give 3-5; make them pointed and specific.
+            """You are a Debate Coach. Construct "Subversive Questions" to break the frame.
+
+How do we shift the "Overton Window"?
+Constraints:
+- Counter-frames: Exactly 3 alternative ways to view this.
+- Fact Checks: Exactly 3 specific claims to verify.
 
 Respond in JSON:
 {
-  "counter_frames": ["question1", "question2"],
-  "fact_checks": ["claim to verify"]
+  "counter_frames": ["Question 1 (e.g., 'Why are we framing this as a security issue instead of a health issue?')", "Question 2"],
+  "fact_checks": ["Claim 1", "Claim 2", "Claim 3"]
 }"""
         ],
         return_usage=True,

@@ -47,40 +47,55 @@ def bill_pork_barrel_finder(bill_text: str):
         callable=prompt,
         prompts=[
             # Identify pork/riders
-            """You are a legislative analyst. Identify likely pork/riders/unrelated provisions in the bill.
+            """You are a Fiscal Hawk and Legislative Watchdog. Audit this bill for "Pork Barrel Spending" and "Poison Pill Riders".
+
+Identify non-germane provisions added to buy votes.
 Tone: {{tone}}
 
 Bill:
 {{bill}}
 
-Provide 3-7 items max; include why each is suspect and who pushed it if hinted.
+Perspective Framework:
+- Earmarks: Directing funds to a specific entity without competition.
+- Logrolling: "I'll vote for your pork if you vote for mine."
+
+Constraints:
+- Identify exactly 5 suspicious items.
+- "Why Suspect": Explain the specific mechanism of waste (e.g., "No competitive bidding").
+- "Hinted Sponsor": Who likely inserted this? (e.g., "Senator from [State]").
 
 Respond in JSON:
 {
   "pork_items": [
-    {"section": "identifier if any", "description": "what it does", "why_suspect": "reason", "hinted_sponsor": "if known/guess"}
+    {"section": "Section 123", "description": "Description of provision", "why_suspect": "Reason it's pork", "hinted_sponsor": "Likely sponsor"}
   ]
 }""",
             # Beneficiaries and pay-fors
-            """List likely beneficiaries and pay-fors for each pork item.
-Keep to top 3 per item.
+            """Follow the Money. Who wins and who pays?
 
 Pork: {{output[-1].pork_items}}
+
+Constraints:
+- Beneficiaries: Specific companies, unions, or donors (not just "The public").
+- Pay-fors: Who bears the cost? (e.g., "Taxpayers", "Future generations").
 
 Respond in JSON:
 {
   "beneficiaries": [
-    {"item": "ref", "who_benefits": ["actor"], "who_pays": ["actor"]}
+    {"item": "Ref to Section 123", "who_benefits": ["Specific Entity"], "who_pays": ["Specific Group"]}
   ]
 }""",
             # Red flags and questions
-            """Provide red flags and questions to ask before passage.
-Give 3-5 red flags and 3-5 concise questions.
+            """You are a Citizen Journalist. What questions should we scream at the press briefing?
+
+Constraints:
+- Red Flags: Exactly 3 systemic issues.
+- Questions: Exactly 3 "Gotcha" questions that demand a specific answer.
 
 Respond in JSON:
 {
-  "red_flags": ["flag1", "flag2"],
-  "questions": ["question1", "question2"]
+  "red_flags": ["Flag 1 (e.g., 'Passed at midnight')", "Flag 2"],
+  "questions": ["Question 1 (e.g., 'Why is this bridge funded from the education budget?')", "Question 2"]
 }"""
         ],
         return_usage=True,

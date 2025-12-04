@@ -58,82 +58,171 @@ def research_timeline_tool(topic, additional_context=""):
         model=model_info,
         callable=prompt,
         prompts=[
-            # Prompt 1: Historical Origins (Deep Dive)
-            """Analyze the historical origins of '{{topic}}' (aim for 3-5 entries; if fewer, explain why).
-            
-            Prioritize:
-            - Earliest documented theory/concept (even if obscure)
-            - One disputed attribution (if any)
-            - One precursor technology/concept
-            
-            Keep each description to 2-3 sentences max.
-            
-            Respond in JSON: {
-                "origins": [
-                    {
-                        "period": "e.g., '1600s' or '300 BCE'",
-                        "event": "Event/Discovery (<=8 words)",
-                        "description": "2-3 sentences",
-                        "significance": "1 sentence",
-                        "uncertainty": "1 sentence or 'None'"
-                    }
-                ],
-                "theoretical_roots": "3-4 sentence summary; if <3 origins, explain scarcity here"
-            }""",
+            # Prompt 1: Historical Origins with research-grade rigor
+            """You are a research historian specializing in the history of science and technology.
 
-            # Prompt 2: Evolution & Breakthroughs
-            """Trace the key evolution points of '{{topic}}' from its origins ({{output[-1].theoretical_roots}}).
-            
-            Focus on:
-            - Major paradigm shifts
-            - Critical breakthroughs (technical or conceptual)
-            - "Winter" periods (stagnation) and what ended them
-            
-            Respond in JSON: {
-                "evolution_points": [
-                    {
-                        "year": "Year/Era",
-                        "breakthrough": "Name of breakthrough",
-                        "impact": "Transformative effect",
-                        "key_figures": ["Names"],
-                        "citation_needed": "Topic needing citation"
-                    }
-                ]
-            }""",
+Analyze the historical origins of '{{topic}}' with academic rigor.
 
-            # Prompt 3: Current State & Frontier
-            """Analyze the current state of '{{topic}}' today.
-            
-            Identify:
-            - State-of-the-art (SOTA) capabilities
-            - Unresolved questions/Research gaps
-            - Current limitations
-            
-            Respond in JSON: {
-                "current_state_summary": "High-level summary",
-                "sota_capabilities": ["Cap 1", "Cap 2"],
-                "research_gaps": ["Gap 1", "Gap 2"],
-                "limitations": ["Limitation 1", "Limitation 2"],
-                "consensus_level": "High/Medium/Low (is there agreement on direction?)"
-            }""",
+Provide 3-5 key origins, prioritizing:
+1. Earliest documented theory or concept (even if obscure)
+2. Major disputed attribution or controversy (if exists)
+3. Most important precursor technology or breakthrough
+4. Foundational work that enabled this field
 
-            # Prompt 4: Future Trajectories & Risks
-            """Project the future of '{{topic}}' over 20 years with exactly three scenarios:
-            - Best-case (optimistic but realistic)
-            - Worst-case (risks/limits magnified)
-            - Wildcard (low-probability, high-impact; e.g., regulatory shock, enabling tech leap)
-            
-            Respond in JSON: {
-                "future_scenarios": [
-                    {
-                        "scenario_name": "Best-case/Worst-case/Wildcard",
-                        "description": "3-5 sentences",
-                        "risks": ["Risk 1", "Risk 2"],
-                        "ethics": ["Ethical concern 1"],
-                        "mitigations": ["Mitigation 1"]
-                    }
-                ]
-            }"""
+For EACH origin:
+- Period: Specific date range (e.g., "1820s", "300 BCE - 100 CE")
+- Event: Name in under 10 words
+- Description: 2-3 sentences maximum explaining what happened
+- Significance: 1 sentence on why this mattered
+- Uncertainty: Note debates, disputed claims, or "None known"
+
+Example for "Artificial Intelligence - Origins":
+{
+  "period": "1943",
+  "event": "McCulloch-Pitts Neural Model",
+  "description": "Warren McCulloch and Walter Pitts published the first mathematical model of an artificial neuron, showing how simple connected units could compute logical functions. This provided the theoretical foundation that neurons could be modeled mathematically.",
+  "significance": "Established that brain-like computation could be formalized with logic and math, not just biology.",
+  "uncertainty": "Debate exists whether this was 'true' AI research or just computational theory."
+}
+
+Respond in JSON:
+{
+  "origins": [
+    {
+      "period": "Date or era",
+      "event": "Event name (max 10 words)",
+      "description": "2-3 sentences (max 80 words)",
+      "significance": "1 sentence (max 25 words)",
+      "uncertainty": "1 sentence or 'None known'"
+    }
+  ],
+  "theoretical_roots": "3-4 sentence summary of the intellectual foundations (max 100 words)"
+}
+
+If fewer than 3 significant origins exist, explain why in "theoretical_roots". Provide 3-5 origins total.""",
+
+            # Prompt 2: Evolution with paradigm shifts and stagnation periods
+            """You are a science historian tracking the evolution of technological and scientific fields.
+
+Trace the key evolution of '{{topic}}' from its theoretical roots:
+{{output[-1].theoretical_roots}}
+
+Provide 4-7 major evolution points, focusing on:
+1. **Paradigm shifts** - Fundamental changes in approach or thinking
+2. **Critical breakthroughs** - Discoveries that unlocked new possibilities
+3. **Stagnation periods** ("AI winters", "dead ends") - When progress stalled and why it resumed
+4. **Enabling technologies** - External developments that accelerated the field
+
+Example of a "Winter Period" for "Artificial Intelligence":
+{
+  "year": "1974-1980",
+  "breakthrough": "First AI Winter",
+  "impact": "Funding dried up after early AI promises failed to materialize. Research slowed dramatically as practical applications proved elusive.",
+  "key_figures": ["Lighthill Report (UK)", "DARPA funding cuts (US)"],
+  "citation_needed": "Exact funding reduction percentages"
+}
+
+For EACH evolution point:
+- Year: Specific year or era (e.g., "1997", "Early 2000s")
+- Breakthrough: Name (max 12 words). Use negative framing for setbacks ("Second AI Winter", "Dot-com Crash Impact")
+- Impact: 2-3 sentences on transformative effects (max 60 words)
+- Key figures: 2-5 names (people, papers, or institutions)
+- Citation needed: Specific claim that needs verification, or "None"
+
+Respond in JSON:
+{
+  "evolution_points": [
+    {
+      "year": "Year or era",
+      "breakthrough": "Name (max 12 words)",
+      "impact": "2-3 sentences (max 60 words)",
+      "key_figures": ["Name 1", "Name 2"],
+      "citation_needed": "Specific claim needing verification or 'None'"
+    }
+  ]
+}
+
+Provide 4-7 evolution points chronologically. Include at least one setback/stagnation if applicable.""",
+
+            # Prompt 3: Current state with SOTA and research frontiers
+            """You are a research analyst providing a state-of-the-field assessment of '{{topic}}'.
+
+Analyze the current state (as of 2024-2025) with precision.
+
+Provide:
+1. **High-level summary** (3-4 sentences): Where does the field stand today?
+2. **SOTA capabilities** (4-6 items): What can we do NOW that we couldn't 5 years ago?
+3. **Research gaps** (3-5 items): What major questions remain unsolved?
+4. **Current limitations** (3-5 items): What are the hard blockers?
+5. **Consensus level**: How much agreement exists on the path forward?
+
+Example SOTA capability for "Gene Editing":
+✅ GOOD: "Prime editing allows precise DNA changes without double-strand breaks, achieving ~90% efficiency in some cell types (2024)"
+❌ BAD: "Gene editing is really advanced now" (too vague)
+
+Example research gap:
+✅ GOOD: "No reliable method for in vivo editing of neuronal cells in adult humans without viral vectors"
+❌ BAD: "Brain editing is hard" (not specific)
+
+Respond in JSON:
+{
+  "current_state_summary": "3-4 sentence overview (max 100 words)",
+  "sota_capabilities": [
+    "Specific capability 1 with metric/date if possible (max 30 words)",
+    "Specific capability 2...",
+    "(provide 4-6 total)"
+  ],
+  "research_gaps": [
+    "Specific unsolved problem 1 (max 25 words)",
+    "Specific unsolved problem 2...",
+    "(provide 3-5 total)"
+  ],
+  "limitations": [
+    "Specific limitation 1 (max 25 words)",
+    "Specific limitation 2...",
+    "(provide 3-5 total)"
+  ],
+  "consensus_level": "High/Medium/Low - [1 sentence explaining why]"
+}
+
+Be specific. Include years/dates where possible. Avoid vague statements.""",
+
+            # Prompt 4: Future trajectories with scenarios
+            """You are a technology forecaster analyzing possible futures for '{{topic}}'.
+
+Project plausible trajectories over the next 20 years (2025-2045).
+
+Provide:
+1. **Near-term (5 years)**: Likely developments based on current trends
+2. **Long-term (20 years)**: Speculative but plausible scenarios
+3. **Wildcards** (2-4 items): Low-probability, high-impact disruptions
+4. **Risks** (3-5 items): Systemic dangers or failure modes
+
+Example "Wildcard" for "Quantum Computing":
+✅ GOOD: "Room-temperature superconductors discovered, eliminating cooling requirements and enabling desktop quantum computers"
+❌ BAD: "Quantum computers get better" (not a wildcard, just trend)
+
+Example "Risk" for "AI Systems":
+✅ GOOD: "Automated systems become too complex to audit, leading to undetectable bias in critical decisions (hiring, loans, parole)"
+❌ BAD: "AI might be dangerous" (too vague)
+
+Respond in JSON:
+{
+  "near_term_prediction": "2-3 sentence projection for next 5 years (max 75 words)",
+  "long_term_speculation": "3-4 sentence scenario for 20 years (max 100 words)",
+  "wildcards": [
+    "Low-probability, high-impact event 1 (max 30 words)",
+    "Wildcard 2...",
+    "(provide 2-4 total)"
+  ],
+  "risks": [
+    "Specific systemic risk 1 (max 30 words)",
+    "Risk 2...",
+    "(provide 3-5 total)"
+  ]
+}
+
+Wildcards should be surprising but not science fiction. Risks should be systemic/structural, not obvious."""
         ]
     )
 

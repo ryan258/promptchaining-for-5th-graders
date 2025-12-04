@@ -49,59 +49,84 @@ def common_ground_finder(view_a: str, view_b: str):
         callable=prompt,
         prompts=[
             # Values behind each view
-            """You are a facilitator mediating two sides. Extract underlying values and motivations for each view.
+            """You are a Conflict Resolution Specialist and Moral Psychologist. Deconstruct the opposing views into their "Moral Foundations" (Haidt's framework).
+
+Identify the core values driving each side, not just their stated positions.
 Tone: {{tone}}
 
 View A: {{view_A}}
 View B: {{view_B}}
 
-Provide 3-5 values per side; include one unstated fear.
+Perspective Framework:
+- Care/Harm
+- Fairness/Cheating
+- Loyalty/Betrayal
+- Authority/Subversion
+- Sanctity/Degradation
+- Liberty/Oppression
+
+Constraints:
+- List exactly 3 core values per side.
+- "Unstated Fear": What is the catastrophic outcome each side is trying to prevent? (Max 1 sentence).
 
 Respond in JSON:
 {
-  "view_A_values": ["value1", "value2"],
-  "view_B_values": ["value1", "value2"],
-  "unstated_fears": ["fear1", "fear2"]
+  "view_A_values": ["Value 1 (e.g., 'Sanctity of tradition')", "Value 2"],
+  "view_B_values": ["Value 1 (e.g., 'Care for the vulnerable')", "Value 2"],
+  "unstated_fears": ["View A fear: 'Chaos and loss of order'", "View B fear: 'Oppression and loss of rights'"]
 }""",
             # Shared concerns
-            """Identify shared concerns or risks that both sides legitimately care about.
+            """You are a Diplomatic Mediator. Identify the "Overlapping Magisteria"—the specific risks or outcomes that both sides genuinely want to avoid.
 
+Focus on "Negative Agreement": What do they both hate?
 Values: A={{output[-1].view_A_values}}, B={{output[-1].view_B_values}}
 
-Provide 3-5 concerns; include evidence both care.
+Constraints:
+- List exactly 3 shared concerns.
+- "Evidence": Must cite a specific overlap in their logic or values.
+- Max 20 words per concern.
 
 Respond in JSON:
 {
-  "shared_concerns": ["concern1", "concern2"],
-  "evidence_both_care": ["short evidence for each"]
+  "shared_concerns": ["Shared Concern 1", "Shared Concern 2", "Shared Concern 3"],
+  "evidence_both_care": ["Evidence for 1", "Evidence for 2", "Evidence for 3"]
 }""",
             # Common goals
-            """Derive common goals that are downstream of the shared concerns.
+            """Synthesize "Superordinate Goals"—higher-level objectives that require cooperation to achieve.
 
+These must be downstream of the shared concerns.
 Shared concerns: {{output[-1].shared_concerns}}
+
+Constraints:
+- List exactly 2 common goals.
+- "Goal Tensions": Where might the *methods* to achieve these goals conflict?
 
 Respond in JSON:
 {
-  "common_goals": ["goal1", "goal2"],
-  "goal_tensions": ["where goals could conflict"]
+  "common_goals": ["Goal 1 (e.g., 'Safe communities')", "Goal 2"],
+  "goal_tensions": ["Tension 1 (e.g., 'Surveillance vs. Privacy')"]
 }""",
             # Bridge options
-            """Propose bridge-building moves that respect both sides' values and fears.
-Keep them specific and testable; avoid platitudes.
+            """You are a Game Theorist specializing in "Positive Sum" outcomes. Propose specific, low-risk moves to build trust.
+
+Avoid "Compromise" (both lose); seek "Integration" (both win).
 
 Views: {{view_A}} vs {{view_B}}
 Values: A={{output[-3].view_A_values}}, B={{output[-3].view_B_values}}
 Shared concerns: {{output[-2].shared_concerns}}
 Common goals: {{output[-1].common_goals}}
 
-Provide 3-5 bridge ideas and 3-5 conversation prompts.
+Constraints:
+- Bridge Ideas: Exactly 3 specific actions.
+- Conversation Prompts: Exactly 3 questions to ask.
+- "Risk": Must identify a specific backfire mode.
 
 Respond in JSON:
 {
   "bridge_ideas": [
-    {"move": "action", "why_it_works": "reason", "risk": "what could backfire"}
+    {"move": "Specific action", "why_it_works": "Mechanism of trust building", "risk": "Potential backfire"}
   ],
-  "conversation_prompts": ["question or prompt to surface alignment"]
+  "conversation_prompts": ["Question 1 (e.g., 'What is your worst case scenario?')", "Question 2", "Question 3"]
 }"""
         ],
         return_usage=True,

@@ -47,57 +47,72 @@ def coalition_fracture_simulator(description: str):
         callable=prompt,
         prompts=[
             # Fault lines
-            """You are a conflict analyst. Identify key factions and fault lines in the coalition.
+            """You are a Political Strategist and Game Theorist. Analyze the stability of this "Minimum Winning Coalition".
+
+Identify "Wedge Issues" and "Misaligned Incentives".
 Tone: {{tone}}
 
 Coalition:
 {{coalition}}
 
-Limit to 3-5 fault lines; include severity.
+Perspective Framework:
+- Ideological vs Transactional: Are they bound by belief or profit?
+- The "Junior Partner" Dilemma: Is the smaller faction being exploited?
+
+Constraints:
+- Factions: Exactly 2-3 key players.
+- Fault Lines: Exactly 3 structural weaknesses.
+- Severity: Low, Medium, High.
 
 Respond in JSON:
 {
-  "factions": ["faction1", "faction2"],
+  "factions": ["Faction A", "Faction B"],
   "fault_lines": [
-    {"line": "issue/tension", "who": ["actors"], "severity": "Low/Med/High"}
+    {"line": "Description of tension", "who": ["Faction A", "Faction B"], "severity": "High"}
   ]
 }""",
             # Triggers and incentives
-            """List plausible triggers that would open the fault lines and the incentives to break ranks.
-Provide 3 triggers max; include likelihood.
+            """What "Exogenous Shocks" could break this alliance?
 
 Fault lines: {{output[-1].fault_lines}}
+
+Constraints:
+- Triggers: Exactly 3 specific events (e.g., "Budget vote").
+- Incentives: Why defect? (e.g., "Prisoner's Dilemma payoff").
 
 Respond in JSON:
 {
   "triggers": [
-    {"trigger": "event", "affected_factions": ["who"], "likelihood": "Low/Med/High"}
+    {"trigger": "Event description", "affected_factions": ["Faction A"], "likelihood": "Medium"}
   ],
-  "defection_incentives": ["incentive1", "incentive2"]
+  "defection_incentives": ["Incentive 1", "Incentive 2"]
 }""",
             # Fracture scenarios
-            """Simulate 1-2 fracture scenarios and short-term outcomes.
-Keep sequences concise (3 steps max).
+            """Simulate the "Endgame". How does the collapse happen?
 
 Triggers: {{output[-1].triggers}}
+
+Constraints:
+- Scenarios: Exactly 2 distinct paths to failure.
+- Sequence: Exactly 3 steps per scenario.
 
 Respond in JSON:
 {
   "scenarios": [
-    {"name": "scenario", "sequence": ["step1", "step2"], "outcome": "result"}
+    {"name": "Scenario Name (e.g., 'The Betrayal')", "sequence": ["Step 1", "Step 2", "Step 3"], "outcome": "Final state"}
   ]
 }""",
             # Mitigations
-            """Propose mitigation or cohesion moves to reduce fracture risk.
-Give 2-3 moves and 2-3 monitoring signals.
+            """You are a Diplomat and Crisis Manager. How do we hold the center?
 
-Fault lines: {{output[-3].fault_lines}}
-Triggers: {{output[-2].triggers}}
+Constraints:
+- Mitigations: Exactly 3 moves to restore trust.
+- Monitoring: Exactly 3 early warning signals.
 
 Respond in JSON:
 {
-  "mitigations": ["move1", "move2"],
-  "monitoring_signals": ["signal1", "signal2"]
+  "mitigations": ["Move 1 (e.g., 'Power-sharing agreement')", "Move 2"],
+  "monitoring_signals": ["Signal 1 (e.g., 'Leak frequency')", "Signal 2"]
 }"""
         ],
         return_usage=True,

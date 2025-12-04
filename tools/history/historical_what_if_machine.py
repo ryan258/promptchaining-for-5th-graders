@@ -51,50 +51,72 @@ def historical_what_if_machine(counterfactual: str, additional_context: str = ""
         callable=prompt,
         prompts=[
             # Branching point and assumptions
-            """You are a cautious historian. State the branching point and key assumptions explicitly.
+            """You are a Counterfactual Historian and Chaos Theory Analyst. Identify the precise "Point of Divergence" (POD).
+
+Avoid "Great Man Theory"—focus on structural forces and contingencies.
 Tone: {{tone}}
 
 Scenario: {{scenario}}
 Context: {{additional_context}}
 
-Provide 3-5 assumptions max.
+Perspective Framework:
+- Butterfly Effect: Small changes, big consequences.
+- Path Dependence: Once a path is chosen, it's hard to reverse.
+
+Constraints:
+- "Branch Point": The exact moment history changed (e.g., "Oct 14, 1066: Harold Godwinson survives Hastings").
+- Assumptions: Exactly 3 structural changes required for this to happen.
 
 Respond in JSON:
 {
-  "branch_point": "event",
-  "assumptions": ["assumption1", "assumption2"]
+  "branch_point": "Specific event and date",
+  "assumptions": ["Assumption 1 (e.g., 'Weather was different')", "Assumption 2"]
 }""",
             # Near-term ripple effects
-            """Map near-term ripple effects (0-10 years) with plausibility.
-Provide 3-5 effects; each 1-2 sentences.
+            """Map the "First-Order Effects" (0-10 years). What changes immediately?
 
+Focus on "Plausibility"—what is the most likely immediate outcome?
 Branch: {{output[-1].branch_point}}
 Assumptions: {{output[-1].assumptions}}
+
+Constraints:
+- Identify exactly 3 near-term effects.
+- "Plausibility": Low, Medium, High.
+- Max 2 sentences per effect.
 
 Respond in JSON:
 {
   "near_term_effects": [
-    {"effect": "description", "plausibility": "Low/Med/High"}
+    {"effect": "Description of change", "plausibility": "High"}
   ]
 }""",
             # Longer-term trajectory
-            """Project longer-term trajectory (10-50 years) with confidence and key dependencies.
-Provide 3-5 effects; keep dependencies specific.
+            """Project the "Second-Order Effects" (10-50 years). How does the timeline diverge radically?
+
+Focus on "Unintended Consequences".
+Constraints:
+- Identify exactly 3 long-term effects.
+- "Confidence": Low, Medium, High.
+- "Dependencies": What *else* must happen for this to be true?
 
 Respond in JSON:
 {
   "long_term_effects": [
-    {"effect": "description", "confidence": "Low/Med/High", "dependencies": ["dep1"]}
+    {"effect": "Description of radical divergence", "confidence": "Low", "dependencies": ["Dependency 1"]}
   ]
 }""",
             # Caveats and research hooks
-            """List caveats, unknowns, and sources/lines of research to validate or refine the scenario.
-Give 3-5 caveats and 3-5 hooks.
+            """You are an Academic Reviewer. What are the flaws in this simulation?
+
+Where is the "Determinism Trap"?
+Constraints:
+- Caveats: Exactly 3 reasons this might NOT happen.
+- Research Hooks: Exactly 3 topics to study to validate this.
 
 Respond in JSON:
 {
-  "caveats": ["caveat1", "caveat2"],
-  "research_hooks": ["hook1", "hook2"]
+  "caveats": ["Caveat 1 (e.g., 'Geography remains the same')", "Caveat 2"],
+  "research_hooks": ["Topic 1 (e.g., 'Grain yields in 13th century France')", "Topic 2"]
 }"""
         ],
         return_usage=True,

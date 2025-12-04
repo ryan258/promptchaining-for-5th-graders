@@ -47,45 +47,63 @@ def media_bias_triangulator(event: str):
         callable=prompt,
         prompts=[
             # Biased framings
-            """You are a media editor comparing bias lenses. Generate headlines for the event from multiple bias lenses.
+            """You are a Media Bias Researcher and Political Scientist. Simulate how different "Echo Chambers" will frame this event.
+
 Tone: {{tone}}
 
 Event:
 {{event}}
 
-Keep each headline <= 18 words. Make the bias obvious.
+Perspective Framework:
+- Progressive Lens: Focus on systemic inequality, corporate power, and social justice.
+- Conservative Lens: Focus on tradition, individual responsibility, and national security.
+- Centrist/Establishment Lens: Focus on stability, institutions, and bipartisan compromise.
+
+Constraints:
+- Generate exactly 3 headlines.
+- Length: Max 12 words per headline.
+- Style: Mimic the specific vocabulary of each tribe (e.g., "Woke mob" vs "Systemic racism").
 
 Respond in JSON:
 {
-  "headline_left": "text",
-  "headline_right": "text",
-  "headline_center": "text"
+  "headline_left": "Headline from a Progressive outlet",
+  "headline_right": "Headline from a Conservative outlet",
+  "headline_center": "Headline from a Mainstream/Corporate outlet"
 }""",
             # Omissions per framing
-            """For each headline, note the likely omissions or minimized facts. 1-2 sentences each.
+            """Analyze the "Blind Spots". What does each lens *refuse* to see?
 
 Headlines: {{output[-1]}}
 
+Constraints:
+- Identify exactly 1 major omission per lens.
+- "Omission": A specific fact or context that undermines their narrative.
+- Max 1 sentence per omission.
+
 Respond in JSON:
 {
-  "omission_left": "text",
-  "omission_right": "text",
-  "omission_center": "text"
+  "omission_left": "What the Left ignores",
+  "omission_right": "What the Right ignores",
+  "omission_center": "What the Center ignores"
 }""",
             # Ground truth synthesis
-            """Synthesize a ground-truth summary including material facts and uncertainty.
-Avoid emotional framing; include what is unknown or contested.
-Keep it to 4-6 sentences. If facts conflict, state both.
+            """You are an Epistemologist and Neutral Arbiter. Triangulate the "Ground Truth" from the noise.
 
+Synthesize the facts that all sides agree on, and clearly state what is disputed.
 Event: {{event}}
 Headlines: {{output[-2]}}
 Omissions: {{output[-1]}}
 
+Constraints:
+- Ground Truth: Max 5 sentences. Must be purely factual.
+- Bias Rating: Low, Medium, High (for the overall media ecosystem's handling of this).
+- Unknowns: Exactly 2 key facts that are currently unknowable.
+
 Respond in JSON:
 {
-  "ground_truth": "text",
-  "bias_rating": "High/Med/Low",
-  "unknowns": ["unknown 1", "unknown 2"]
+  "ground_truth": "The synthesized factual summary.",
+  "bias_rating": "High",
+  "unknowns": ["Unknown 1", "Unknown 2"]
 }"""
         ],
         return_usage=True,

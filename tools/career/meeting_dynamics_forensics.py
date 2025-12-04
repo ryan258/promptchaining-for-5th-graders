@@ -47,44 +47,70 @@ def meeting_dynamics_forensics(transcript: str):
         callable=prompt,
         prompts=[
             # Interruption patterns
-            """You are a conversation analyst. Map interruption patterns and dominance signals in the meeting.
+            """You are a Sociolinguist and Power Dynamics Expert. Map the "Conversational Floor" to reveal who actually dominates the room.
+
+Analyze "Cooperative Overlaps" (enthusiastic agreement) vs. "Competitive Interruptions" (stealing the floor).
 Tone: {{tone}}
 
 Transcript:
 {{transcript}}
 
-Limit interruptions list to the top 5; include a severity or frequency note.
+Perspective Framework:
+- Manterrupting/Bropropriating: Is credit being stolen in real-time?
+- Filibustering: Who talks to prevent others from speaking?
+
+Constraints:
+- List exactly the top 5 interruption events.
+- "Severity": Low (accidental), Medium (habitual), High (hostile).
+- Max 15 words per event.
 
 Respond in JSON:
 {
-  "interruptions": [{"interrupter": "Name", "victim": "Name"}],
-  "dominance_score": {"Name": 10, "Name": 5}
+  "interruptions": [
+    {"interrupter": "Name", "victim": "Name", "type": "Competitive/Cooperative", "severity": "High"}
+  ],
+  "dominance_score": {"Name": 10 (Dominant), "Name": 1 (Silent)}
 }""",
             # Deference markers
-            """Identify deference and submission markers (hedging, permission-seeking, orders as questions).
-Provide 3-5 strongest examples. Include the exact phrase snippet.
+            """You are a Behavioral Psychologist specializing in Status Signals. Identify "Low Status" language markers.
+
+Look for:
+- Hedging: "I might be wrong, but..."
+- Tag Questions: "It's a good plan, right?"
+- Permission Seeking: "Is it okay if I..."
 
 Transcript: {{transcript}}
+
+Constraints:
+- Identify exactly 3-5 deference markers.
+- "Analysis": Explain *why* this signals submission in 1 sentence.
 
 Respond in JSON:
 {
   "deference_markers": [
-    {"speaker": "Name", "phrase": "text", "analysis": "short (why it signals deference)"}
+    {"speaker": "Name", "phrase": "Exact quote snippet", "analysis": "Explanation of status signal"}
   ]
 }""",
             # Real org chart
-            """Infer the real power structure in the room and who holds veto power.
-Keep hierarchy to top 5 only. Note one red flag and one leverage move.
+            """You are a Corporate Anthropologist. Infer the "Shadow Hierarchy" based on the behavioral data.
+
+Who holds the "Veto Power"? Who do people look at when they finish speaking?
+Distinguish between "Positional Authority" (Job Title) and "Relational Authority" (Influence).
 
 Interruptions: {{output[-2].interruptions}}
 Deference: {{output[-1].deference_markers}}
 
+Constraints:
+- Hierarchy: Top 5 influential people only.
+- Red Flags: Specific toxic dynamics (e.g., "HiPPO decision making").
+- Leverage Moves: How to gain influence in this specific group.
+
 Respond in JSON:
 {
-  "real_hierarchy": ["1. Name", "2. Name"],
-  "power_dynamic": "description",
-  "red_flags": ["flag1", "flag2"],
-  "leverage_moves": ["move1"]
+  "real_hierarchy": ["1. Name (The real boss)", "2. Name (The influencer)", "3. Name"],
+  "power_dynamic": "One sentence summary of the room's political structure.",
+  "red_flags": ["Specific red flag 1", "Specific red flag 2"],
+  "leverage_moves": ["Specific tactical move 1"]
 }"""
         ],
         return_usage=True,

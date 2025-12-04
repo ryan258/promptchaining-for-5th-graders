@@ -47,60 +47,75 @@ def status_game_decoder(situation: str):
         callable=prompt,
         prompts=[
             # Surface analysis
-            """Analyze the surface interaction: who is polite, who is rude, what's happening on the face of it.
+            """You are an Evolutionary Psychologist and Sociologist. Decode the "Micro-Sociology" of this interaction.
+
+Analyze the "Dramaturgy" (Goffman)—the performance of self.
 Tone: {{tone}}
 
 Situation:
 {{situation}}
 
-Keep to 3-5 bullet observations.
+Perspective Framework:
+- Face Work: How are they protecting their own/others' dignity?
+- Politeness Theory: Positive face (need to be liked) vs Negative face (need for autonomy).
+
+Constraints:
+- Observations: Exactly 3 key dynamics.
+- "Polite Person": Who is adhering to norms?
+- "Rude Person": Who is violating norms?
 
 Respond in JSON:
 {
-  "surface_analysis": "description",
-  "polite_person": "Name/label",
-  "rude_person": "Name/label"
+  "surface_analysis": "Description of the social friction",
+  "polite_person": "Name (e.g., 'The Host')",
+  "rude_person": "Name (e.g., 'The Interrupter')"
 }""",
             # Status signals
-            """Identify status signals:
-- countersignaling
-- signaling wealth/experience
-- signaling busy importance
-- signaling intellectual dominance
+            """Decode the "Signaling Game". Who is high status, and how do you know?
 
-Provide 3-7 signals; include snippet evidence.
+Look for "Costly Signals" and "Countersignaling".
+Constraints:
+- Identify exactly 5 signals.
+- "Signal Type": Use specific terms (e.g., "Dominance Display", "Virtue Signaling").
+- "Evidence": Quote the behavior.
 
 Respond in JSON:
 {
   "signals": [
-    {"person": "label", "signal_type": "type", "description": "short"}
+    {"person": "Person A", "signal_type": "Countersignaling", "description": "Wearing a hoodie to a board meeting"}
   ]
 }""",
             # Hierarchy mapping
-            """Map the dominance/status hierarchy and reasoning.
-Limit hierarchy to top 5.
+            """Map the "Pecking Order". Who is the Alpha?
 
 Signals: {{output[-1].signals}}
 
+Constraints:
+- Hierarchy: Rank exactly the top 3 players.
+- Reasoning: Based on "Resource Control" or "Social Proof".
+
 Respond in JSON:
 {
-  "hierarchy": ["1. Person X", "2. Person Y"],
-  "reasoning": "why"
+  "hierarchy": ["1. Person X (Alpha)", "2. Person Y (Beta)", "3. Person Z (Omega)"],
+  "reasoning": "Person X controls the attention economy of the room."
 }""",
             # Real game
-            """What is the real status game being played? Name it, list rules, and predict the winner.
-Provide 2-3 rules; give one countermove to redirect.
+            """What is the "Meta-Game"? What are they *really* fighting over?
 
 Situation: {{situation}}
-Signals: {{output[-2].signals}}
 Hierarchy: {{output[-1].hierarchy}}
+
+Constraints:
+- "Real Game": Name it (e.g., "The Victimhood Olympics").
+- Rules: Exactly 3 implicit rules.
+- Winner: Who wins this specific game?
 
 Respond in JSON:
 {
-  "real_game": "name",
-  "rules": ["rule1", "rule2"],
-  "winner": "Name/label",
-  "countermoves": ["how to avoid/redirect if needed"]
+  "real_game": "Name of the hidden game",
+  "rules": ["Rule 1 (e.g., 'Whoever cries first wins')", "Rule 2"],
+  "winner": "Person Y",
+  "countermoves": ["Strategy to flip the board (e.g., 'Refuse to validate the frame')"]
 }"""
         ],
         return_usage=True,

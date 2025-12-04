@@ -53,55 +53,77 @@ def character_evolution_engine(character_type: str, additional_context: str = ""
         callable=prompt,
         prompts=[
             # Baseline character
-            """Describe the core character as {{char_type}} with name, virtue, and a grounding detail.
-Tone: {{tone}} | Genre: {{genre}} | Context: {{additional_context}}
+            """You are a Screenwriter and Narrative Designer. Create a "Compelling Protagonist".
 
-Provide 1-2 sentence description; keep virtue specific.
+Tone: {{tone}} | Genre: {{genre}} | Context: {{additional_context}}
+Character Type: {{char_type}}
+
+Perspective Framework:
+- The "Ghost": A past event that haunts them.
+- The "Lie": A misconception they have about themselves.
+
+Constraints:
+- Description: Exactly 2 sentences (Appearance + Vibe).
+- Virtue: A specific skill or moral strength (e.g., "Loyalty to a fault").
+- Name: Genre-appropriate.
 
 Respond in JSON:
 {
-  "name": "name",
-  "positive_trait": "trait",
-  "description": "tight description"
+  "name": "Name",
+  "positive_trait": "Specific Virtue",
+  "description": "Evocative description."
 }""",
             # Flaw
-            """Give {{output[-1].name}} a specific, story-relevant flaw.
-Keep it adult and stakes-bearing (not twee).
+            """Give {{output[-1].name}} a "Fatal Flaw" (Hamartia).
+
+Constraints:
+- Flaw: A psychological or moral weakness (not physical).
+- Origin: The "Ghost" event that created this flaw (Max 1 sentence).
 
 Respond in JSON:
 {
-  "flaw": "flaw description",
-  "flaw_origin": "why this flaw exists"
+  "flaw": "Specific flaw (e.g., 'Cannot trust authority')",
+  "flaw_origin": "Backstory event (e.g., 'Betrayed by mentor')"
 }""",
             # Crucible challenge
-            """Design a crucible challenge that forces {{output[-2].name}} to confront {{output[-1].flaw}}.
-Make it situational, with external pressure.
+            """Design the "Inciting Incident" or "Midpoint Climax". Force them to face the Flaw.
+
+Constraints:
+- Challenge: A specific external pressure (e.g., "Must trust a rival").
+- Stakes: Exactly 2 consequences of failure (Internal + External).
 
 Respond in JSON:
 {
-  "challenge": "scenario",
-  "stakes": ["stake1", "stake2"]
+  "challenge": "Scenario description",
+  "stakes": ["Internal Stake (e.g., 'Self-respect')", "External Stake (e.g., 'The mission')"]
 }""",
             # Growth
-            """Show the growth beat: how does {{output[-3].name}} adapt when facing {{output[-1].challenge}} with stakes {{output[-1].stakes}}?
-Keep it concise and credible.
+            """Show the "Character Arc". How do they overcome the Flaw?
+
+Constraints:
+- Growth: A specific behavioral change (Action, not just thought).
+- New Capability: What they can do now that they couldn't before.
+- Cost: What they lost to get here (e.g., "Innocence").
 
 Respond in JSON:
 {
-  "growth": "behavior change",
-  "new_capability": "what they can now do",
-  "cost": "what it costs them"
+  "growth": "Description of change",
+  "new_capability": "New skill/perspective",
+  "cost": "Sacrifice made"
 }""",
             # New adventure hook
-            """Pitch a new adventure that showcases the transformed character.
-Tie to genre and prior cost; include a simple logline.
-Keep synopsis 3-5 sentences.
+            """Pitch the sequel. Where does the "New Self" go next?
+
+Constraints:
+- Synopsis: Exactly 3 sentences.
+- Logline: One punchy sentence.
+- Foil: A character who tests the *new* strength.
 
 Respond in JSON:
 {
-  "new_adventure": "short synopsis",
-  "logline": "one-liner",
-  "foil_or_ally": "who challenges or supports the growth"
+  "new_adventure": "Synopsis",
+  "logline": "Logline",
+  "foil_or_ally": "Character description"
 }"""
         ],
         return_usage=True,

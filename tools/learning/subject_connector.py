@@ -49,36 +49,54 @@ def subject_connector(subject_a: str, subject_b: str):
         callable=prompt,
         prompts=[
             # Connections
-            """You are an interdisciplinary coach. List 3-5 non-obvious connections between {{subject_A}} and {{subject_B}}.
+            """You are a Polymath and Innovation Consultant. Find "Structural Isomorphisms" (shared underlying patterns) between {{subject_A}} and {{subject_B}}.
+
+Avoid surface-level links. Look for deep structural similarities.
 Tone: {{tone}}
+
+Perspective Framework:
+- Systems Theory: Do they share feedback loops or emergent properties?
+- Evolution: Do they share selection pressures?
+
+Constraints:
+- List exactly 3 non-obvious connections.
+- "Connection": Must describe the shared mechanism (max 15 words).
 
 Respond in JSON:
 {
-  "connections": ["connection1", "connection2", "connection3"]
+  "connections": ["Connection 1 (e.g., 'Both use distributed consensus')", "Connection 2", "Connection 3"]
 }""",
             # Why they matter
-            """Explain why each connection matters and what it unlocks.
-Keep importance to one sentence each.
+            """Explain the "Cross-Pollination Value". Why does knowing A help you understand B?
 
 Connections: {{output[-1].connections}}
+
+Constraints:
+- Explain exactly 3 connections.
+- "Importance": How does this insight solve a problem in the other field? (Max 1 sentence).
 
 Respond in JSON:
 {
   "explanations": [
-    {"connection": "text", "importance": "why it matters"}
+    {"connection": "Ref to connection", "importance": "Insight value"}
   ]
 }""",
             # Project idea
-            """Design a practical project that uses both subjects, with title, description, and outputs.
-Keep title <= 10 words; description 2-3 sentences; outputs 3-5 items.
+            """Design a "Synthesis Project" that proves mastery of both domains.
 
+The project must be concrete and buildable.
 Explanations: {{output[-1].explanations}}
+
+Constraints:
+- Title: Max 10 words.
+- Description: Exactly 3 sentences.
+- Outputs: Exactly 3 tangible artifacts (e.g., "Codebase", "Whitepaper", "Model").
 
 Respond in JSON:
 {
-  "project_title": "title",
-  "project_description": "description",
-  "expected_outputs": ["output1", "output2"]
+  "project_title": "Title",
+  "project_description": "Description",
+  "expected_outputs": ["Output 1", "Output 2", "Output 3"]
 }"""
         ],
         return_usage=True,

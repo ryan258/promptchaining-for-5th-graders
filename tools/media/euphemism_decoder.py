@@ -47,43 +47,59 @@ def euphemism_decoder(text: str):
         callable=prompt,
         prompts=[
             # Identify euphemisms
-            """You are a plain-language editor. Identify euphemisms/softeners and map them to literal meanings.
+            """You are an Orwellian Scholar and Plain Language Advocate. Decode "Doublespeak" and "Sanitized Language".
+
+Identify terms that obscure reality or minimize impact.
 Tone: {{tone}}
 
 Text:
 {{speech}}
 
-Keep 5 entries max; include evidence snippet for each.
+Perspective Framework:
+- Softening: Making bad things sound neutral (e.g., "Kinetic action" vs "Bombing").
+- Abstraction: Removing human agency (e.g., "Mistakes were made").
+
+Constraints:
+- Identify exactly 5 euphemisms.
+- "Literal": The brutal, unvarnished truth (max 5 words).
+- "Evidence": Quote the exact snippet.
 
 Respond in JSON:
 {
   "euphemisms": [
-    {"term": "euphemism", "literal": "plain meaning", "evidence": "snippet"}
+    {"term": "Euphemism used", "literal": "Plain meaning", "evidence": "Quote snippet"}
   ]
 }""",
             # Translate to plain English
-            """Rewrite the text in plain English, replacing euphemisms with literal meanings.
+            """Rewrite the text in "Radical Candor" style. Remove all obfuscation.
 
 Mappings: {{output[-1].euphemisms}}
 
+Constraints:
+- Rewrite the entire text.
+- Must be shorter than the original.
+- Tone: Blunt, factual, and direct.
+
 Respond in JSON:
 {
-  "plain_english": "rewritten text"
+  "plain_english": "The rewritten text."
 }""",
             # Reveal intent
-            """Explain why this language was chosen and what reactions it tries to avoid or provoke.
-Give one GOOD vs BAD intent note:
-GOOD: "Avoids admitting civilian casualties; aims to maintain domestic support"
-BAD: "They want to sound nice" (too vague)
+            """Analyze the "Political Utility" of this language. Why hide the truth?
 
 Plain text: {{output[-1].plain_english}}
 Mappings: {{output[-2].euphemisms}}
 
+Constraints:
+- "Hidden Reality": What specific fact is being hidden? (Max 1 sentence).
+- "Intended Effect": How does this manipulate the audience's feelings? (Max 1 sentence).
+- "Who Benefits": Exactly 2 actors.
+
 Respond in JSON:
 {
-  "hidden_reality": "what's actually happening",
-  "intended_effect": "emotional/cognitive outcome",
-  "who_benefits": ["actor1", "actor2"]
+  "hidden_reality": "The specific ugly truth.",
+  "intended_effect": "To prevent outrage/panic.",
+  "who_benefits": ["Actor 1", "Actor 2"]
 }"""
         ],
         return_usage=True,

@@ -47,42 +47,58 @@ def campaign_promise_tracker(text: str):
         callable=prompt,
         prompts=[
             # Extract promises
-            """You are a campaign fact-auditor. Extract concrete promises/commitments from the text.
+            """You are a Policy Analyst and Accountability Watchdog. Audit this campaign text for "Hard Commitments".
+
+Distinguish between "Puffery" (vague slogans) and "Actionable Promises".
 Tone: {{tone}}
 
 Text:
 {{text}}
 
-Provide 3-7 promises max. Avoid vague slogans.
+Perspective Framework:
+- SMART Criteria: Specific, Measurable, Achievable, Relevant, Time-bound.
+- The "Read My Lips" Test: Is this a clear pledge that can be broken?
+
+Constraints:
+- Identify exactly 5 concrete promises.
+- "Promise": Quote the exact commitment.
+- "Timeframe": If not stated, mark as "Indefinite".
 
 Respond in JSON:
 {
   "promises": [
-    {"promise": "what", "area": "policy area", "timeframe": "if stated"}
+    {"promise": "Quote of promise", "area": "Policy Area (e.g., 'Healthcare')", "timeframe": "By 2025 / First 100 Days"}
   ]
 }""",
             # Feasibility and risks
-            """Assess feasibility, blockers, and risks for each promise.
-Keep each field 1 sentence max.
+            """Stress-test these promises. Are they legislative fantasy or executive reality?
 
 Promises: {{output[-1].promises}}
+
+Constraints:
+- Feasibility: Low, Medium, High.
+- "Blockers": Specific legislative or judicial hurdles (e.g., "Requires 60 votes in Senate").
+- "Risks": Unintended consequences (Max 1 sentence).
 
 Respond in JSON:
 {
   "analysis": [
-    {"promise": "ref", "feasibility": "Low/Med/High", "blockers": ["blocker1"], "risks": ["risk1"]}
+    {"promise": "Ref to promise", "feasibility": "Low", "blockers": ["Filibuster", "Court Challenge"], "risks": ["Inflationary pressure"]}
   ]
 }""",
             # Verification hooks
-            """Provide verification hooks and milestones to track delivery.
-2-3 hooks per promise; milestones should be measurable.
+            """Establish a "Truth-Tracking Protocol". How will we know if they failed?
 
 Analysis: {{output[-1].analysis}}
+
+Constraints:
+- Metric: A specific number or binary outcome (e.g., "Unemployment rate < 4%").
+- Milestones: Exactly 2 observable steps on the path.
 
 Respond in JSON:
 {
   "verification_hooks": [
-    {"promise": "ref", "metric": "what to measure", "milestones": ["m1", "m2"]}
+    {"promise": "Ref to promise", "metric": "Specific KPI", "milestones": ["Bill introduced", "Signed into law"]}
   ]
 }"""
         ],
