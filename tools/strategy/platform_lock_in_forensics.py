@@ -57,6 +57,8 @@ Tone: {{tone}}
 Platform/use case: {{platform}}
 Context: {{additional_context}}
 
+Provide 3-6 mechanisms; keep each specific.
+
 Respond in JSON:
 {
   "lock_in_mechanisms": [
@@ -65,6 +67,7 @@ Respond in JSON:
 }""",
             # Incentives and switching costs
             """Map incentives for the vendor and switching costs for the customer.
+Switching costs: list 3-5, concrete (time $, risk).
 
 Mechanisms: {{output[-1].lock_in_mechanisms}}
 
@@ -75,6 +78,7 @@ Respond in JSON:
 }""",
             # Exit strategies
             """Suggest exit or mitigation strategies (data portability, abstractions, contract terms).
+Provide 3-5 mitigations; pair each with a monitoring signal.
 
 Respond in JSON:
 {

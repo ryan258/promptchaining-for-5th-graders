@@ -49,7 +49,7 @@ def subject_connector(subject_a: str, subject_b: str):
         callable=prompt,
         prompts=[
             # Connections
-            """List 3-5 non-obvious connections between {{subject_A}} and {{subject_B}}.
+            """You are an interdisciplinary coach. List 3-5 non-obvious connections between {{subject_A}} and {{subject_B}}.
 Tone: {{tone}}
 
 Respond in JSON:
@@ -58,6 +58,7 @@ Respond in JSON:
 }""",
             # Why they matter
             """Explain why each connection matters and what it unlocks.
+Keep importance to one sentence each.
 
 Connections: {{output[-1].connections}}
 
@@ -69,6 +70,7 @@ Respond in JSON:
 }""",
             # Project idea
             """Design a practical project that uses both subjects, with title, description, and outputs.
+Keep title <= 10 words; description 2-3 sentences; outputs 3-5 items.
 
 Explanations: {{output[-1].explanations}}
 

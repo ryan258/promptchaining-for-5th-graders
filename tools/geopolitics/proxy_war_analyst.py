@@ -53,6 +53,8 @@ Tone: {{tone}}
 Conflict:
 {{conflict}}
 
+Limit to top 6 actors. Be explicit on role (proxy/sponsor/primary).
+
 Respond in JSON:
 {
   "actors": [
@@ -61,6 +63,7 @@ Respond in JSON:
 }""",
             # Escalation paths
             """Map plausible escalation paths and triggers.
+Provide 2-3 paths; each with trigger and short sequence.
 
 Respond in JSON:
 {
@@ -70,6 +73,7 @@ Respond in JSON:
 }""",
             # Off-ramps and constraints
             """Identify off-ramps, constraints, and leverage points to reduce risk.
+Provide 2-3 off-ramps and 2-3 monitoring signals.
 
 Respond in JSON:
 {

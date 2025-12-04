@@ -59,24 +59,26 @@ def research_timeline_tool(topic, additional_context=""):
         callable=prompt,
         prompts=[
             # Prompt 1: Historical Origins (Deep Dive)
-            """Analyze the historical origins of '{{topic}}'. 
+            """Analyze the historical origins of '{{topic}}' (aim for 3-5 entries; if fewer, explain why).
             
-            Look for:
-            - Earliest theoretical underpinnings (even if obscure)
-            - Contradicting theories or disputed attributions
-            - Precursor technologies or concepts
+            Prioritize:
+            - Earliest documented theory/concept (even if obscure)
+            - One disputed attribution (if any)
+            - One precursor technology/concept
+            
+            Keep each description to 2-3 sentences max.
             
             Respond in JSON: {
                 "origins": [
                     {
-                        "period": "Time period",
-                        "event": "Event/Discovery",
-                        "description": "Detailed description",
-                        "significance": "Why this matters",
-                        "uncertainty": "Any historical debate/uncertainty"
+                        "period": "e.g., '1600s' or '300 BCE'",
+                        "event": "Event/Discovery (<=8 words)",
+                        "description": "2-3 sentences",
+                        "significance": "1 sentence",
+                        "uncertainty": "1 sentence or 'None'"
                     }
                 ],
-                "theoretical_roots": "Summary of early theoretical work"
+                "theoretical_roots": "3-4 sentence summary; if <3 origins, explain scarcity here"
             }""",
 
             # Prompt 2: Evolution & Breakthroughs
@@ -116,18 +118,21 @@ def research_timeline_tool(topic, additional_context=""):
             }""",
 
             # Prompt 4: Future Trajectories & Risks
-            """Project the future of '{{topic}}' (20 years).
-            
-            Speculate on:
-            - Probable evolution (linear progress)
-            - Wildcard scenarios (disruptive changes)
-            - Systemic risks or ethical implications
+            """Project the future of '{{topic}}' over 20 years with exactly three scenarios:
+            - Best-case (optimistic but realistic)
+            - Worst-case (risks/limits magnified)
+            - Wildcard (low-probability, high-impact; e.g., regulatory shock, enabling tech leap)
             
             Respond in JSON: {
-                "near_term_prediction": "Next 5 years",
-                "long_term_speculation": "20 years out",
-                "wildcards": ["Low probability, high impact event"],
-                "risks": ["Risk 1", "Risk 2"]
+                "future_scenarios": [
+                    {
+                        "scenario_name": "Best-case/Worst-case/Wildcard",
+                        "description": "3-5 sentences",
+                        "risks": ["Risk 1", "Risk 2"],
+                        "ethics": ["Ethical concern 1"],
+                        "mitigations": ["Mitigation 1"]
+                    }
+                ]
             }"""
         ]
     )

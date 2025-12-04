@@ -71,6 +71,8 @@ Target role (if provided): {{target_role}}
 Posting:
 {{job_posting}}
 
+Give 3-5 hidden priorities; include one cultural tell.
+
 Respond in JSON:
 {
   "hidden_priorities": ["priority1", "priority2"],
@@ -78,7 +80,11 @@ Respond in JSON:
   "red_flags": ["flag1", "flag2"]
 }""",
             # Manager pain points
-            """List the specific pain points the hiring manager is trying to solve.
+            """List the specific pain points the hiring manager is trying to solve (3-5).
+Give one GOOD vs BAD example:
+GOOD: "Shipping velocity stalled because scope creep; need someone to enforce scope"
+BAD: "Wants good communication" (too generic)
+
 Priorities: {{output[-1].hidden_priorities}}
 Culture: {{output[-1].culture_vibe}}
 
@@ -89,6 +95,7 @@ Respond in JSON:
             # Application strategy
             """Craft an application strategy that hooks to the pain points.
 Include positioning theme and proof vectors.
+Limit to 1 theme + 3 proof targets.
 
 Pain points: {{output[-1].manager_pain_points}}
 Notable wins: {{notable_wins}}
@@ -102,6 +109,7 @@ Respond in JSON:
             # Resume bullets
             """Write 3 resume bullets aligned to the strategy.
 Use strong verbs, quantified outcomes, and relevance to pain points.
+Format hint: Action verb + project + quant (%, $, time) + result.
 
 Pain points: {{output[-2].manager_pain_points}}
 Theme: {{output[-1].application_theme}}
@@ -114,6 +122,7 @@ Respond in JSON:
             # STAR stories
             """Draft STAR mini-outlines to back up each bullet.
 Keep them concise and ready to expand in interview prep.
+Each field 1-2 sentences max.
 
 Bullets: {{output[-1].resume_bullets}}
 

@@ -51,12 +51,14 @@ def problem_solution_spider(problem: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Define the problem crisply
-            """Define the problem succinctly for an adult operator.
+            """You are a pragmatic facilitator. Define the problem succinctly for an adult operator.
 Include who is affected, what breaks, and why it matters.
 Tone: {{tone}}
 Context: {{additional_context}}
 
 Problem: {{problem}}
+
+Keep it to 2-3 sentences.
 
 Respond in JSON:
 {
@@ -70,6 +72,8 @@ Be realistic; avoid generic answers.
 Problem: {{output[-1].defined_problem}}
 Context: {{additional_context}}
 
+Provide 3-5 constraints and 3-5 resources max.
+
 Respond in JSON:
 {
   "constraints": ["constraint1", "constraint2"],
@@ -78,6 +82,9 @@ Respond in JSON:
             # Wild ideas
             """Brainstorm 4-5 unconventional ideas to solve the problem within/around the constraints.
 Signal feasibility at a glance.
+
+Example GOOD wild idea: "Swap paper for SMS to bypass app deployment; volunteer hotline to triage"
+Example BAD wild idea: "Be more innovative" (too vague)
 
 Constraints: {{output[-1].constraints}}
 Resources: {{output[-1].resources}}
@@ -106,6 +113,8 @@ Include success/failure signals and next steps.
 
 Solutions: {{output[-1].solution_options}}
 Problem: {{output[-4].defined_problem}}
+
+Keep scenario to 3-5 sentences; 3 signals each.
 
 Respond in JSON:
 {

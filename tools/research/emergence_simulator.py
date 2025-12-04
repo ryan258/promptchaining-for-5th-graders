@@ -51,11 +51,13 @@ def emergence_simulator(system: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Define agents and rules
-            """Define agent types and simple rules/interactions for the system.
+            """You are a systems thinker. Define agent types and simple rules/interactions for the system.
 Tone: {{tone}}
 
 System: {{system}}
 Context: {{additional_context}}
+
+Keep agents/rules to 3-5 total. Be concrete (verbs, thresholds, interactions).
 
 Respond in JSON:
 {
@@ -65,6 +67,8 @@ Respond in JSON:
 }""",
             # Interaction loop
             """Describe an interaction loop (tick) and likely short-term patterns.
+Limit patterns to 3; make loop steps explicit.
+Example loop: "Each tick: agents move toward neighbors; if too close, they repel; apply friction."
 
 Rules: {{output[-1].rules}}
 
@@ -75,6 +79,7 @@ Respond in JSON:
 }""",
             # Emergent behaviors
             """Hypothesize emergent behaviors over time and conditions that amplify/suppress them.
+Give 2-3 behaviors max. Include one amplifier and one damper each.
 
 Patterns: {{output[-1].short_term_patterns}}
 
@@ -86,6 +91,7 @@ Respond in JSON:
 }""",
             # Experiments
             """Propose simple experiments to probe or steer emergence.
+Provide 2 experiments max; each with a measurable signal.
 
 Emergent behaviors: {{output[-1].emergent_behaviors}}
 

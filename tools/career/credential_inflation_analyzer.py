@@ -53,14 +53,17 @@ Tone: {{tone}}
 Text:
 {{text}}
 
+Give 3-5 signals max; include why each is suspect.
+
 Respond in JSON:
 {
   "inflation_signals": [
-    {"requirement": "what", "why_suspect": "reason"}
+    {"requirement": "what", "why_suspect": "reason (1 sentence)"}
   ]
 }""",
             # Skill-based equivalents
             """Map skills or proofs-of-work that would substitute for inflated credentials.
+Provide 1-2 substitutes per signal; keep concise.
 
 Signals: {{output[-1].inflation_signals}}
 
@@ -72,6 +75,7 @@ Respond in JSON:
 }""",
             # Impact and advice
             """Summarize impact on candidates and practical advice to navigate or counter credential creep.
+Impacts: 2-3 bullets. Advice: 3-5 bullets, specific actions.
 
 Respond in JSON:
 {

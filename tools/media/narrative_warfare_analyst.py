@@ -53,6 +53,8 @@ Tone: {{tone}}
 Text:
 {{narratives}}
 
+Provide top 3-5 narratives max; keep objectives concise.
+
 Respond in JSON:
 {
   "narratives": [
@@ -61,6 +63,7 @@ Respond in JSON:
 }""",
             # Escalation and techniques
             """Identify escalation moves and techniques used (fear, appeal to authority, doubt seeding, etc).
+Provide 3-5 techniques total; include snippet examples.
 
 Respond in JSON:
 {
@@ -71,6 +74,7 @@ Respond in JSON:
 }""",
             # Counters
             """Offer counter-messaging ideas or inoculation prompts to reduce the impact of the narratives.
+Provide 3-5 counters; keep each to one sentence.
 
 Respond in JSON:
 {
@@ -81,6 +85,7 @@ Respond in JSON:
 }""",
             # Monitoring
             """Suggest monitoring signals to track narrative shifts over time.
+Provide 3-5 signals.
 
 Respond in JSON:
 {

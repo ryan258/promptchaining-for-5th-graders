@@ -47,24 +47,58 @@ def concept_simplifier_demo():
         # Our list of step-by-step questions for the AI.
         prompts=[
             # Prompt 1: Break the topic into small pieces.
-            # "{{topic}}" will be replaced with "Photosynthesis".
-            # We ask for the answer in JSON format (like a dictionary).
-            """Break the complex topic '{{topic}}' into 3-4 main parts a 5th grader can understand. Respond in JSON: {"parts": ["part1 explanation", "part2 explanation", ...]}""",
+            """You are an elementary teacher. Break '{{topic}}' into 3-4 essential parts:
+1) INPUT (what goes in)
+2) PROCESS (what happens)
+3) OUTPUT (what comes out)
+4) WHY IT MATTERS (optional, only if helpful)
+
+Use simple words a 5th grader uses with friends.
+
+Example GOOD vs BAD:
+GOOD: "You need sunlight, water, and air" (clear input)
+BAD: "Combine ingredients via thermal processing" (too formal)
+
+Respond in JSON: {
+  "parts": [
+    {"name": "Input/Process/Output/Why", "explanation": "1-2 sentences using simple words"}
+  ]
+}""",
 
             # Prompt 2: Find simple comparisons (analogies).
             # "{{output[-1].parts}}" uses the 'parts' from the AI's last answer.
-            """For the topic '{{topic}}' and its parts {{output[-1].parts}}, find a simple analogy for each part to help a 5th grader understand. Respond in JSON: {"analogies": [{"part": "original part1", "analogy": "analogy1"}, ...]}""",
+            """For the parts {{output[-1].parts}} of '{{topic}}', give one analogy each.
+Prefer everyday life; avoid cutesy or random pop culture.
+
+Respond in JSON: {
+  "analogies": [
+    {"part": "original part", "analogy": "analogy", "why_it_works": "short reason"}
+  ]
+}""",
 
             # Prompt 3: Give examples for those analogies.
             # "{{output[-1].analogies}}" uses the 'analogies' from the AI's last answer.
-            """Using the analogies from {{output[-1].analogies}} for '{{topic}}', provide a simple example for each to test understanding. Respond in JSON: {"examples": [{"analogy_for_part": "analogy1", "example": "example1"}, ...]}""",
+            """Using the analogies from {{output[-1].analogies}} for '{{topic}}', provide a concrete example and a check-yourself question.
+
+Each example: 2-3 sentences showing the analogy in action.
+Each check_yourself: start with "What would happen if..." or "Can you explain why..."
+
+Respond in JSON: {
+  "examples": [
+    {"analogy_for_part": "analogy", "example": "2-3 sentence scenario", "check_yourself": "question"}
+  ]
+}""",
 
             # Prompt 4: Create a short teaching story.
             # This prompt uses answers from three previous steps!
             # "{{output[-3].parts}}" gets the parts from 3 answers ago.
             # "{{output[-2].analogies}}" gets the analogies from 2 answers ago.
             # "{{output[-1].examples}}" gets the examples from the last answer.
-            """Now, create a very short teaching story (3-5 sentences) for a 5th grader that explains '{{topic}}' using the main parts, analogies, and examples from {{output[-3].parts}}, {{output[-2].analogies}}, and {{output[-1].examples}}. Make it engaging! Respond in JSON: {"story": "your teaching story"}"""
+            """Write a 3-5 sentence story for a 5th grader that uses the parts, analogies, and examples from {{output[-3].parts}}, {{output[-2].analogies}}, and {{output[-1].examples}}.
+
+Keep it concrete; avoid filler like "once upon a time" unless it helps comprehension.
+
+Respond in JSON: {"story": "your teaching story"}"""
         ],
     )
 

@@ -47,11 +47,13 @@ def meeting_dynamics_forensics(transcript: str):
         callable=prompt,
         prompts=[
             # Interruption patterns
-            """Map interruption patterns and dominance signals in the meeting.
+            """You are a conversation analyst. Map interruption patterns and dominance signals in the meeting.
 Tone: {{tone}}
 
 Transcript:
 {{transcript}}
+
+Limit interruptions list to the top 5; include a severity or frequency note.
 
 Respond in JSON:
 {
@@ -60,17 +62,19 @@ Respond in JSON:
 }""",
             # Deference markers
             """Identify deference and submission markers (hedging, permission-seeking, orders as questions).
+Provide 3-5 strongest examples. Include the exact phrase snippet.
 
 Transcript: {{transcript}}
 
 Respond in JSON:
 {
   "deference_markers": [
-    {"speaker": "Name", "phrase": "text", "analysis": "short"}
+    {"speaker": "Name", "phrase": "text", "analysis": "short (why it signals deference)"}
   ]
 }""",
             # Real org chart
             """Infer the real power structure in the room and who holds veto power.
+Keep hierarchy to top 5 only. Note one red flag and one leverage move.
 
 Interruptions: {{output[-2].interruptions}}
 Deference: {{output[-1].deference_markers}}
@@ -79,7 +83,8 @@ Respond in JSON:
 {
   "real_hierarchy": ["1. Name", "2. Name"],
   "power_dynamic": "description",
-  "red_flags": ["flag1", "flag2"]
+  "red_flags": ["flag1", "flag2"],
+  "leverage_moves": ["move1"]
 }"""
         ],
         return_usage=True,

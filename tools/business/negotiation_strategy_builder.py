@@ -51,11 +51,15 @@ def negotiation_strategy_builder(scenario: str, additional_context: str = ""):
         callable=prompt,
         prompts=[
             # Power analysis
-            """Analyze leverage and hidden power dynamics.
+            """You are a seasoned negotiator. Analyze leverage and hidden power dynamics.
 Tone: {{tone}}
 
 Scenario: {{scenario}}
 Context: {{additional_context}}
+
+Give one GOOD vs BAD leverage read:
+GOOD: "They are under deadline; my option set is wider" (specific)
+BAD: "They want it; I don't" (too thin)
 
 Respond in JSON:
 {
@@ -64,7 +68,8 @@ Respond in JSON:
   "their_power": "high/medium/low"
 }""",
             # BATNAs
-            """Define BATNAs (yours and theirs) and likely outcome if no deal is reached.
+            """Define BATNAs (yours and theirs) and likely outcome if no deal is reached (1-2 sentences each).
+Keep it concrete (time, money, alternatives).
 
 Analysis: {{output[-1].leverage_analysis}}
 
@@ -75,6 +80,7 @@ Respond in JSON:
 }""",
             # Anchoring
             """Set the opening anchor and speaking order based on power and BATNAs.
+Include numbers/terms if applicable. Keep to 1 anchor.
 
 Leverage: {{output[-2].leverage_analysis}}
 BATNAs: {{output[-1].my_batna}} vs {{output[-1].their_batna}}
@@ -86,7 +92,7 @@ Respond in JSON:
   "reasoning": "why this anchor"
 }""",
             # Objections
-            """Predict the top objections to the anchor.
+            """Predict the top objections to the anchor (3 max). Make them sharp and specific.
 
 Anchor: {{output[-1].opening_anchor}}
 
@@ -96,6 +102,7 @@ Respond in JSON:
 }""",
             # Counter-scripts
             """Write counter-scripts that pivot to value without unnecessary concessions.
+Each response: 1-2 sentences; avoid apologizing; restate anchor logic.
 
 Objections: {{output[-1].objections}}
 Anchor: {{output[-2].opening_anchor}}

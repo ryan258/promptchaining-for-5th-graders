@@ -53,14 +53,17 @@ Tone: {{tone}}
 Target:
 {{text}}
 
+Provide 3-7 signals; include evidence snippets.
+
 Respond in JSON:
 {
   "capture_signals": [
-    {"signal": "what", "evidence": "short note"}
+    {"signal": "what", "evidence": "short note/snippet"}
   ]
 }""",
             # Incentives and beneficiaries
             """Map incentives and who benefits from the current setup.
+Limit to top 3 beneficiaries and incentives.
 
 Signals: {{output[-1].capture_signals}}
 
@@ -71,6 +74,7 @@ Respond in JSON:
 }""",
             # Mitigations
             """Propose mitigation ideas or governance tweaks to reduce capture risk.
+Provide 3-5 mitigations and 3-5 monitoring signals. Keep each to one sentence.
 
 Respond in JSON:
 {

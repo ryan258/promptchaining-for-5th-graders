@@ -47,11 +47,13 @@ def media_bias_triangulator(event: str):
         callable=prompt,
         prompts=[
             # Biased framings
-            """Generate headlines for the event from multiple bias lenses.
+            """You are a media editor comparing bias lenses. Generate headlines for the event from multiple bias lenses.
 Tone: {{tone}}
 
 Event:
 {{event}}
+
+Keep each headline <= 18 words. Make the bias obvious.
 
 Respond in JSON:
 {
@@ -60,7 +62,7 @@ Respond in JSON:
   "headline_center": "text"
 }""",
             # Omissions per framing
-            """For each headline, note the likely omissions or minimized facts.
+            """For each headline, note the likely omissions or minimized facts. 1-2 sentences each.
 
 Headlines: {{output[-1]}}
 
@@ -73,6 +75,7 @@ Respond in JSON:
             # Ground truth synthesis
             """Synthesize a ground-truth summary including material facts and uncertainty.
 Avoid emotional framing; include what is unknown or contested.
+Keep it to 4-6 sentences. If facts conflict, state both.
 
 Event: {{event}}
 Headlines: {{output[-2]}}

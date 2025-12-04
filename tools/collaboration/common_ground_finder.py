@@ -49,11 +49,13 @@ def common_ground_finder(view_a: str, view_b: str):
         callable=prompt,
         prompts=[
             # Values behind each view
-            """Extract underlying values and motivations for each view.
+            """You are a facilitator mediating two sides. Extract underlying values and motivations for each view.
 Tone: {{tone}}
 
 View A: {{view_A}}
 View B: {{view_B}}
+
+Provide 3-5 values per side; include one unstated fear.
 
 Respond in JSON:
 {
@@ -65,6 +67,8 @@ Respond in JSON:
             """Identify shared concerns or risks that both sides legitimately care about.
 
 Values: A={{output[-1].view_A_values}}, B={{output[-1].view_B_values}}
+
+Provide 3-5 concerns; include evidence both care.
 
 Respond in JSON:
 {
@@ -89,6 +93,8 @@ Views: {{view_A}} vs {{view_B}}
 Values: A={{output[-3].view_A_values}}, B={{output[-3].view_B_values}}
 Shared concerns: {{output[-2].shared_concerns}}
 Common goals: {{output[-1].common_goals}}
+
+Provide 3-5 bridge ideas and 3-5 conversation prompts.
 
 Respond in JSON:
 {

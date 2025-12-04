@@ -56,6 +56,8 @@ def character_evolution_engine(character_type: str, additional_context: str = ""
             """Describe the core character as {{char_type}} with name, virtue, and a grounding detail.
 Tone: {{tone}} | Genre: {{genre}} | Context: {{additional_context}}
 
+Provide 1-2 sentence description; keep virtue specific.
+
 Respond in JSON:
 {
   "name": "name",
@@ -93,6 +95,7 @@ Respond in JSON:
             # New adventure hook
             """Pitch a new adventure that showcases the transformed character.
 Tie to genre and prior cost; include a simple logline.
+Keep synopsis 3-5 sentences.
 
 Respond in JSON:
 {

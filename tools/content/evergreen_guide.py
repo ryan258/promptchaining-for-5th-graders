@@ -69,34 +69,39 @@ def evergreen_guide_architect(topic, additional_context=""):
         callable=prompt,
         prompts=[
             # Prompt 1: User Intent & Pain Points Analysis
-            """Analyze the topic '{{topic}}' for a guide that will remain useful for years.
+            """You are a content strategist (10 years in SEO + user research). Analyze '{{topic}}' strictly through reader intent.
 
-What problems are readers trying to solve? What are they searching for? What pain points or knowledge gaps exist?
+Provide 3-5 pain points and search patterns for three modes:
+- Beginner panic (first time searching)
+- Stuck/frustrated practitioner (mid-way, hitting blockers)
+- Optimizer/refiner (improving an existing approach)
 
-Consider these user needs:
-- Someone just starting (what do they not know they don't know?)
-- Someone stuck midway (what's causing confusion?)
-- Someone optimizing (what nuances matter?)
+Show one GOOD vs BAD intent example:
+GOOD: "I keep breaking form on rep #6; how do I stop that?" (specific, stakes)
+BAD: "Tell me about fitness" (too broad)
 
-Respond in JSON: {
+Respond in JSON (keep lists 3-5 items each):
+{
   "user_intent": "Primary problem they're solving",
-  "search_patterns": ["search query 1", "search query 2", "search query 3"],
+  "search_patterns": ["query 1", "query 2", "query 3"],
   "pain_points": ["pain point 1", "pain point 2", "pain point 3"],
   "knowledge_gaps": ["gap 1", "gap 2"],
   "audience_segments": [
-    {"segment": "Beginners", "needs": "needs"},
-    {"segment": "Intermediate", "needs": "needs"}
+    {"segment": "Beginner panic", "needs": "2-3 needs"},
+    {"segment": "Stuck practitioner", "needs": "2-3 needs"},
+    {"segment": "Optimizer", "needs": "2-3 needs"}
   ]
 }""",
 
             # Prompt 2: Competition Steel-Man & Differentiation
-            """Analyze existing content on '{{topic}}'. What do the best guides do well? Where do they fall short?
+            """You are comparing against the top 3 guides on '{{topic}}'.
+Steel-man them (assume competence). Then find gaps.
 
-Steel-man the competition (assume best intent, identify genuine value), then find the gaps.
+Example of steel-man strength: "Great walkthrough with screenshots for setup"
+Example of gap: "No troubleshooting section; assumes ideal path"
 
-Our differentiation must be genuine utility, not just "louder" or "more viral."
-
-Respond in JSON: {
+Respond in JSON (keep 3-5 items max per list):
+{
   "what_exists": {
     "strengths": ["What good guides do well"],
     "weaknesses": ["Common gaps or superficial treatments"],
@@ -109,24 +114,24 @@ Respond in JSON: {
 
             # Prompt 3: Structure for Utility & Skimmability
             """Create a structured outline for '{{topic}}' optimized for:
-1. Utility (readers get value even if they only read 20%)
-2. Skimmability (clear hierarchy, scannable sections)
-3. Depth (goes beyond surface-level advice)
-4. Actionability (readers know what to do next)
+1. Utility (value even if they read only 20%)
+2. Skimmability (headings that convey meaning; bullets 7 words max)
+3. Depth (go beyond listicles)
+4. Actionability (clear next steps)
 
 Writing tone: {{tone}}
 Avoid: {{avoid}}
 Prefer: {{prefer}}
 
-Key insights from analysis:
-- User intent: {{output[-2].user_intent}}
-- Differentiation: {{output[-1].differentiation_opportunity}}
+Use size budgets:
+- Title options: 3
+- Metaphors: max 3, memorable and specific
+- Key points per section: 2-4
+- Takeaways: 3-5
 
-Include:
-- Clear section hierarchy (H2, H3 levels)
-- Key metaphors or analogies (max 2-3, memorable ones)
-- Research areas that need citations
-- Practical takeaways for each major section
+Include one GOOD vs BAD example of a skimmable heading:
+GOOD: "Diagnose slow queries in 5 minutes"
+BAD: "Performance tips"
 
 Respond in JSON: {
   "title_options": ["title 1", "title 2", "title 3"],
@@ -149,27 +154,28 @@ Respond in JSON: {
     }
   ],
   "practical_takeaways": ["Actionable insight 1", "Actionable insight 2"],
-  "skimmability_score": 8.5,
-  "estimated_depth_level": "Intermediate to Advanced"
+  "skimmability_score": 0-10,
+  "estimated_depth_level": "Intermediate/Advanced/etc"
 }""",
 
             # Prompt 4: The Evergreen Audit
-            """Review the outline for '{{topic}}' through the lens of longevity.
+            """Review the outline for '{{topic}}' through the lens of longevity. Label claims as Evergreen vs Time-sensitive.
 
-Will this be true in 5 years? If not, how do we flag it?
+Examples:
+❌ Time-sensitive to flag: "In 2024, React 18 is best-in-class"
+✅ Evergreen to keep: "Readable code beats premature optimization"
 
-Evergreen content:
-- Focuses on principles over tactics
-- Acknowledges what changes vs what stays constant
-- Includes "last updated" triggers (when to revisit)
+For each time-sensitive item, include the exact quote + why it will age + mitigation.
 
-Respond in JSON: {
-  "evergreen_score": 8.5,
+Respond in JSON:
+{
+  "evergreen_score": 0-10,
   "time_sensitive_claims": [
     {
-      "claim": "Specific claim that might age",
-      "mitigation": "How to future-proof it",
-      "update_trigger": "What would require revision"
+      "claim": "Exact quote",
+      "why_it_will_age": "Specific reason",
+      "mitigation": "How to reframe or date",
+      "update_trigger": "Event that requires revision"
     }
   ],
   "universal_principles": [
@@ -186,18 +192,21 @@ Respond in JSON: {
             # Prompt 5: Final Polish & Meta-Quality Check
             """Final quality check for the '{{topic}}' guide outline.
 
-Would you bookmark this? Would you send it to a friend who needs this information?
+Use these criteria:
+- Utility: real problems solved, not trivia
+- Clarity: skimmable headings with meaning
+- Depth: beyond listicles; includes trade-offs
+- Actionability: clear next steps
+- Longevity: principles over tactics
 
-Quality criteria:
-- Utility: Does this solve real problems?
-- Clarity: Is the structure logical and scannable?
-- Depth: Does this go beyond surface-level advice?
-- Actionability: Do readers know what to do next?
-- Longevity: Will this still be useful in 2-3 years?
+Provide one GOOD vs BAD call-to-action example:
+GOOD: "Run this 10-minute diagnostic to find your bottleneck"
+BAD: "Check performance regularly"
 
-Respond in JSON: {
-  "overall_quality_score": 8.5,
-  "would_bookmark": true,
+Respond in JSON:
+{
+  "overall_quality_score": 0-10,
+  "would_bookmark": true/false,
   "strengths": ["Strength 1", "Strength 2"],
   "gaps_to_address": ["Gap 1", "Gap 2"],
   "writing_priorities": [

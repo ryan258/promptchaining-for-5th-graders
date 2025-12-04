@@ -55,6 +55,8 @@ Tone: {{tone}}
 Stated: {{stated}}
 Revealed: {{revealed}}
 
+Keep contradiction to 2-3 sentences; severity = High/Med/Low.
+
 Respond in JSON:
 {
   "contradiction": "description",
@@ -62,16 +64,18 @@ Respond in JSON:
 }""",
             # Value hierarchy
             """Infer the actual value hierarchy implied by behavior.
+Provide top 3 values; include evidence snippet for each.
 
 Contradiction: {{output[-1].contradiction}}
 
 Respond in JSON:
 {
   "actual_values": ["Value 1", "Value 2"],
-  "evidence": "supporting signals"
+  "evidence": "supporting signals or snippets"
 }""",
             # Predict a choice
             """Predict a likely choice in a simple tradeoff scenario given these revealed values.
+Keep reasoning to 2 sentences.
 
 Stated: {{stated}}
 Revealed values: {{output[-1].actual_values}}

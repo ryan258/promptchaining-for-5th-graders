@@ -47,11 +47,13 @@ def campaign_promise_tracker(text: str):
         callable=prompt,
         prompts=[
             # Extract promises
-            """Extract concrete promises/commitments from the text.
+            """You are a campaign fact-auditor. Extract concrete promises/commitments from the text.
 Tone: {{tone}}
 
 Text:
 {{text}}
+
+Provide 3-7 promises max. Avoid vague slogans.
 
 Respond in JSON:
 {
@@ -61,6 +63,7 @@ Respond in JSON:
 }""",
             # Feasibility and risks
             """Assess feasibility, blockers, and risks for each promise.
+Keep each field 1 sentence max.
 
 Promises: {{output[-1].promises}}
 
@@ -72,6 +75,7 @@ Respond in JSON:
 }""",
             # Verification hooks
             """Provide verification hooks and milestones to track delivery.
+2-3 hooks per promise; milestones should be measurable.
 
 Analysis: {{output[-1].analysis}}
 

@@ -53,6 +53,8 @@ Tone: {{tone}}
 Text:
 {{beliefs}}
 
+Provide 3-5 claims and 3-5 premises max.
+
 Respond in JSON:
 {
   "claims": ["claim1", "claim2"],
@@ -60,6 +62,7 @@ Respond in JSON:
 }""",
             # Internal contradictions
             """Identify internal contradictions or tensions between claims/premises.
+Limit to top 3 contradictions; keep why to one sentence each.
 
 Claims: {{output[-1].claims}}
 Premises: {{output[-1].premises}}
@@ -73,6 +76,7 @@ Respond in JSON:
 }""",
             # Behavioral implications
             """Predict behavior choices implied by the stated beliefs vs the contradictions.
+Provide 2-3 likely behaviors; keep each to one sentence.
 
 Respond in JSON:
 {
@@ -81,6 +85,7 @@ Respond in JSON:
 }""",
             # Questions to self-test
             """Provide questions/prompts to self-test consistency or refine the worldview.
+Provide 3-5 questions and 3-5 reading prompts; keep concise.
 
 Respond in JSON:
 {

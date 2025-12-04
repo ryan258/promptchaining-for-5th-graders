@@ -53,6 +53,8 @@ Tone: {{tone}}
 Statement:
 {{statement}}
 
+Keep translation 3-5 sentences. Be explicit about implied (in)action.
+
 Respond in JSON:
 {
   "translation": "plain text",
@@ -72,6 +74,7 @@ Respond in JSON:
 }""",
             # Intent/purpose
             """Surface the political purpose of issuing this statement and who it is aimed at.
+Provide 2-3 audiences; keep effectiveness to one word.
 
 Respond in JSON:
 {

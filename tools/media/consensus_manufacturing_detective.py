@@ -53,6 +53,8 @@ Tone: {{tone}}
 Text:
 {{text}}
 
+Provide top 3-5 in each category; include a snippet for evidence.
+
 Respond in JSON:
 {
   "frames": ["frame1", "frame2"],
@@ -61,6 +63,7 @@ Respond in JSON:
 }""",
             # Omissions and skew
             """Surface key omissions or asymmetries (who/what is minimized or excluded).
+Give 3-5 omissions; note if data/evidence is missing.
 
 Frames: {{output[-1].frames}}
 
@@ -71,6 +74,7 @@ Respond in JSON:
 }""",
             # Beneficiaries and risks
             """Who benefits from this framing, and who is disadvantaged?
+Provide top 3 beneficiaries and top 3 disadvantaged.
 
 Respond in JSON:
 {
@@ -79,6 +83,7 @@ Respond in JSON:
 }""",
             # Counter-framing
             """Offer counter-frames or questions to test the narrative.
+Give 3-5; make them pointed and specific.
 
 Respond in JSON:
 {

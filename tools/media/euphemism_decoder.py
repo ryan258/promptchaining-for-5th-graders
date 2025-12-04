@@ -47,16 +47,18 @@ def euphemism_decoder(text: str):
         callable=prompt,
         prompts=[
             # Identify euphemisms
-            """Identify euphemisms and softeners in the text and map them to their literal meanings.
+            """You are a plain-language editor. Identify euphemisms/softeners and map them to literal meanings.
 Tone: {{tone}}
 
 Text:
 {{speech}}
 
+Keep 5 entries max; include evidence snippet for each.
+
 Respond in JSON:
 {
   "euphemisms": [
-    {"term": "euphemism", "literal": "plain meaning"}
+    {"term": "euphemism", "literal": "plain meaning", "evidence": "snippet"}
   ]
 }""",
             # Translate to plain English
@@ -70,6 +72,9 @@ Respond in JSON:
 }""",
             # Reveal intent
             """Explain why this language was chosen and what reactions it tries to avoid or provoke.
+Give one GOOD vs BAD intent note:
+GOOD: "Avoids admitting civilian casualties; aims to maintain domestic support"
+BAD: "They want to sound nice" (too vague)
 
 Plain text: {{output[-1].plain_english}}
 Mappings: {{output[-2].euphemisms}}

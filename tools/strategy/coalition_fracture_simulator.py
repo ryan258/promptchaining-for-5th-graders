@@ -47,11 +47,13 @@ def coalition_fracture_simulator(description: str):
         callable=prompt,
         prompts=[
             # Fault lines
-            """Identify key factions and fault lines in the coalition.
+            """You are a conflict analyst. Identify key factions and fault lines in the coalition.
 Tone: {{tone}}
 
 Coalition:
 {{coalition}}
+
+Limit to 3-5 fault lines; include severity.
 
 Respond in JSON:
 {
@@ -62,6 +64,7 @@ Respond in JSON:
 }""",
             # Triggers and incentives
             """List plausible triggers that would open the fault lines and the incentives to break ranks.
+Provide 3 triggers max; include likelihood.
 
 Fault lines: {{output[-1].fault_lines}}
 
@@ -74,6 +77,7 @@ Respond in JSON:
 }""",
             # Fracture scenarios
             """Simulate 1-2 fracture scenarios and short-term outcomes.
+Keep sequences concise (3 steps max).
 
 Triggers: {{output[-1].triggers}}
 
@@ -85,6 +89,7 @@ Respond in JSON:
 }""",
             # Mitigations
             """Propose mitigation or cohesion moves to reduce fracture risk.
+Give 2-3 moves and 2-3 monitoring signals.
 
 Fault lines: {{output[-3].fault_lines}}
 Triggers: {{output[-2].triggers}}

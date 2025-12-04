@@ -56,6 +56,10 @@ Tone: {{tone}} | Context: {{additional_context}}
 
 Metric: {{metric}}
 
+Give 2-4 tactics; include one GOOD vs BAD example:
+GOOD: "Report easy bugs to inflate counts; avoid hard fixes" (specific)
+BAD: "Work harder" (not gaming)
+
 Respond in JSON:
 {
   "gaming_strategy": "description",
@@ -63,6 +67,7 @@ Respond in JSON:
 }""",
             # Unintended consequences
             """If the gaming strategy spreads, what happens to the true objective?
+Keep to 3-5 sentences; call out at least one negative externality explicitly.
 
 Strategy: {{output[-1].gaming_strategy}}
 
@@ -74,6 +79,7 @@ Respond in JSON:
 }""",
             # Long-term distortion and culture
             """Simulate the long-term distortion: codebase/process/data quality/culture.
+Limit to 2-3 key effects; note confidence if low.
 
 Outcome: {{output[-1].actual_outcome}}
 
@@ -84,6 +90,7 @@ Respond in JSON:
 }""",
             # Mitigations
             """Suggest mitigations or counter-metrics to reduce gaming while keeping signal.
+Provide 2-3 mitigations and 2-3 alternative signals; keep each to one sentence.
 
 Metric: {{metric}}
 Known gaming: {{output[-3].gaming_strategy}}

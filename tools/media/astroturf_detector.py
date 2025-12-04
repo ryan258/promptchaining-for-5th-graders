@@ -53,6 +53,8 @@ Tone: {{tone}}
 Text:
 {{text}}
 
+Provide top 5 signals max; include snippet evidence.
+
 Respond in JSON:
 {
   "signals": [
@@ -62,13 +64,15 @@ Respond in JSON:
 }""",
             # Likely origin and motives
             """Hypothesize likely originators, funding sources, and motives based on patterns.
+Keep lists to top 3; include confidence (Low/Med/High).
 
 Signals: {{output[-1].signals}}
 
 Respond in JSON:
 {
   "likely_origin": ["actor1", "actor2"],
-  "motives": ["motive1", "motive2"]
+  "motives": ["motive1", "motive2"],
+  "confidence": "Low/Med/High"
 }""",
             # Confidence and alternatives
             """Provide confidence and alternative explanations to avoid false positives.
@@ -82,6 +86,7 @@ Respond in JSON:
 }""",
             # Concise verdict
             """Give a concise verdict and what to watch for next.
+Limit verdict to 2 sentences; provide 2-3 watch-next signals.
 
 Respond in JSON:
 {

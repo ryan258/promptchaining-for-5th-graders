@@ -47,16 +47,18 @@ def corporate_theater_director(text: str):
         callable=prompt,
         prompts=[
             # Decode the theater
-            """Decode the performative elements and intended signals in this corporate ritual/communication.
+            """You are a culture analyst. Decode the performative elements and intended signals in this corporate ritual/communication.
 Tone: {{tone}}
 
 Text:
 {{text}}
 
+Limit to top 5 moves. Include the intended audience for each signal.
+
 Respond in JSON:
 {
   "performative_moves": [
-    {"move": "description", "signal": "what it's trying to signal"}
+    {"move": "description", "signal": "what it's trying to signal", "audience": "who it's aimed at"}
   ],
   "audience_reaction": "likely internal reaction"
 }""",
@@ -72,6 +74,7 @@ Respond in JSON:
 }""",
             # Honest alternative
             """Propose a more honest, concise alternative that keeps morale and trust higher.
+Limit to 3-5 sentences. Keep one concrete acknowledgment of reality.
 
 Respond in JSON:
 {

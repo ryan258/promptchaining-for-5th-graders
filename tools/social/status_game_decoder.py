@@ -53,6 +53,8 @@ Tone: {{tone}}
 Situation:
 {{situation}}
 
+Keep to 3-5 bullet observations.
+
 Respond in JSON:
 {
   "surface_analysis": "description",
@@ -66,6 +68,8 @@ Respond in JSON:
 - signaling busy importance
 - signaling intellectual dominance
 
+Provide 3-7 signals; include snippet evidence.
+
 Respond in JSON:
 {
   "signals": [
@@ -74,6 +78,7 @@ Respond in JSON:
 }""",
             # Hierarchy mapping
             """Map the dominance/status hierarchy and reasoning.
+Limit hierarchy to top 5.
 
 Signals: {{output[-1].signals}}
 
@@ -84,6 +89,7 @@ Respond in JSON:
 }""",
             # Real game
             """What is the real status game being played? Name it, list rules, and predict the winner.
+Provide 2-3 rules; give one countermove to redirect.
 
 Situation: {{situation}}
 Signals: {{output[-2].signals}}

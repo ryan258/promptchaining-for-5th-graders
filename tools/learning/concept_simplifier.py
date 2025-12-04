@@ -57,6 +57,10 @@ def concept_simplifier(topic: str, additional_context: str = ""):
 Include 3-6 essential components (no trivia).
 Keep phrasing concise but adult-ready.
 
+Example pattern:
+GOOD: name = "Data ingestion", why_it_matters = "Everything downstream fails if inputs are messy"
+BAD: name = "All the things", why_it_matters = "It is important" (too vague)
+
 Respond in JSON:
 {
   "components": [
@@ -80,10 +84,14 @@ Respond in JSON:
 Topic: {{topic}}
 Analogies: {{output[-1].analogies}}
 
+For each, include:
+- example: 2-3 sentence concrete scenario showing the analogy in action
+- check_yourself: single question starting with "Can you..." or "What would happen if..."
+
 Respond in JSON:
 {
   "examples": [
-    {"component": "name", "example": "short scenario", "check_yourself": "question or test"}
+    {"component": "name", "example": "2-3 sentence scenario", "check_yourself": "question"}
   ]
 }""",
             # Short explainer

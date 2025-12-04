@@ -73,6 +73,8 @@ Additional context: {{additional_context}}
 Code:
 {{code}}
 
+Provide 3-7 patterns/anti-patterns total; keep each to one sentence.
+
 Respond in JSON:
 {
   "patterns": ["pattern 1", "pattern 2"],
@@ -84,6 +86,8 @@ Respond in JSON:
 
 Anti-patterns: {{output[-1].anti_patterns}}
 Tech debt risks: {{output[-1].tech_debt_risks}}
+
+Provide top 5 smells; include where + impact.
 
 Respond in JSON:
 {
@@ -98,6 +102,8 @@ Include sequencing, safety nets, and quick wins.
 
 Code smells: {{output[-1].code_smells}}
 Gaps: {{output[-1].gaps}}
+
+Limit quick_wins to 3; refactor_plan steps to 5; safety_nets to 3.
 
 Respond in JSON:
 {

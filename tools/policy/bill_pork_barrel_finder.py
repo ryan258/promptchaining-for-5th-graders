@@ -47,20 +47,23 @@ def bill_pork_barrel_finder(bill_text: str):
         callable=prompt,
         prompts=[
             # Identify pork/riders
-            """Identify likely pork/riders/unrelated provisions in the bill.
+            """You are a legislative analyst. Identify likely pork/riders/unrelated provisions in the bill.
 Tone: {{tone}}
 
 Bill:
 {{bill}}
 
+Provide 3-7 items max; include why each is suspect and who pushed it if hinted.
+
 Respond in JSON:
 {
   "pork_items": [
-    {"section": "identifier if any", "description": "what it does", "why_suspect": "reason"}
+    {"section": "identifier if any", "description": "what it does", "why_suspect": "reason", "hinted_sponsor": "if known/guess"}
   ]
 }""",
             # Beneficiaries and pay-fors
             """List likely beneficiaries and pay-fors for each pork item.
+Keep to top 3 per item.
 
 Pork: {{output[-1].pork_items}}
 
@@ -72,6 +75,7 @@ Respond in JSON:
 }""",
             # Red flags and questions
             """Provide red flags and questions to ask before passage.
+Give 3-5 red flags and 3-5 concise questions.
 
 Respond in JSON:
 {

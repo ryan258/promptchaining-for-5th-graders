@@ -47,11 +47,13 @@ def crisis_opportunity_scanner(crisis: str):
         callable=prompt,
         prompts=[
             # Actors
-            """Identify actors ready to exploit this crisis to advance pre-existing agendas.
+            """You are a crisis/policy analyst. Identify actors ready to exploit this crisis to advance pre-existing agendas.
 Tone: {{tone}}
 
 Text:
 {{crisis}}
+
+Provide top 5 actors max; include their playbook.
 
 Respond in JSON:
 {
@@ -61,6 +63,7 @@ Respond in JSON:
 }""",
             # Overreach solutions
             """List likely overreach solutions pitched as fixes but serving the agendas.
+Provide 3-5; include winners/losers.
 
 Actors: {{output[-1].actors}}
 
@@ -72,6 +75,7 @@ Respond in JSON:
 }""",
             # Crisis bypass
             """Explain how the crisis is used to bypass normal scrutiny and what the long-tail impacts are.
+Provide 2-3 impacts and 2-3 guardrails.
 
 Solutions: {{output[-1].proposed_solutions}}
 

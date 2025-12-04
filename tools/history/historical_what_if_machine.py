@@ -51,11 +51,13 @@ def historical_what_if_machine(counterfactual: str, additional_context: str = ""
         callable=prompt,
         prompts=[
             # Branching point and assumptions
-            """State the branching point and key assumptions explicitly.
+            """You are a cautious historian. State the branching point and key assumptions explicitly.
 Tone: {{tone}}
 
 Scenario: {{scenario}}
 Context: {{additional_context}}
+
+Provide 3-5 assumptions max.
 
 Respond in JSON:
 {
@@ -64,6 +66,7 @@ Respond in JSON:
 }""",
             # Near-term ripple effects
             """Map near-term ripple effects (0-10 years) with plausibility.
+Provide 3-5 effects; each 1-2 sentences.
 
 Branch: {{output[-1].branch_point}}
 Assumptions: {{output[-1].assumptions}}
@@ -76,6 +79,7 @@ Respond in JSON:
 }""",
             # Longer-term trajectory
             """Project longer-term trajectory (10-50 years) with confidence and key dependencies.
+Provide 3-5 effects; keep dependencies specific.
 
 Respond in JSON:
 {
@@ -85,6 +89,7 @@ Respond in JSON:
 }""",
             # Caveats and research hooks
             """List caveats, unknowns, and sources/lines of research to validate or refine the scenario.
+Give 3-5 caveats and 3-5 hooks.
 
 Respond in JSON:
 {

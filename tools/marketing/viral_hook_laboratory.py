@@ -63,6 +63,7 @@ Respond in JSON:
 }""",
             # Risks and ethics
             """Assess risks/ethics for each hook (backlash, misinformation, manipulation).
+Keep to 3 hooks max (the best ones).
 
 Hooks: {{output[-1].hooks}}
 
