@@ -2,23 +2,20 @@
 
 Potential prompt chain implementations organized by domain.
 
+> **Note**: See [tools/README.md](tools/README.md) for 33 already-implemented tools.
+
 ## Analysis & Research
 
-- **Code Reviewer**: Analyze code → Identify issues → Suggest improvements → Generate tests
-- **Research Assistant**: Question → Find sources → Synthesize findings → Generate citations
 - **Data Analyzer**: Load data → Statistical analysis → Visualization suggestions → Insights report
 - **Argument Analyzer**: Claim → Evidence → Counter-arguments → Logical evaluation
 - **Trend Spotter**: Collect signals → Pattern identification → Projection → Implications
-- **Literature Review**: Topic → Key papers → Themes → Gaps → Research questions
 
 ## Content Generation
 
 - **Blog Post Generator**: Topic → Outline → Introduction → Body sections → Conclusion
 - **Documentation Writer**: Feature → Overview → Usage → Examples → Troubleshooting
-- **Tutorial Creator**: Concept → Prerequisites → Step-by-step → Practice exercises → Assessment
 - **Email Composer**: Context → Draft → Tone adjustment → Clarity check → Final version
 - **Presentation Builder**: Topic → Key points → Slide outline → Speaker notes → Q&A prep
-- **Marketing Copy**: Product → Benefits → Target audience → Message → Call-to-action
 
 ## Problem Solving
 
@@ -27,11 +24,9 @@ Potential prompt chain implementations organized by domain.
 - **Strategy Planner**: Goal → Current state → Obstacles → Approaches → Action plan
 - **Process Optimizer**: Current process → Bottlenecks → Improvements → Implementation → Metrics
 - **Risk Analyzer**: Scenario → Risks → Probability → Impact → Mitigation strategies
-- **Root Cause Analysis**: Problem → Symptoms → Contributing factors → Root cause → Solution
 
 ## Learning & Explanation
 
-- **Concept Explainer**: Complex topic → Simple explanation → Examples → Analogies → Quiz
 - **Skill Breakdown**: Skill → Fundamentals → Progressive levels → Practice methods → Mastery
 - **Comparison Generator**: Items → Similarities → Differences → Use cases → Recommendation
 - **Mental Model Builder**: Domain → Key concepts → Relationships → Frameworks → Applications
@@ -42,8 +37,6 @@ Potential prompt chain implementations organized by domain.
 
 - **Story Builder**: Premise → Characters → Plot points → Conflict → Resolution
 - **World Builder**: Setting → Rules → Cultures → Conflicts → Stories
-- **Brainstorm Facilitator**: Problem → Individual ideas → Combinations → Refinement → Best solutions
-- **Character Developer**: Basic traits → Backstory → Motivations → Arc → Challenges
 - **Plot Twist Generator**: Story so far → Reader expectations → Twist options → Impact → Integration
 - **Dialogue Writer**: Scene → Character voices → Conflict → Subtext → Resolution
 
@@ -62,16 +55,13 @@ Potential prompt chain implementations organized by domain.
 - **Database Schema**: Requirements → Entities → Relationships → Indexes → Migrations
 - **Test Suite Generator**: Code → Test cases → Edge cases → Mock data → Assertions
 - **Architecture Planner**: Requirements → Components → Interactions → Scaling → Deployment
-- **Refactoring Guide**: Code → Issues → Patterns → Refactor steps → Validation
 - **Performance Optimizer**: Bottleneck → Profiling → Optimization options → Implementation → Benchmarking
 
 ## Communication
 
-- **Conflict Resolution**: Situation → Perspectives → Common ground → Solutions → Next steps
 - **Persuasive Argument**: Position → Evidence → Structure → Counter-arguments → Conclusion
 - **Feedback Generator**: Performance → Strengths → Areas for growth → Specific examples → Action items
 - **Teaching Aid**: Concept → Student level → Explanation → Checks for understanding → Reinforcement
-- **Negotiation Prep**: Goals → BATNA → Opening → Concessions → Agreement
 - **Apology Composer**: Situation → Acknowledgment → Understanding → Solution → Commitment
 
 ## Data & Analysis

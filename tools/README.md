@@ -1,6 +1,6 @@
 # 🧠 Cognitive Exoskeleton Tools
 
-Production-ready tools that amplify output while conserving cognitive energy.
+Production-ready tools that amplify cognitive output while conserving energy. All 33 tools use advanced prompt engineering with expert personas, structured frameworks, concrete examples, and well-defined constraints.
 
 ## Philosophy
 
@@ -8,49 +8,19 @@ These tools are designed for **low-energy usability**. If you can't use them on 
 
 ### Design Principles
 
-1. **Zero-config start**: Load user context automatically
-2. **Resume-able**: Save state if interrupted
+1. **Zero-config start**: Load user context automatically from `context/user_profile.json`
+2. **CLI-first**: Accept input via args or stdin
 3. **Fast**: < 3 minutes for 80% of use cases
 4. **Energy ROI positive**: Value out > effort in
+5. **Professional output**: Structured JSON + markdown with comprehensive analysis
 
 ---
 
-## Content Tools
+## Tool Catalog
 
-### 🌲 Evergreen Guide Architect
+### 📚 Learning Tools
 
-Transform topics or rough notes into structured, lasting guide outlines.
-
-**Usage:**
-```bash
-# From topic
-python tools/content/evergreen_guide.py "Progressive overload for MS patients"
-
-# From notes
-cat notes/training-thoughts.md | python tools/content/evergreen_guide.py
-
-# With context
-python tools/content/evergreen_guide.py "Topic" --context "Additional notes here"
-```
-
-**Output:**
-- Markdown outline in `output/guides/`
-- Analysis of user intent & pain points
-- Competition differentiation strategy
-- Key metaphors and research citations
-- Evergreen audit (what stays timeless)
-- Quality metrics and writing priorities
-
-**Energy Cost**: Low (2-3 minutes)
-**Energy Return**: High (saves hours of outlining)
-**Net**: Strongly positive ✅
-
----
-
-## Learning Tools
-
-### 🧭 Concept Simplifier
-
+#### 🧭 Concept Simplifier
 Break complex topics into components, analogies, examples, and a concise explainer.
 
 **Usage:**
@@ -59,13 +29,18 @@ python tools/learning/concept_simplifier.py "Diffusion models in AI"
 python tools/learning/concept_simplifier.py "Topic" --context "Audience or constraints"
 ```
 
-**Output:**
-- JSON in `output/learning/concept_simplifier/`
-- Components, analogies, examples, explainer, pitfalls, next steps
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/learning/concept_simplifier/`
+- Components with significance
+- Analogies with breakdown points
+- Concrete examples with self-check questions
+- Synthesized explainer
+- Common pitfalls and next steps
 
-### 🔗 Subject Connector
+**Prompts:** Expert educator → analogy specialist → learning designer → technical writer
 
+---
+
+#### 🔗 Subject Connector
 Find surprising links between two subjects, why they matter, and design a project that uses both.
 
 **Usage:**
@@ -73,18 +48,17 @@ Find surprising links between two subjects, why they matter, and design a projec
 python tools/learning/subject_connector.py "Subject A" --context "Subject B"
 ```
 
-**Output:**
-- JSON in `output/learning/subject_connector/`
-- Connections, importance, project idea with expected outputs
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/learning/subject_connector/`
+- Unexpected connections
+- Why connections matter
+- Project idea with expected outputs
 
 ---
 
-## Research Tools
+### 🔬 Research Tools
 
-### 🕰️ Research Timeline (Knowledge Time Machine, adult mode)
-
-Generate origin → evolution → current frontier timelines with citations and risks.
+#### 🕰️ Research Timeline (Knowledge Time Machine)
+Generate comprehensive timelines: origins → evolution → current state → future trajectories.
 
 **Usage:**
 ```bash
@@ -92,11 +66,14 @@ python tools/research/timeline.py "CRISPR gene editing"
 cat notes/topic.md | python tools/research/timeline.py --context "Specific angle"
 ```
 
-**Output:**
-- Markdown timeline in `output/research/`
-- Origins, breakthroughs, current state, future speculation
-- Risks/limitations and research gaps
-- Logs with token/cost estimates in `logs/`
+**Output:** Markdown in `output/research/timelines/`
+- Historical origins with uncertainty notes
+- Evolution points (breakthroughs and setbacks)
+- Current SOTA (State of the Art) capabilities
+- Research gaps and limitations
+- Future scenarios and wildcards
+
+**Prompts:** Research historian → science historian → field analyst → technology forecaster
 
 **Energy Cost**: Low (2-3 minutes)
 **Energy Return**: High (research prep shortcut)
@@ -104,61 +81,52 @@ cat notes/topic.md | python tools/research/timeline.py --context "Specific angle
 
 ---
 
-## Development Tools
-
-### 🏗️ Code Architecture Critic
-
-Audit a code snippet for patterns/anti-patterns, smells, refactors, risks, and an improved architecture sketch.
+#### 🌌 Emergence Simulator
+Analyze systems for emergent behaviors from simple agent interactions.
 
 **Usage:**
 ```bash
-python tools/dev/code_architecture_critic.py "path/to/file.py"
-python tools/dev/code_architecture_critic.py "inline code" --context "constraints or goals"
+python tools/research/emergence_simulator.py "System description"
 ```
 
-**Output:**
-- JSON in `output/dev/code_architecture_critic/`
-- Patterns/anti-patterns, smells, refactor plan, maintenance forecast, architecture sketch
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/research/emergence_simulator/`
+- Agent types and interaction rules
+- Emergent behaviors and mechanisms
+- Validation experiments
 
 ---
 
-## Collaboration Tools
+### 🎨 Content Tools
 
-### 🤝 Common Ground Finder
-
-Map opposing views to values, shared concerns, common goals, and bridge options.
+#### 🌲 Evergreen Guide Architect
+Transform topics or rough notes into structured, lasting guide outlines.
 
 **Usage:**
 ```bash
-python tools/collaboration/common_ground_finder.py "View A" --context "View B"
+python tools/content/evergreen_guide.py "Progressive overload for MS patients"
+cat notes/training-thoughts.md | python tools/content/evergreen_guide.py
+python tools/content/evergreen_guide.py "Topic" --context "Additional notes"
 ```
 
-**Output:**
-- JSON in `output/collaboration/common_ground_finder/`
-- Values, shared concerns, common goals, bridge ideas, conversation prompts
-- Logs with token/cost estimates in `logs/`
+**Output:** Markdown in `output/guides/`
+- User intent & pain point analysis
+- Competition differentiation strategy
+- Key metaphors and research citations
+- Evergreen audit (timeless vs. timely elements)
+- Quality metrics and writing priorities
+
+**Prompts:** Content strategist → research analyst → metaphor specialist → quality auditor
+
+**Energy Cost**: Low (2-3 minutes)
+**Energy Return**: High (saves hours of outlining)
+**Net**: Strongly positive ✅
 
 ---
 
-## Brainstorming Tools
+### 💼 Career Tools
 
-### 🕷️ Problem–Solution Spider
-
-Clarify a problem, constraints, wild ideas, blended solutions, and a quick test scenario.
-
-**Output:**
-- JSON in `output/brainstorm/problem_solution_spider/`
-- Defined problem, constraints/resources, wild ideas, solution options, test scenario
-- Logs with token/cost estimates in `logs/`
-
----
-
-## Career Tools
-
-### 🎯 Dream Job Reverse Engineer
-
-Decode a job posting into hidden priorities, pain points, application strategy, resume bullets, and STAR stories.
+#### 🎯 Dream Job Reverse Engineer
+Decode job postings into hidden priorities, manager pain points, and application strategy.
 
 **Usage:**
 ```bash
@@ -166,14 +134,19 @@ python tools/career/dream_job_reverse_engineer.py "path/to/job.txt"
 python tools/career/dream_job_reverse_engineer.py "Job text" --context "Your profile/angle"
 ```
 
-**Output:**
-- JSON in `output/career/dream_job_reverse_engineer/`
-- Hidden priorities, pain points, strategy, bullets, STAR outlines
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/career/dream_job_reverse_engineer/`
+- Hidden priorities and culture vibe from language analysis
+- Manager pain points (what broke, what's blocking them)
+- Skills and proof-of-work mappings
+- Resume bullets tailored to pain points
+- STAR story outlines
 
-### 🔎 Meeting Dynamics Forensics
+**Prompts:** Recruiter → organizational psychologist → career strategist → storytelling coach
 
-Analyze meeting transcripts for interruptions, deference, and the real power hierarchy.
+---
+
+#### 🔎 Meeting Dynamics Forensics
+Analyze meeting transcripts for interruptions, deference patterns, and the real power hierarchy.
 
 **Usage:**
 ```bash
@@ -181,18 +154,121 @@ python tools/career/meeting_dynamics_forensics.py "Transcript text"
 cat meeting.txt | python tools/career/meeting_dynamics_forensics.py
 ```
 
-**Output:**
-- JSON in `output/career/meeting_dynamics_forensics/`
-- Interruptions, deference markers, inferred hierarchy, red flags
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/career/meeting_dynamics_forensics/`
+- Interruption patterns (who interrupts whom)
+- Deference markers (language, turn-taking)
+- Inferred hierarchy vs. stated org chart
+- Red flags and recommendations
 
 ---
 
-## Media Literacy Tools
+#### 🎓 Credential Inflation Analyzer
+Detect degree inflation and gatekeeping in job requirements.
 
-### 🧹 Euphemism Decoder
+**Usage:**
+```bash
+python tools/career/credential_inflation_analyzer.py "Job/role description"
+```
 
-Turn sanitized language into plain English, expose intent, and flag manipulation.
+**Output:** JSON in `output/career/credential_inflation_analyzer/`
+- Inflation signals (why requirements are suspect)
+- Skill-based substitutes and proofs
+- Impacts and practical advice
+
+---
+
+### 🤝 Business Tools
+
+#### 🤝 Negotiation Strategy Builder
+Analyze leverage, BATNAs, set anchors, predict objections, and craft counter-scripts.
+
+**Usage:**
+```bash
+python tools/business/negotiation_strategy_builder.py "Scenario description"
+python tools/business/negotiation_strategy_builder.py "Scenario" --context "Role, constraints, numbers"
+```
+
+**Output:** JSON in `output/business/negotiation_strategy_builder/`
+- Power analysis (leverage, BATNA strength)
+- BATNA definition (yours and theirs)
+- Opening anchor strategy with reasoning
+- Predicted objections (3-4 sharp ones)
+- Counter-scripts with fallback options
+- Concession guardrails
+
+**Prompts:** Negotiation strategist → BATNA analyst → anchoring expert → objection psychologist → persuasion expert
+
+**Energy Cost**: Low
+**Energy Return**: Very High (negotiation prep worth thousands)
+**Net**: Extremely positive ✅
+
+---
+
+### 💻 Development Tools
+
+#### 🏗️ Code Architecture Critic
+Audit code for patterns/anti-patterns, smells, refactoring opportunities, and architecture improvements.
+
+**Usage:**
+```bash
+python tools/dev/code_architecture_critic.py "path/to/file.py"
+python tools/dev/code_architecture_critic.py "inline code" --context "constraints or goals"
+```
+
+**Output:** JSON in `output/dev/code_architecture_critic/`
+- Patterns and anti-patterns
+- Code smells with severity
+- Refactoring roadmap
+- Maintenance forecast (technical debt trajectory)
+- Improved architecture sketch
+
+---
+
+### 🤝 Collaboration Tools
+
+#### 🤝 Common Ground Finder
+Map opposing views to shared values, concerns, and bridge options.
+
+**Usage:**
+```bash
+python tools/collaboration/common_ground_finder.py "View A" --context "View B"
+```
+
+**Output:** JSON in `output/collaboration/common_ground_finder/`
+- Core values from each side
+- Shared concerns despite different solutions
+- Common goals
+- Bridge ideas (satisfies both)
+- Conversation prompts
+
+---
+
+### 🧠 Brainstorming Tools
+
+#### 🕷️ Problem–Solution Spider
+Clarify problems, generate wild ideas, blend solutions, and design quick validation tests.
+
+**Usage:**
+```bash
+python tools/brainstorm/problem_solution_spider.py "Problem statement"
+python tools/brainstorm/problem_solution_spider.py "Problem" --context "Constraints/stakeholders"
+```
+
+**Output:** JSON in `output/brainstorm/problem_solution_spider/`
+- Crisply defined problem with stakes
+- Constraints and resources
+- Wild ideas with feasibility
+- Blended solution options
+- Quick test scenario with success/failure signals
+
+**Prompts:** Product manager → operations strategist → innovation consultant → systems architect → QA/experiment designer
+
+---
+
+### 📰 Media Literacy Tools
+
+#### 🧹 Euphemism Decoder
+Translate sanitized language into plain English and expose intent.
 
 **Usage:**
 ```bash
@@ -200,13 +276,14 @@ python tools/media/euphemism_decoder.py "Quoted text"
 cat speech.txt | python tools/media/euphemism_decoder.py
 ```
 
-**Output:**
-- JSON in `output/media/euphemism_decoder/`
-- Euphemism mappings, plain-English rewrite, intent/beneficiaries
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/media/euphemism_decoder/`
+- Euphemism mappings to plain English
+- Full rewrite without spin
+- Intent analysis and beneficiaries
 
-### 🧭 Media Bias Triangulator
+---
 
+#### 🧭 Media Bias Triangulator
 Generate polarized framings, surface omissions, and synthesize ground truth.
 
 **Usage:**
@@ -215,59 +292,100 @@ python tools/media/media_bias_triangulator.py "Event description"
 cat event.txt | python tools/media/media_bias_triangulator.py
 ```
 
-**Output:**
-- JSON in `output/media/media_bias_triangulator/`
-- Biased headlines, omissions, ground truth synthesis
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/media/media_bias_triangulator/`
+- Biased headlines (left and right framings)
+- Omissions from each perspective
+- Ground truth synthesis
 
-### 🌾 Astroturf Detector
+---
 
-Assess whether messaging shows signs of astroturfing/coordination.
+#### 🌾 Astroturf Detector
+Assess whether messaging shows signs of astroturfing or organic coordination.
 
 **Usage:**
 ```bash
 python tools/media/astroturf_detector.py "Thread/post text"
 ```
 
-**Output:**
-- JSON in `output/media/astroturf_detector/`
-- Signals, likely origin/motives, confidence, verdict/watch-next
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/media/astroturf_detector/`
+- Coordination signals
+- Likely origin and motives
+- Confidence assessment
+- Verdict and monitoring guidance
 
-### 🧠 Consensus Manufacturing Detective
+---
 
-Spot framing/repetition/omissions used to manufacture consensus and who benefits.
+#### 🧠 Consensus Manufacturing Detective
+Spot framing, repetition, and omissions used to manufacture consensus.
 
 **Usage:**
 ```bash
 python tools/media/consensus_manufacturing_detective.py "Campaign text"
 ```
 
-**Output:**
-- JSON in `output/media/consensus_manufacturing_detective/`
-- Frames, omissions, beneficiaries, counter-frames
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/media/consensus_manufacturing_detective/`
+- Framing techniques
+- Key omissions
+- Beneficiaries
+- Counter-frames
 
-### 🛡️ Narrative Warfare Analyst
+---
 
-Analyze competing narratives, techniques, escalation risks, and counters.
+#### 🛡️ Narrative Warfare Analyst
+Analyze competing narratives, propaganda techniques, and escalation risks.
 
 **Usage:**
 ```bash
 python tools/media/narrative_warfare_analyst.py "Narrative summary or quotes"
 ```
 
-**Output:**
-- JSON in `output/media/narrative_warfare_analyst/`
-- Narratives, techniques, counters, monitoring signals
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/media/narrative_warfare_analyst/`
+- Competing narratives
+- Techniques used
+- Counter-narratives
+- Monitoring signals for escalation
 
 ---
 
-## Social Dynamics Tools
+### 🧠 Psychology Tools
 
-### 🧠 Status Game Decoder
+#### 🧭 Ideological Consistency Test
+Surface contradictions between stated beliefs, derived implications, and likely behavior.
 
+**Usage:**
+```bash
+python tools/psychology/ideological_consistency_test.py "Stated beliefs text"
+cat beliefs.txt | python tools/psychology/ideological_consistency_test.py
+```
+
+**Output:** JSON in `output/psychology/ideological_consistency_test/`
+- Core claims and hidden premises
+- Internal contradictions with severity ratings
+- Predicted behaviors vs. consistent behaviors
+- Self-test questions and reading prompts
+
+**Prompts:** Philosopher → logician → behavioral scientist → epistemologist
+
+---
+
+#### 🕵️ Revealed Preference Detective
+Contrast stated preferences with revealed behavior to infer real values.
+
+**Usage:**
+```bash
+python tools/psychology/revealed_preference_detective.py "Stated pref" --context "Revealed behavior"
+```
+
+**Output:** JSON in `output/psychology/revealed_preference_detective/`
+- Contradiction severity
+- Actual value hierarchy (revealed)
+- Predicted choice in forced tradeoff
+
+---
+
+### 🧠 Social Dynamics Tools
+
+#### 🧠 Status Game Decoder
 Parse social interactions for signals, hierarchy, and the real game being played.
 
 **Usage:**
@@ -275,249 +393,230 @@ Parse social interactions for signals, hierarchy, and the real game being played
 python tools/social/status_game_decoder.py "Describe the scene"
 ```
 
-**Output:**
-- JSON in `output/social/status_game_decoder/`
-- Surface analysis, signals, hierarchy, real game, countermoves
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/social/status_game_decoder/`
+- Surface analysis
+- Status signals (subtle and overt)
+- Inferred hierarchy
+- Real game being played
+- Countermoves
 
 ---
 
-## Strategy Tools
+### 🎯 Strategy Tools
 
-### ⚡ Crisis Opportunity Scanner
-
-Spot agenda-driven moves during a crisis: actors, overreach solutions, and the bypass mechanism.
+#### ⚡ Crisis Opportunity Scanner
+Spot agenda-driven moves during crises: actors, overreach solutions, bypass mechanisms.
 
 **Usage:**
 ```bash
 python tools/strategy/crisis_opportunity_scanner.py "Describe the crisis"
 ```
 
-**Output:**
-- JSON in `output/strategy/crisis_opportunity_scanner/`
-- Actors, overreach solutions, bypass mechanism, guardrails
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/strategy/crisis_opportunity_scanner/`
+- Key actors and their agendas
+- Overreach solutions (proposals exceeding crisis scope)
+- Bypass mechanism (resistance strategy)
+- Guardrails and red lines
 
-### 📈 Goodhart's Law Predictor
+---
 
-Stress-test a metric for gaming strategies, unintended consequences, and long-term distortion.
+#### 📈 Goodhart's Law Predictor
+Stress-test metrics for gaming strategies, unintended consequences, and long-term distortion.
 
 **Usage:**
 ```bash
 python tools/strategy/goodharts_law_predictor.py "Metric description"
 ```
 
-**Output:**
-- JSON in `output/strategy/goodharts_law_predictor/`
-- Gaming strategies, unintended consequences, long-term distortion, mitigations
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/strategy/goodharts_law_predictor/`
+- Gaming strategies (how to cheat the metric)
+- Unintended consequences
+- Long-term distortion
+- Mitigations
 
-### 🕊️ Diplomatic Subtext Decoder
+---
 
-Translate diplomatese into real intent, predict responses, and surface political purpose.
+#### 🕊️ Diplomatic Subtext Decoder
+Translate diplomatic language into real intent, predict responses, surface political purpose.
 
 **Usage:**
 ```bash
 python tools/strategy/diplomatic_subtext_decoder.py "Statement text"
 ```
 
-**Output:**
-- JSON in `output/strategy/diplomatic_subtext_decoder/`
-- Plain translation, action level, predicted response, political purpose
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/strategy/diplomatic_subtext_decoder/`
+- Plain translation
+- Action level (escalation vs. de-escalation)
+- Predicted response
+- Political purpose
 
 ---
 
-## Business Tools
-
-### 🤝 Negotiation Strategy Builder
-
-Analyze leverage, BATNAs, anchors, objections, and counter-scripts for a negotiation scenario.
+#### 🔒 Platform Lock-in Forensics
+Analyze platform lock-in mechanisms, switching costs, and escape routes.
 
 **Usage:**
 ```bash
-python tools/business/negotiation_strategy_builder.py "Scenario description"
-python tools/business/negotiation_strategy_builder.py "Scenario" --context "Role, constraints, numbers"
+python tools/strategy/platform_lock_in_forensics.py "Platform description"
 ```
 
-**Output:**
-- JSON in `output/business/negotiation_strategy_builder/`
-- Leverage/BATNA, anchor, objections, scripts, guardrails
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/strategy/platform_lock_in_forensics/`
+- Lock-in mechanisms
+- Switching costs (time, money, data)
+- Mitigations and escape routes
 
 ---
 
-## Psychology Tools
-
-### 🕵️ Revealed Preference Detective
-
-Contrast stated preferences with revealed behavior to infer real values and likely choices.
+#### 🧩 Coalition Fracture Simulator
+Identify fault lines in coalitions, fracture triggers, and mitigation strategies.
 
 **Usage:**
 ```bash
-python tools/psychology/revealed_preference_detective.py "Stated pref" --context "Revealed behavior"
+python tools/strategy/coalition_fracture_simulator.py "Describe the coalition"
 ```
 
-**Output:**
-- JSON in `output/psychology/revealed_preference_detective/`
-- Contradiction severity, actual value hierarchy, predicted choice
-- Logs with token/cost estimates in `logs/`
+**Output:** JSON in `output/strategy/coalition_fracture_simulator/`
+- Fault lines (value conflicts, power imbalances)
+- Fracture triggers
+- Scenarios (how it breaks)
+- Mitigations
 
 ---
 
-## Writing Tools
+### 🌍 Geopolitics Tools
 
-### 🎭 Character Evolution Engine
+#### 🛰️ Proxy War Analyst
+Analyze proxy conflicts: actors, objectives, escalation paths, off-ramps.
 
-Generate a character arc (trait, flaw, crucible challenge, growth, new adventure).
+**Usage:**
+```bash
+python tools/geopolitics/proxy_war_analyst.py "Conflict description"
+```
+
+**Output:** JSON in `output/geopolitics/proxy_war_analyst/`
+- Actors and objectives (sponsors + proxies)
+- Escalation paths
+- Off-ramps and peace conditions
+
+---
+
+### 🏛️ Policy & Politics Tools
+
+#### 🐖 Bill Pork Barrel Finder
+Identify pork barrel items, beneficiaries, and funding mechanisms in legislation.
+
+**Usage:**
+```bash
+python tools/policy/bill_pork_barrel_finder.py "Bill text or summary"
+```
+
+**Output:** JSON in `output/policy/bill_pork_barrel_finder/`
+- Pork items (suspicious spending)
+- Beneficiaries and payers
+- Red flags and justifications
+
+---
+
+#### 🏛️ Regulatory Capture Mapper
+Detect regulatory capture signals and revolving door dynamics.
+
+**Usage:**
+```bash
+python tools/policy/regulatory_capture_mapper.py "Agency/industry description"
+```
+
+**Output:** JSON in `output/policy/regulatory_capture_mapper/`
+- Capture signals
+- Incentives and mechanisms
+- Mitigations
+
+---
+
+#### 📋 Campaign Promise Tracker
+Track campaign promises, assess feasibility, identify blockers.
+
+**Usage:**
+```bash
+python tools/politics/campaign_promise_tracker.py "Speech/manifesto text"
+```
+
+**Output:** JSON in `output/politics/campaign_promise_tracker/`
+- Promises extracted
+- Feasibility assessment
+- Blockers (political, legal, budgetary)
+- Verification hooks
+
+---
+
+### 🎭 Culture Tools
+
+#### 🎭 Corporate Theater Director
+Decode performative corporate rituals and propose honest alternatives.
+
+**Usage:**
+```bash
+python tools/culture/corporate_theater_director.py "Describe the ritual/town hall/email"
+```
+
+**Output:** JSON in `output/culture/corporate_theater_director/`
+- Performative moves
+- Real incentives
+- Honest alternative (what they should actually say/do)
+
+---
+
+### 📈 Marketing Tools
+
+#### 🧪 Viral Hook Laboratory
+Generate viral hooks with risk/ethics analysis.
+
+**Usage:**
+```bash
+python tools/marketing/viral_hook_laboratory.py "Product/message"
+```
+
+**Output:** JSON in `output/marketing/viral_hook_laboratory/`
+- Viral hook candidates
+- Psychological mechanisms
+- Risk analysis (ethical concerns)
+- Guardrails
+
+---
+
+### 📚 History Tools
+
+#### 🧪 Historical What-If Machine
+Analyze historical counterfactuals with ripple effects and plausibility.
+
+**Usage:**
+```bash
+python tools/history/historical_what_if_machine.py "What if..." --context "Lens/constraints"
+```
+
+**Output:** JSON in `output/history/historical_what_if_machine/`
+- Branch point analysis
+- Immediate and long-term ripple effects
+- Plausibility assessment
+- Caveats and research hooks
+
+---
+
+### ✍️ Writing Tools
+
+#### 🎭 Character Evolution Engine
+Generate character arcs: trait, flaw, crucible challenge, growth, new adventure.
 
 **Usage:**
 ```bash
 python tools/writing/character_evolution_engine.py "Character type" --context "Genre, tone, constraints"
 ```
 
-**Output:**
-- JSON in `output/writing/character_evolution_engine/`
-- Character baseline, flaw, challenge, growth, new adventure hook
-- Logs with token/cost estimates in `logs/`
-
----
-
-## Psychology Tools
-
-### 🕵️ Revealed Preference Detective
-
-Contrast stated preferences with revealed behavior to infer real values and likely choices.
-
-**Usage:**
-```bash
-python tools/psychology/revealed_preference_detective.py "Stated pref" --context "Revealed behavior"
-```
-
-**Output:**
-- JSON in `output/psychology/revealed_preference_detective/`
-- Contradiction severity, actual value hierarchy, predicted choice
-- Logs with token/cost estimates in `logs/`
-
-**Usage:**
-```bash
-python tools/brainstorm/problem_solution_spider.py "Problem statement"
-python tools/brainstorm/problem_solution_spider.py "Problem" --context "Constraints/stakeholders"
-```
-
-**Output:**
-- JSON in `output/brainstorm/problem_solution_spider/`
-- Defined problem, constraints/resources, wild ideas, solution options, test scenario
-- Logs with token/cost estimates in `logs/`
-
----
-
-## Health Tools
-
-### 🔬 Medical Consensus Parser
-*Coming soon*
-
-Parse research studies with built-in skepticism and synthesis.
-
----
-
-## New Additions (Policy, Politics, Strategy, Geo, Marketing)
-
-### 📋 Campaign Promise Tracker
-- Usage: `python tools/politics/campaign_promise_tracker.py "Speech/manifesto text"`
-- Output: `output/politics/campaign_promise_tracker/` — promises, feasibility/blockers, verification hooks
-
-### 🐖 Bill Pork Barrel Finder
-- Usage: `python tools/policy/bill_pork_barrel_finder.py "Bill text or summary"`
-- Output: `output/policy/bill_pork_barrel_finder/` — pork items, beneficiaries/payers, red flags
-
-### 🏛️ Regulatory Capture Mapper
-- Usage: `python tools/policy/regulatory_capture_mapper.py "Agency/industry description"`
-- Output: `output/policy/regulatory_capture_mapper/` — capture signals, incentives, mitigations
-
-### 🔒 Platform Lock-in Forensics
-- Usage: `python tools/strategy/platform_lock_in_forensics.py "Platform description"`
-- Output: `output/strategy/platform_lock_in_forensics/` — lock-in mechanisms, switching costs, mitigations
-
-### 🧩 Coalition Fracture Simulator
-- Usage: `python tools/strategy/coalition_fracture_simulator.py "Describe the coalition"`
-- Output: `output/strategy/coalition_fracture_simulator/` — fault lines, triggers, scenarios, mitigations
-
-### 🛰️ Proxy War Analyst
-- Usage: `python tools/geopolitics/proxy_war_analyst.py "Conflict description"`
-- Output: `output/geopolitics/proxy_war_analyst/` — actors/objectives, escalation paths, off-ramps
-
-### 🌌 Emergence Simulator
-- Usage: `python tools/research/emergence_simulator.py "System description"`
-- Output: `output/research/emergence_simulator/` — agents/rules, emergent behaviors, experiments
-
-### 📈 Goodhart's Law Predictor
-- Usage: `python tools/strategy/goodharts_law_predictor.py "Metric description"`
-- Output: `output/strategy/goodharts_law_predictor/` — gaming strategies, unintended outcomes, mitigations
-
-### 🧪 Viral Hook Laboratory
-- Usage: `python tools/marketing/viral_hook_laboratory.py "Product/message"`
-- Output: `output/marketing/viral_hook_laboratory/` — hooks, risk/ethics analysis, guardrails
-
-### 🌾 Astroturf Detector
-- Usage: `python tools/media/astroturf_detector.py "Thread/post text"`
-- Output: `output/media/astroturf_detector/` — signals, likely origin/motives, verdict
-
-### 🧠 Consensus Manufacturing Detective
-- Usage: `python tools/media/consensus_manufacturing_detective.py "Campaign text"`
-- Output: `output/media/consensus_manufacturing_detective/` — frames, omissions, beneficiaries, counter-frames
-
-### 🛡️ Narrative Warfare Analyst
-- Usage: `python tools/media/narrative_warfare_analyst.py "Narrative summary or quotes"`
-- Output: `output/media/narrative_warfare_analyst/` — narratives, techniques, counters, monitoring
-
-### 🎭 Corporate Theater Director
-- Usage: `python tools/culture/corporate_theater_director.py "Describe the ritual/town hall/email"`
-- Output: `output/culture/corporate_theater_director/` — performative moves, incentives, honest alternative
-
-### 🎓 Credential Inflation Analyzer
-- Usage: `python tools/career/credential_inflation_analyzer.py "Job/role description"`
-- Output: `output/career/credential_inflation_analyzer/` — inflation signals, skill substitutes, advice
-
-### 🧭 Ideological Consistency Test
-- Usage: `python tools/psychology/ideological_consistency_test.py "Stated beliefs text"`
-- Output: `output/psychology/ideological_consistency_test/` — claims/premises, contradictions, behaviors, self-test
-
-### 🧠 Subject Connector
-- Usage: `python tools/learning/subject_connector.py "Subject A" --context "Subject B"`
-- Output: `output/learning/subject_connector/` — connections, importance, project idea
-
-### 🎭 Character Evolution Engine
-- Usage: `python tools/writing/character_evolution_engine.py "Character type" --context "Genre, tone, constraints"`
-- Output: `output/writing/character_evolution_engine/` — arc with flaw, challenge, growth, new adventure
-
-### 🧪 Historical What-If Machine
-- Usage: `python tools/history/historical_what_if_machine.py "What if..." --context "Lens/constraints"`
-- Output: `output/history/historical_what_if_machine/` — branch point, ripple effects, caveats/hooks
-
-### 📊 Symptom Correlator
-*Coming soon*
-
-Find patterns in health logs and propose experiments.
-
-### ⚖️  Protocol Decision Matrix
-*Coming soon*
-
-Evaluate new interventions with risk-adjusted framework.
-
----
-
-## Cognitive Tools
-
-### 🎯 Advocacy Prep
-*Coming soon*
-
-Prepare for important conversations (doctor appointments, business calls).
-
-### 🔓 Blocker Breaker
-*Coming soon*
-
-Break through when feeling stuck on projects.
+**Output:** JSON in `output/writing/character_evolution_engine/`
+- Character baseline (trait + strength)
+- Flaw and consequences
+- Crucible challenge
+- Growth moment
+- New adventure hook
 
 ---
 
@@ -533,10 +632,11 @@ Edit `context/user_profile.json` with your preferences:
     "avoid": ["Things to avoid"],
     "prefer": ["Things to emphasize"]
   },
-  "health_context": {
-    "condition": "Your situation",
-    "priorities": ["Your health priorities"]
-  }
+  "learning_profile": {
+    "audience": "Your target audience",
+    "depth": "Preferred depth level"
+  },
+  "expertise_level": "General/Intermediate/Expert"
 }
 ```
 
@@ -544,17 +644,17 @@ Edit `context/user_profile.json` with your preferences:
 
 Tools use the same `.env` setup as the main framework:
 ```bash
-# Should already be configured if demos work
-OPENROUTER_API_KEY=your_key_here
-OPENROUTER_MODELS="openai/gpt-3.5-turbo,google/gemini-flash-1.5,google/gemini-pro-1.5"  # Optional: override model list for FusionChain
-RUN_FUSION_CHAIN=0  # Optional: enable multi-model demo (uses more calls)
+OPENROUTER_API_KEY=sk-or-v1-your_key_here
 ```
+
+Get a key at [openrouter.ai/keys](https://openrouter.ai/keys)
 
 ### 3. Run a Tool
 
 ```bash
 python tools/content/evergreen_guide.py "Test topic"
-python tools/research/timeline.py "Test topic"
+python tools/learning/concept_simplifier.py "Quantum mechanics"
+python tools/business/negotiation_strategy_builder.py "Salary negotiation scenario"
 ```
 
 ---
@@ -563,29 +663,70 @@ python tools/research/timeline.py "Test topic"
 
 ```
 output/
-├── guides/               # Guide outlines
-│   └── 20241203-1430-topic.md
-├── health/              # Health analysis
-│   ├── research/
-│   ├── experiments/
-│   └── protocols/
-└── prep/                # Conversation prep docs
-    └── appointment-2024-12-03.md
+├── guides/                          # Evergreen guide outlines
+├── learning/
+│   ├── concept_simplifier/          # Topic breakdowns
+│   └── subject_connector/           # Subject connections
+├── research/
+│   ├── timelines/                   # Research timelines
+│   └── emergence_simulator/         # Emergence analyses
+├── career/
+│   ├── dream_job_reverse_engineer/  # Job analysis
+│   ├── meeting_dynamics_forensics/  # Meeting analyses
+│   └── credential_inflation_analyzer/ # Credential analysis
+├── business/
+│   └── negotiation_strategy_builder/ # Negotiation strategies
+├── dev/
+│   └── code_architecture_critic/    # Code audits
+├── collaboration/
+│   └── common_ground_finder/        # Disagreement bridges
+├── brainstorm/
+│   └── problem_solution_spider/     # Problem-solving
+├── media/                           # Media literacy analyses
+├── psychology/                      # Behavioral analyses
+├── social/                          # Social dynamics
+├── strategy/                        # Strategic analyses
+├── geopolitics/                     # Geopolitical analyses
+├── policy/                          # Policy analyses
+├── politics/                        # Political analyses
+├── culture/                         # Cultural analyses
+├── marketing/                       # Marketing strategies
+├── history/                         # Historical analyses
+└── writing/                         # Creative writing
 ```
+
+Logs are saved to `logs/` with token usage and cost estimates.
 
 ---
 
 ## Energy Cost Reference
 
-| Tool | Setup | Usage | Value | Net ROI |
-|------|-------|-------|-------|---------|
-| Evergreen Guide | 0min | 2min | 2hrs saved | +++ |
-| Medical Consensus | 0min | 3min | Hours of research | +++ |
-| Symptom Correlator | 5min* | 2min | Pattern insights | ++ |
-| Advocacy Prep | 0min | 10min | Confidence++ | ++ |
-| Blocker Breaker | 0min | 5min | Restart work | +++ |
+| Tool Category | Setup | Usage | Value | Net ROI |
+|---------------|-------|-------|-------|---------|
+| Content (Evergreen Guide) | 0min | 2min | 2hrs saved | +++ |
+| Career (Dream Job) | 0min | 2min | Interview advantage | +++ |
+| Business (Negotiation) | 0min | 3min | Worth $1000s | +++ |
+| Research (Timeline) | 0min | 2min | Hours of research | +++ |
+| Learning (Concept Simplifier) | 0min | 2min | Deep understanding | +++ |
+| Strategy (Crisis Scanner) | 0min | 2min | Pattern recognition | ++ |
+| Media (Bias Triangulator) | 0min | 2min | Media literacy | ++ |
 
-*One-time setup to create log format
+All tools are **Energy ROI Positive**: value delivered exceeds effort required.
+
+---
+
+## Cost Tracking
+
+View token usage and costs:
+```bash
+python tools/cost_report.py
+```
+
+This analyzes all logs and shows:
+- Per-tool usage statistics
+- Total tokens consumed
+- Estimated costs
+- Most/least expensive tools
 
 ---
 
@@ -598,58 +739,17 @@ output/
 3. **Output Structure**: Save to appropriate `output/` subdirectory
 4. **Error Handling**: Graceful degradation, partial value
 5. **Energy Test**: Can you use it at 50% capacity?
-6. **Cost Visibility**: Include usage stats in logs; summarize with `python tools/cost_report.py`
+6. **Cost Visibility**: Include usage stats in logs
+7. **Prompt Engineering**: Use expert personas, frameworks, examples, constraints
 
 ### Tool Template
 
-```python
-#!/usr/bin/env python3
-"""
-Tool Name
-
-Brief description of what it does and why.
-
-Usage:
-    python tools/category/tool.py "input"
-    cat file.txt | python tools/category/tool.py
-"""
-
-import sys
-import os
-import argparse
-import json
-
-# Standard project setup
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-from chain import MinimalChainable
-from main import build_models, prompt
-
-def load_user_context():
-    """Load user profile for context-aware generation"""
-    # Standard implementation
-    pass
-
-def tool_main(input_data, additional_context=""):
-    """Main tool logic"""
-    # Load context
-    user_profile = load_user_context()
-
-    # Build chain
-    # Execute
-    # Save output
-    # Print summary
-    pass
-
-def main():
-    # CLI argument handling
-    pass
-
-if __name__ == "__main__":
-    main()
-```
+See existing tools for patterns. All tools should:
+- Have clear docstrings with usage examples
+- Use `tool_utils.py` for common functionality
+- Save JSON output with timestamps
+- Create markdown logs via `MinimalChainable.log_to_markdown()`
+- Print clear success messages with output paths
 
 ---
 
@@ -660,14 +760,20 @@ Track which tools you actually use:
 - **Using monthly**: Good, maintain
 - **Haven't used in 2 weeks**: Archive or delete
 
-Better to have 3 great tools than 10 mediocre ones.
+Better to have 5 great tools than 20 mediocre ones.
 
 ---
 
-## Support
+## Prompt Engineering Quality
 
-Issues: File in project root issue tracker
-Questions: See main project README
+All 33 tools now feature:
+- **Expert personas**: Specific roles with 15-20+ years experience
+- **Structured frameworks**: Step-by-step analytical approaches
+- **Concrete examples**: ✅ GOOD / ❌ BAD patterns for every prompt
+- **Well-defined constraints**: Explicit word counts, item counts, format requirements
+- **Educational approach**: Prompts explain methodologies, not just ask for output
+
+This results in professional-grade output quality with consistent structure.
 
 ---
 

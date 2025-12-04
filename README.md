@@ -11,7 +11,7 @@ This project implements prompt chaining patterns for AI model interactions:
 1. **MinimalChainable**: Sequential prompt execution with context variables and output references
 2. **FusionChain**: Parallel execution across multiple models with comparative evaluation
 3. **Automatic Logging**: Timestamped markdown logs of all runs for history tracking
-4. **Metagame Analysis**: Demos that reveal hidden strategic layers and uncomfortable truths
+4. **Production-Ready Tools**: 33 specialized tools for professional-grade AI-powered analysis across multiple domains
 
 ## Core Features
 
@@ -96,9 +96,35 @@ print(result.performance_scores)
 
 ```
 .
-  - 20 Exceptional Use Cases (monetizable skills, cognitive amplification, pattern recognition, futures, creative synthesis)
-  - 10 Metagame X-Ray Demos (reveal hidden strategic layers)
-  - Implementation priorities and selection framework
+├── chain.py                  # Core chaining framework (MinimalChainable, FusionChain)
+├── main.py                   # Model configuration and utilities
+├── tools/                    # 33 production-ready specialized tools
+│   ├── brainstorm/          # Problem-solving tools
+│   ├── business/            # Negotiation and business strategy
+│   ├── career/              # Job search and career navigation
+│   ├── collaboration/       # Bridging disagreements
+│   ├── content/             # Content creation and planning
+│   ├── culture/             # Corporate dynamics analysis
+│   ├── dev/                 # Code analysis and architecture
+│   ├── geopolitics/         # International relations analysis
+│   ├── history/             # Historical analysis and counterfactuals
+│   ├── learning/            # Education and concept explanation
+│   ├── marketing/           # Marketing strategy and virality
+│   ├── media/               # Media literacy and bias detection
+│   ├── policy/              # Policy analysis and regulatory scrutiny
+│   ├── politics/            # Political analysis and promise tracking
+│   ├── psychology/          # Behavioral analysis and consistency testing
+│   ├── research/            # Research timelines and emergence patterns
+│   ├── social/              # Social dynamics and status games
+│   ├── strategy/            # Strategic analysis and scenario planning
+│   └── writing/             # Creative writing and character development
+├── demos/                   # Example demonstrations (legacy)
+├── output/                  # Generated analysis and reports
+├── logs/                    # Execution logs with token usage
+└── context/                 # User profile configuration
+```
+
+See [tools/README.md](tools/README.md) for comprehensive tool documentation.
 
 ## Why Prompt Chaining?
 
@@ -112,21 +138,28 @@ print(result.performance_scores)
 - 🔀 Multiple perspectives synthesized
 - 💡 Later steps couldn't exist without earlier discoveries
 
-**Example**: Metagame demos CANNOT work as single prompts because:
-1. First must map the surface game
-2. Then identify contradictions (behavior vs stated rules)
-3. Then reverse-engineer actual incentives
-4. Only then reveal the real game
+**Example**: The Negotiation Strategy Builder CANNOT work as a single prompt because:
+1. First must analyze power dynamics and leverage
+2. Then identify BATNAs (Best Alternative To Negotiated Agreement)
+3. Then set strategic anchors based on power analysis
+4. Then predict objections based on counterparty interests
+5. Only then craft counter-scripts that maintain frame control
 
-The chain IS the insight.
+The chain IS the strategy. Each step depends on insights from previous steps.
 
 ## Ethical Note
 
-Some demos (especially metagame analysis) reveal uncomfortable truths about power, manipulation, and strategic deception.
+Some tools (especially those analyzing power dynamics, manipulation, and strategic deception) reveal uncomfortable truths.
 
 **Understanding ≠ Endorsing**
 
 These patterns exist whether you acknowledge them or not. Knowledge is for defense (see through BS) and awareness (make better decisions), not offense (deploy BS).
+
+## Getting Started
+
+1. Follow [GETTING_STARTED.md](GETTING_STARTED.md) for installation
+2. Explore [tools/README.md](tools/README.md) for the full tool catalog
+3. Check [HAPPY-PATH.md](HAPPY-PATH.md) for beginner-friendly examples
 
 ## License
 
@@ -138,4 +171,4 @@ Built with OpenRouter API for multi-model access.
 
 ---
 
-**18 demos and counting. See what prompt chaining can unlock.**
+**33 production-ready tools. See what prompt chaining can unlock.**

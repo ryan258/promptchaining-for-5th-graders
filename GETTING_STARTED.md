@@ -102,11 +102,11 @@ for i, output in enumerate(outputs):
 
 ## Next Steps
 
-1. Run all demos to see different patterns
-2. Check `IDEAS.md` for project inspiration
-3. Read `chain.py` to understand the implementation
-4. Experiment with custom evaluator functions
-5. Try multi-model comparison with FusionChain
+1. **Explore tools**: Check [tools/README.md](tools/README.md) for the full catalog of 33 production-ready tools
+2. **Run demos**: See different prompt chaining patterns in action
+3. **Read the framework**: Study `chain.py` to understand the implementation
+4. **Build your own**: Create custom chains or new tools
+5. **Multi-model**: Try FusionChain for model comparison
 
 ## Key Concepts
 
