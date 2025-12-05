@@ -97,14 +97,35 @@ class FusionChain:
 class MinimalChainable:
     """
     This is the heart of the whole system!
-    
+
     MinimalChainable lets you chain prompts together like links in a chain.
     Each prompt can use:
     1. Variables from your context (like {{name}} gets replaced with a real name)
     2. Answers from previous prompts (like {{output[-1]}} gets the last answer)
-    
+
     It's like having a conversation where each question builds on the previous answers.
     """
+
+    @staticmethod
+    def _extract_role_from_prompt(prompt: str) -> str:
+        """
+        Extract the persona/role from a prompt.
+        Looks for patterns like "You are a [role]" or "You are an [role]"
+        """
+        patterns = [
+            r"You are an? ([^.,\n]+(?:specializing in [^.,\n]+)?)",
+            r"As an? ([^.,\n]+),",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, prompt, re.IGNORECASE)
+            if match:
+                role = match.group(1).strip()
+                # Clean up and title case
+                role = role.replace("  ", " ")
+                return role
+
+        return None
 
     @staticmethod
     def run(
@@ -112,18 +133,20 @@ class MinimalChainable:
         model: Any,                 # The AI model to use
         callable: Callable,        # Function that sends prompts to the AI
         prompts: List[str],         # List of prompts to run in order
-        return_usage: bool = False  # Whether to return usage stats
-    ) -> Union[List[Any], Tuple[List[Any], List[str], List[Any]]]:
+        return_usage: bool = False,  # Whether to return usage stats
+        return_trace: bool = False   # Whether to return execution trace
+    ) -> Union[List[Any], Tuple[List[Any], List[str], List[Any]], Tuple[List[Any], List[str], List[Any], Dict]]:
         """
         This is where the magic happens!
-        
+
         Think of this like following a recipe where each step uses ingredients
         from previous steps. We start with our context (ingredients) and
         each prompt (recipe step) can use what we made before.
 
         Returns:
-            - If return_usage=False: (outputs, context_filled_prompts)
-            - If return_usage=True: (outputs, context_filled_prompts, usage_stats)
+            - If return_usage=False and return_trace=False: (outputs, context_filled_prompts)
+            - If return_usage=True and return_trace=False: (outputs, context_filled_prompts, usage_stats)
+            - If return_trace=True: (outputs, context_filled_prompts, usage_stats, execution_trace)
         """
         
         # Create empty lists to store our results
@@ -222,13 +245,47 @@ class MinimalChainable:
                     usage_dict = usage.__dict__
                 else:
                     usage_dict = usage
-                
+
                 usage_stats_list.append(usage_dict)
+
+        # Build execution trace if requested
+        if return_trace:
+            execution_trace = {
+                "steps": [],
+                "final_result": output[-1] if output else None,
+                "total_tokens": 0
+            }
+
+            for i, (filled_prompt, response) in enumerate(zip(context_filled_prompts, output)):
+                # Extract role from the original prompt (before variable substitution)
+                role = MinimalChainable._extract_role_from_prompt(prompts[i])
+                if not role:
+                    role = f"Step {i + 1}"
+
+                # Get token usage for this step
+                tokens = None
+                if i < len(usage_stats_list):
+                    usage = usage_stats_list[i]
+                    if isinstance(usage, dict):
+                        prompt_tokens = usage.get('prompt_tokens', 0)
+                        completion_tokens = usage.get('completion_tokens', 0)
+                        tokens = prompt_tokens + completion_tokens
+                        execution_trace["total_tokens"] += tokens
+
+                execution_trace["steps"].append({
+                    "step_number": i + 1,
+                    "role": role,
+                    "prompt": filled_prompt,
+                    "response": response,
+                    "tokens": tokens
+                })
+
+            return output, context_filled_prompts, usage_stats_list, execution_trace
 
         # Return outputs, filled-in prompts, and usage stats (if requested)
         if return_usage:
             return output, context_filled_prompts, usage_stats_list
-            
+
         return output, context_filled_prompts
 
     @staticmethod

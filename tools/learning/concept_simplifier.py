@@ -47,10 +47,11 @@ def concept_simplifier(topic: str, additional_context: str = ""):
         "additional_context": additional_context,
     }
 
-    result, context_filled_prompts, usage_stats = MinimalChainable.run(
+    result, context_filled_prompts, usage_stats, execution_trace = MinimalChainable.run(
         context=context_data,
         model=model_info,
         callable=prompt,
+        return_trace=True,
         prompts=[
             # Prompt 1: Decompose with expert educator lens
             """You are an expert educator specializing in making complex topics accessible to {{audience}}.
@@ -187,16 +188,16 @@ Respond in JSON:
 
 Keep explainer to 150-200 words total. Provide 2-3 pitfalls and 2-3 next_steps."""
         ],
-        return_usage=True,
     )
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     output_dir = os.path.join(project_root, "output", "learning", "concept_simplifier")
     os.makedirs(output_dir, exist_ok=True)
 
+    # Save the execution trace (includes full chain visualization data)
     output_path = os.path.join(output_dir, f"{timestamp}-{topic[:50].replace(' ', '_')}.json")
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=2)
+        json.dump(execution_trace, f, indent=2)
 
     log_file = MinimalChainable.log_to_markdown("concept_simplifier", context_filled_prompts, result, usage_stats)
 

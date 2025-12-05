@@ -43,10 +43,12 @@ def subject_connector(subject_a: str, subject_b: str):
         "tone": tone,
     }
 
-    result, context_filled_prompts, usage_stats = MinimalChainable.run(
+    result, context_filled_prompts, usage_stats, execution_trace = MinimalChainable.run(
         context=context_data,
         model=model_info,
         callable=prompt,
+        return_trace=True,
+
         prompts=[
             # Connections
             """You are a Polymath and Innovation Consultant. Find "Structural Isomorphisms" (shared underlying patterns) between {{subject_A}} and {{subject_B}}.
@@ -99,8 +101,7 @@ Respond in JSON:
   "expected_outputs": ["Output 1", "Output 2", "Output 3"]
 }"""
         ],
-        return_usage=True,
-    )
+        )
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     output_dir = os.path.join(project_root, "output", "learning", "subject_connector")
@@ -108,7 +109,7 @@ Respond in JSON:
 
     output_path = os.path.join(output_dir, f"{timestamp}-subject_connector.json")
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=2)
+        json.dump(execution_trace, f, indent=2)
 
     log_file = MinimalChainable.log_to_markdown("subject_connector", context_filled_prompts, result, usage_stats)
 
