@@ -4,11 +4,18 @@
 
 import json  # Helps us work with data that looks like {"key": "value"}
 import re    # Helps us find patterns in text (like finding JSON in markdown)
-from typing import List, Dict, Callable, Any, Union, Tuple  # These tell Python what types of data we expect
+from typing import List, Dict, Callable, Any, Union, Tuple, Optional  # These tell Python what types of data we expect
 from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
 import os
 import datetime
+
+# Import artifact store for persistent knowledge accumulation
+try:
+    from artifact_store import ArtifactStore, resolve_artifact_references
+except ImportError:
+    ArtifactStore = None
+    resolve_artifact_references = None
 
 # This is like a report card that tells us how our fusion chain did
 class FusionChainResult(BaseModel):
@@ -37,6 +44,8 @@ class FusionChain:
         evaluator: Callable[[List[str]], List[float]],
         get_model_name: Callable[[Any], str],
         num_workers: int = 4,              # How many models to run at the same time
+        artifact_store: Optional['ArtifactStore'] = None,  # Optional artifact store
+        topic: Optional[str] = None  # Optional topic for artifacts
     ) -> FusionChainResult:
         """
         This is like the regular run() function, but faster!
@@ -52,7 +61,10 @@ class FusionChain:
             We need this because of how parallel processing works.
             """
             outputs, context_filled_prompts, usage_stats = MinimalChainable.run(
-                context, model, callable, prompts, return_usage=True
+                context, model, callable, prompts,
+                return_usage=True,
+                artifact_store=artifact_store,
+                topic=topic
             )
             return outputs, context_filled_prompts, usage_stats
 
@@ -134,7 +146,9 @@ class MinimalChainable:
         callable: Callable,        # Function that sends prompts to the AI
         prompts: List[str],         # List of prompts to run in order
         return_usage: bool = False,  # Whether to return usage stats
-        return_trace: bool = False   # Whether to return execution trace
+        return_trace: bool = False,   # Whether to return execution trace
+        artifact_store: Optional['ArtifactStore'] = None,  # Store for saving/loading artifacts
+        topic: Optional[str] = None  # Topic name for artifact storage (auto-detected if not provided)
     ) -> Union[List[Any], Tuple[List[Any], List[str], List[Any]], Tuple[List[Any], List[str], List[Any], Dict]]:
         """
         This is where the magic happens!
@@ -154,9 +168,19 @@ class MinimalChainable:
         context_filled_prompts = []    # Stores the actual prompts we sent
         usage_stats_list = []          # Stores usage stats
 
+        # Auto-detect topic from context if not provided
+        if topic is None and artifact_store is not None:
+            topic = context.get("topic") or context.get("subject_A") or context.get("subject_a")
+
         # Go through each prompt one by one
         for i, prompt in enumerate(prompts):
-            
+
+            # STEP 0: Resolve artifact references (if artifact store provided)
+            # This lets us use {{artifact:machine_learning:components}}
+            artifact_keys_used = []
+            if artifact_store is not None and resolve_artifact_references is not None:
+                prompt, artifact_keys_used = resolve_artifact_references(prompt, artifact_store)
+
             # STEP 1: Replace context variables
             # Look for things like {{topic}} and replace them with real values
             for key, value in context.items():
@@ -233,7 +257,29 @@ class MinimalChainable:
 
             # Save this result so future prompts can reference it
             output.append(result)
-            
+
+            # STEP 5: Save as artifact (if artifact store provided and topic available)
+            if artifact_store is not None and topic:
+                # Extract semantic step name from the original prompt
+                step_name = MinimalChainable._extract_role_from_prompt(prompts[i])
+                if not step_name:
+                    step_name = f"step_{i + 1}"
+                else:
+                    # Convert role to step name: "Expert Educator" → "expert_educator"
+                    step_name = re.sub(r'[^a-z0-9]+', '_', step_name.lower()).strip('_')
+
+                # Save the artifact with metadata
+                artifact_store.save(
+                    topic=topic,
+                    step_name=step_name,
+                    data=result,
+                    metadata={
+                        "prompt_index": i,
+                        "original_prompt": prompts[i][:100] + "..." if len(prompts[i]) > 100 else prompts[i],
+                        "artifacts_used": artifact_keys_used
+                    }
+                )
+
             # Store usage if available
             if usage:
                 # Convert usage object to dict if possible to ensure JSON serializability

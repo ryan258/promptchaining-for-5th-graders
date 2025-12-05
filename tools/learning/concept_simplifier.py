@@ -24,6 +24,7 @@ project_root = setup_project_root(__file__)
 
 from chain import MinimalChainable
 from main import build_models, prompt
+from artifact_store import ArtifactStore
 
 
 def concept_simplifier(topic: str, additional_context: str = ""):
@@ -40,6 +41,9 @@ def concept_simplifier(topic: str, additional_context: str = ""):
     client, model_names = build_models()
     model_info = (client, model_names[0])
 
+    # Create artifact store for persistent knowledge
+    artifact_store = ArtifactStore()
+
     context_data = {
         "topic": topic,
         "tone": tone,
@@ -52,6 +56,8 @@ def concept_simplifier(topic: str, additional_context: str = ""):
         model=model_info,
         callable=prompt,
         return_trace=True,
+        artifact_store=artifact_store,
+        topic=topic,
         prompts=[
             # Prompt 1: Decompose with expert educator lens
             """You are an expert educator specializing in making complex topics accessible to {{audience}}.
@@ -203,6 +209,8 @@ Keep explainer to 150-200 words total. Provide 2-3 pitfalls and 2-3 next_steps."
 
     print(f"✅ Saved JSON to: {output_path}")
     print(f"✅ Log saved to: {log_file}")
+    print()
+    print(artifact_store.visualize())
 
 
 def main():
