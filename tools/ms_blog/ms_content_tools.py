@@ -48,6 +48,24 @@ def save_markdown(content: str, output_path: str) -> str:
     return output_path
 
 
+def sanitize_filename(title: str, prefix: str = "untitled") -> str:
+    """
+    Convert title to safe filename with fallback for invalid titles.
+
+    Args:
+        title: The title to sanitize
+        prefix: Prefix to use if title contains only special characters
+
+    Returns:
+        Safe filename ending in .md
+    """
+    safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    if safe_title:
+        return f"{safe_title.lower().replace(' ', '-')}.md"
+    # Fallback for titles with only special characters
+    return f"{prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.md"
+
+
 def validate_content(content: str, content_type: str) -> Dict[str, Any]:
     """
     Validate generated content meets quality standards.
@@ -797,6 +815,293 @@ Return ONLY valid JSON."""
     )
 
     return ideas, metadata
+
+
+# ============================================================================
+# BATCH CONTENT GENERATOR
+# ============================================================================
+
+# Default batch distribution percentages
+BATCH_MIX_PROMPT = 0.5
+BATCH_MIX_SHORTCUT = 0.3
+BATCH_MIX_GUIDE = 0.2
+
+def batch_generate_content(
+    topic_area: str,
+    count: int = 5,
+    mix: Dict[str, int] = None,
+    energy_level: str = "medium",
+    output_dir: str = None
+) -> Dict[str, Any]:
+    """
+    Generate multiple pieces of content in a batch.
+
+    Args:
+        topic_area: General topic (e.g., "Fatigue Management")
+        count: Total items to generate (if mix not provided)
+        mix: Dict of type -> count (e.g., {"prompt": 3, "shortcut": 2})
+        energy_level: Energy level for generation
+        output_dir: Directory to save content
+
+    Returns:
+        Summary of generated content
+    """
+    print(f"🚀 Starting batch generation for: {topic_area}")
+    
+    # Default mix if not provided
+    if not mix:
+        n_prompts = int(count * BATCH_MIX_PROMPT)
+        n_shortcuts = int(count * BATCH_MIX_SHORTCUT)
+        # Ensure at least one of each if count allows, otherwise fill remainder with guides
+        remaining = count - n_prompts - n_shortcuts
+        n_guides = max(0, remaining)
+        
+        mix = {
+            "prompt": n_prompts,
+            "shortcut": n_shortcuts,
+            "guide": n_guides
+        }
+
+    results = {
+        "generated": [],
+        "errors": [],
+        "summary": {"topic": topic_area, "total": 0}
+    }
+
+    # Step 1: Generate ideas first to ensure coherence
+    print("  🧠 Brainstorming batch ideas...")
+    # Generate extra ideas to ensure we have enough valid ones
+    ideas, _ = expand_content_idea(topic_area, count=sum(mix.values()) + 3)
+    
+    # Process each type
+    for content_type, num in mix.items():
+        if num <= 0:
+            continue
+            
+        print(f"  Processing {num} {content_type}(s)...")
+        
+        # Get relevant ideas safely
+        type_key_map = {
+            "prompt": "prompt_cards",
+            "shortcut": "shortcuts",
+            "guide": "guides"
+        }
+        type_key = type_key_map.get(content_type, f"{content_type}s")
+        available_ideas = ideas.get(type_key, [])
+        
+        if not isinstance(available_ideas, list):
+            available_ideas = []
+
+        # Warn if insufficient ideas
+        actual_count = min(num, len(available_ideas))
+        if actual_count < num:
+            print(f"    ⚠️  Warning: Only {actual_count} {content_type} ideas available (requested {num})")
+
+        for i in range(actual_count):
+            idea = available_ideas[i]
+            # Handle potential missing keys or malformed idea objects
+            if not isinstance(idea, dict):
+                continue
+                
+            title = idea.get('title', 'Untitled')
+            print(f"    - Generating: {title}")
+            
+            try:
+                content = None
+                metadata = None
+                
+                if content_type == "prompt":
+                    content, metadata = generate_prompt_card(
+                        problem=idea.get('problem', title),
+                        energy_level=energy_level
+                    )
+                elif content_type == "shortcut":
+                    content, metadata = generate_shortcut_spotlight(
+                        tool=title,
+                        ms_benefit=idea.get('ms_benefit', "Helps with MS symptoms"),
+                        category=idea.get('category', "automation")
+                    )
+                elif content_type == "guide":
+                    content, metadata = generate_guide(
+                        system=title,
+                        complexity=idea.get('difficulty', 'beginner'),
+                        estimated_time="30 mins"
+                    )
+                
+                if content and output_dir:
+                    # Use shared sanitization utility
+                    filename = sanitize_filename(title, prefix=content_type)
+                    save_path = os.path.join(output_dir, filename)
+                    save_markdown(content, save_path)
+                    metadata['saved_to'] = save_path
+                
+                results["generated"].append({
+                    "title": title,
+                    "type": content_type,
+                    "metadata": metadata
+                })
+                
+            except Exception as e:
+                print(f"    ❌ Error: {e}")
+                results["errors"].append({"title": title, "error": str(e)})
+
+    results["summary"]["total"] = len(results["generated"])
+    print(f"✅ Batch complete! Generated {results['summary']['total']} items.")
+    
+    return results
+
+
+# ============================================================================
+# CONTENT CALENDAR GENERATOR
+# ============================================================================
+
+def generate_content_calendar(
+    topic: str,
+    duration: str = "1 month",
+    frequency: str = "3x/week",
+    start_date: str = None
+) -> Dict[str, Any]:
+    """
+    Generate a content calendar.
+
+    Args:
+        topic: Main theme
+        duration: How long (e.g., "1 month")
+        frequency: Posting frequency
+        start_date: YYYY-MM-DD string
+
+    Returns:
+        Calendar plan
+    """
+    model_info = get_model()
+    start_date = start_date or datetime.now().strftime('%Y-%m-%d')
+
+    prompts = [
+        f"""You are a content strategist for an MS blog.
+        
+Create a content calendar.
+Topic: {topic}
+Duration: {duration}
+Frequency: {frequency}
+Start Date: {start_date}
+
+Content types available:
+- Prompt Cards (quick wins)
+- Shortcut Spotlights (tools)
+- Multi-Phase Guides (deep dives)
+
+Design a schedule that balances:
+- Energy levels (mix of simple and complex)
+- Topic variety
+- User journey (building skills over time)
+
+Respond in JSON:
+{{
+  "strategy": "Brief strategy explanation",
+  "schedule": [
+    {{
+      "week": 1,
+      "theme": "Week's theme",
+      "posts": [
+        {{
+          "day": "Monday",
+          "date": "YYYY-MM-DD",
+          "type": "prompt|shortcut|guide",
+          "title": "Post title",
+          "goal": "What this achieves"
+        }}
+      ]
+    }}
+  ]
+}}"""
+    ]
+
+    result, _, usage, _ = MinimalChainable.run(
+        context={},
+        model=model_info,
+        callable=prompt,
+        return_trace=True,
+        prompts=prompts
+    )
+
+    calendar = result[-1]
+    
+    # Log it
+    MinimalChainable.log_to_markdown(
+        "calendar_generator",
+        prompts,
+        result,
+        usage
+    )
+
+    return calendar
+
+
+# ============================================================================
+# SEO OPTIMIZER
+# ============================================================================
+
+def optimize_content_seo(content: str, keywords: List[str] = None) -> str:
+    """
+    Optimize existing markdown content for SEO.
+    
+    Args:
+        content: The markdown content to optimize
+        keywords: List of target keywords (optional)
+        
+    Returns:
+        Optimized markdown content
+    """
+    model_info = get_model()
+    keywords_str = ", ".join(keywords) if keywords else "relevant MS and accessibility keywords"
+
+    # Handle long content
+    content_preview = content[:3000]
+    truncation_note = ""
+    if len(content) > 3000:
+        print(f"⚠️  Warning: Content is {len(content)} chars, optimizing first 3000 chars only")
+        truncation_note = "\n\n[NOTE: Content truncated to 3000 chars. Optimize what's shown and return only the optimized portion.]"
+
+    prompts = [
+        f"""You are an SEO expert. Optimize this markdown content.
+
+Target Keywords: {keywords_str}
+
+Content:
+{content_preview}{truncation_note}
+
+Tasks:
+1. Improve title for CTR and keywords (keep it under 60 chars)
+2. Refine meta description in front matter (under 160 chars)
+3. Ensure headings are hierarchical (H1, H2, H3) and keyword-rich
+4. Add alt text suggestions to any image placeholders
+5. Improve readability (short paragraphs, bullet points)
+6. Ensure 'tags' in front matter are relevant
+
+Constraint: Do NOT change the core meaning, helpfulness, or tone. Keep it accessible.
+
+Return the optimized markdown content. Do not include explanations or commentary."""
+    ]
+
+    result, filled_prompts, usage, _ = MinimalChainable.run(
+        context={},
+        model=model_info,
+        callable=prompt,
+        return_trace=True,
+        prompts=prompts
+    )
+    
+    optimized_content = result[-1]
+    
+    # Log the optimization
+    MinimalChainable.log_to_markdown(
+        "seo_optimizer",
+        filled_prompts,
+        result,
+        usage
+    )
+
+    return optimized_content
 
 
 # ============================================================================

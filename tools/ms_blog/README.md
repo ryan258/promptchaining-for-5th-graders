@@ -131,34 +131,30 @@ result = low_energy_pipeline(
 
 ## Quick Start
 
-### Command Line Interface
+### Command Line Interface (CLI)
+
+The new CLI makes it easy to generate content from your terminal.
 
 ```bash
-# Use the low-energy pipeline
-python tools/ms_blog/ms_content_tools.py "I need help organizing my day" --energy low
+# View all commands
+python tools/ms_blog/cli.py --help
 
-# Generate specific format
-python tools/ms_blog/ms_content_tools.py "Voice typing" --format shortcut --energy medium
+# Run the interactive menu (easiest way to start)
+python tools/ms_blog/cli.py
 
-# Don't auto-save (just preview)
-python tools/ms_blog/ms_content_tools.py "Medication tracking" --no-save
-```
+# Run the low-energy pipeline
+python tools/ms_blog/cli.py pipeline "I need help organizing my day" --energy low
 
-### Run the Demo
+# Generate a batch of content (New!)
+python tools/ms_blog/cli.py batch "Fatigue Management" --count 5
 
-```bash
-# Interactive demo menu
-python demos/ms_blog_demo.py --interactive
+# Generate a content calendar (New!)
+python tools/ms_blog/cli.py calendar "Cognitive Health" --duration "1 month"
 
-# Run specific demo
-python demos/ms_blog_demo.py --demo 1  # Low-energy pipeline
-python demos/ms_blog_demo.py --demo 2  # Prompt card
-python demos/ms_blog_demo.py --demo 3  # Shortcut
-python demos/ms_blog_demo.py --demo 4  # Guide
-python demos/ms_blog_demo.py --demo 5  # Idea expander
-
-# Run all demos
-python demos/ms_blog_demo.py --demo 6
+# Generate specific formats
+python tools/ms_blog/cli.py prompt "Brain fog planning"
+python tools/ms_blog/cli.py shortcut "Voice typing" --benefit "Saves energy"
+python tools/ms_blog/cli.py guide "Symptom tracking system"
 ```
 
 ### Run Tests
