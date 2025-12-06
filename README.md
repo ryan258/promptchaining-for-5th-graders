@@ -49,8 +49,9 @@ This sequential reasoning **cannot work as a single prompt** because later steps
 - [Why Prompt Chaining?](#-why-prompt-chaining)
 - [Quick Start](#-quick-start)
 - [Core Capabilities](#-core-capabilities)
-- [Built-In Tools](#-built-in-tools)
 - [Advanced Features](#-advanced-features)
+- [Framework Enhancements](#-framework-enhancements)
+- [Built-In Tools](#-built-in-tools)
 - [Project Structure](#-project-structure)
 - [Examples & Demos](#-examples--demos)
 - [Documentation](#-documentation)
@@ -287,6 +288,119 @@ result = chain.execute(
 ```
 
 The meta-chain analyzes your task and generates optimal prompt sequences automatically.
+
+---
+
+## 🧠 Framework Enhancements
+
+Three powerful extensions that unlock new reasoning capabilities:
+
+### 1. Natural Reasoning Patterns ⭐⭐⭐⭐
+
+**Module:** `natural_reasoning.py`
+
+Formalize expert reasoning patterns as reusable chain templates:
+
+- **Scientific Method** - Test hypotheses through observation, prediction, experiment, analysis
+- **Socratic Dialogue** - Examine beliefs through systematic questioning
+- **Design Thinking** - Human-centered problem solving (Empathize → Define → Ideate → Prototype → Test)
+- **Judicial Reasoning** - Analyze cases using facts, principles, precedent, judgment
+- **Root Cause Analysis (5 Whys)** - Dig beneath symptoms to find systemic causes
+
+```python
+from natural_reasoning import scientific_method, design_thinking
+
+# Apply scientific method to a hypothesis
+result, metadata = scientific_method(
+    hypothesis="Regular exercise improves MS fatigue management",
+    evidence_sources=["Study 1", "Study 2"]
+)
+print(result['conclusion']['verdict'])  # "Supported" / "Refuted" / "Inconclusive"
+
+# Use design thinking for user-centered problem solving
+solution, metadata = design_thinking(
+    problem="MS patients struggle to track symptoms",
+    constraints=["Low energy", "Brain fog"]
+)
+print(solution['prototype']['how_it_works'])
+```
+
+**Use for:** Teaching how experts think, applying proven patterns to any domain, creating "How experts think about X" blog content.
+
+### 2. Adversarial Chains ⭐⭐⭐⭐⭐
+
+**Module:** `adversarial_chains.py`
+
+Use conflict and opposition to reveal truth (impossible with single prompts!):
+
+- **Red Team vs Blue Team** - Adversarial debate with one side attacking, one defending, judge evaluating
+- **Dialectical Synthesis** - Hegelian dialectic: Thesis → Antithesis → Synthesis
+- **Adversarial Socratic** - Aggressive questioning to stress-test claims
+
+```python
+from adversarial_chains import red_vs_blue, dialectical
+
+# Run adversarial debate
+debate, metadata = red_vs_blue(
+    topic="MS treatment strategies",
+    position_to_defend="Aggressive DMTs should be prioritized",
+    rounds=3
+)
+print(f"Winner: {metadata['winner']}")
+print(debate['judgment']['verdict'])
+
+# Find synthesis that transcends opposition
+result, metadata = dialectical(
+    thesis="Prioritize symptom management",
+    domain="MS treatment philosophy"
+)
+print(result['synthesis']['synthesis_statement'])  # Transcendent position
+```
+
+**Use for:** Testing ideas rigorously, exploring controversial topics, red-teaming strategies, transcending binary thinking.
+
+### 3. Emergence Measurement ⭐⭐⭐⭐
+
+**Module:** `emergence_measurement.py`
+
+Scientifically prove chains unlock insights impossible from single prompts:
+
+```python
+from emergence_measurement import measure_emergence, batch_measure
+
+# Compare chain vs mega-prompt
+comparison, metadata = measure_emergence(
+    topic="Neural Networks",
+    chain_function=concept_simplifier
+)
+print(f"Winner: {comparison['winner']}")  # "Chain" / "Baseline" / "Tie"
+
+# Batch test for statistical significance
+aggregate, results = batch_measure(
+    topics=["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5"],
+    chain_function=concept_simplifier
+)
+print(aggregate['results']['chain_win_rate'])  # e.g., "73.3%"
+print(aggregate['statistical_significance'])
+```
+
+**Measures across 5 dimensions:**
+- Novelty (unique insights)
+- Depth (sophistication)
+- Coherence (logical flow)
+- Pedagogical (understandability)
+- Actionability (practical use)
+
+**Use for:** Validating your chains work better, publishing research findings, convincing stakeholders with data.
+
+**📖 Full Documentation:** See [FRAMEWORK_ENHANCEMENTS.md](FRAMEWORK_ENHANCEMENTS.md) for complete guide, examples, and API reference.
+
+**🎬 Demos:**
+```bash
+python demos/natural_reasoning_demo.py
+python demos/adversarial_chains_demo.py
+python demos/emergence_measurement_demo.py
+```
 
 ---
 
