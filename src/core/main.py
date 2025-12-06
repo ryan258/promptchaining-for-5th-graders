@@ -7,6 +7,8 @@ from openai import OpenAI # The tool that lets us talk to AI models via OpenRout
 import json # Helps us work with data that looks like {"key": "value"}
 from dotenv import load_dotenv # Helps us load secret keys from a file
 import os # Helps us read secret keys from the computer
+import time
+import random
 
 def build_models():
     """
@@ -63,6 +65,9 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
     client, model_name = model_info
     
     max_retries = 3
+    base_delay = 1
+    max_delay = 10
+
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
@@ -71,8 +76,9 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
                     {"role": "user", "content": prompt_text}
                 ],
                 # We need to set these to avoid the default 16-token limit!
-                max_tokens=1000, 
+                max_tokens=4096, 
                 temperature=0.7,
+                timeout=30.0, # Explicit timeout
                 extra_headers={
                     "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders"),
                     "X-Title": os.getenv("OPENROUTER_APP_NAME", "Prompt Chaining for 5th Graders"),
@@ -83,16 +89,25 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
             usage = response.usage
             
             if not content:
-                print(f"⚠️ Attempt {attempt + 1}/{max_retries}: Received empty content. Retrying...")
-                continue
+                raise ValueError("Received empty content from API")
             
             # Return both content and usage
             return content, usage
             
         except Exception as e:
             print(f"⚠️ Attempt {attempt + 1}/{max_retries} failed: {e}")
+            
             if attempt == max_retries - 1:
-                return f"Error: {str(e)}", None
+                # On final failure, raise the exception to let the caller handle it
+                raise e
+            
+            # Exponential backoff with jitter
+            delay = min(max_delay, base_delay * (2 ** attempt))
+            jitter = random.uniform(0, 0.1 * delay)
+            sleep_time = delay + jitter
+            
+            print(f"⏳ Waiting {sleep_time:.2f}s before retry...")
+            time.sleep(sleep_time)
 
 
 def prompt_chainable_poc():

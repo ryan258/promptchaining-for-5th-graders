@@ -46,6 +46,39 @@ function normalizeArrayInput(value) {
     .filter(Boolean)
 }
 
+function formatDialogue(rounds) {
+  if (!rounds || !Array.isArray(rounds)) return ''
+
+  return rounds.map(r => {
+    const q = r.question || {}
+    const a = r.answer || {}
+
+    return `### Round ${r.round}
+    
+**Teacher:** ${q.question}
+> *Target: ${q.target}*
+
+**Student:** ${a.answer}
+> *Insight: ${a.new_insight}*
+
+---`
+  }).join('\n\n')
+}
+
+function formatWhyChain(whys) {
+  if (!whys || !Array.isArray(whys)) return ''
+
+  return whys.map(w => {
+    return `### Why #${w.why_number}
+    
+**Question:** ${w.question}
+**Cause:** ${w.cause}
+> *Evidence: ${w.evidence}*
+
+---`
+  }).join('\n\n')
+}
+
 function buildColumns(pattern, result) {
   if (!result) return []
 
@@ -72,7 +105,7 @@ function buildColumns(pattern, result) {
   if (pattern === 'five_whys') {
     return [
       { title: 'Problem', content: result.problem },
-      { title: 'Why Chain', content: result.whys },
+      { title: 'Why Chain', content: formatWhyChain(result.whys) },
       { title: 'Synthesis', content: result.synthesis }
     ]
   }
@@ -89,7 +122,7 @@ function buildColumns(pattern, result) {
   if (pattern === 'socratic_dialogue') {
     return [
       { title: 'Belief', content: result.initial_belief },
-      { title: 'Dialogue', content: result.dialogue },
+      { title: 'Dialogue', content: formatDialogue(result.rounds) },
       { title: 'Synthesis', content: result.synthesis }
     ]
   }
@@ -203,11 +236,10 @@ export default function PatternLauncher() {
                 key={pattern.name}
                 type="button"
                 onClick={() => setSelectedPattern(pattern.name)}
-                className={`px-3 py-2 text-sm border ${
-                  selectedPattern === pattern.name
-                    ? 'bg-purple-500/20 border-purple-400/50 text-purple-100'
-                    : 'bg-slate-900/40 border-white/10 text-gray-200'
-                }`}
+                className={`px-3 py-2 text-sm border ${selectedPattern === pattern.name
+                  ? 'bg-purple-500/20 border-purple-400/50 text-purple-100'
+                  : 'bg-slate-900/40 border-white/10 text-gray-200'
+                  }`}
               >
                 {PATTERN_LABELS[pattern.name] || pattern.name}
               </button>

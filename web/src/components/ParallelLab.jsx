@@ -8,6 +8,60 @@ const DEFAULT_CHAINS = [
   { value: 'five_whys', label: '5 Whys' }
 ]
 
+
+function formatRedTeam(rounds) {
+  if (!rounds || !Array.isArray(rounds)) return ''
+
+  return rounds.map(r => {
+    const attack = r.red_attack || {}
+    const attacksList = attack.attacks || []
+
+    return `### Round ${r.round} - Attack
+    
+${attacksList.map(a => `- **${a.target}:** ${a.attack}`).join('\n')}
+
+**Strongest Objection:** ${attack.strongest_objection}
+**Alternative View:** ${attack.alternative_view}
+
+---`
+  }).join('\n\n')
+}
+
+function formatBlueTeam(opening, rounds) {
+  let text = ''
+
+  if (opening) {
+    text += `### Opening Statement
+    
+**Thesis:** ${opening.thesis}
+
+${(opening.arguments || []).map(a => `- **${a.point}:** ${a.reasoning}`).join('\n')}
+
+**Conclusion:** ${opening.conclusion}
+
+---
+
+`
+  }
+
+  if (rounds && Array.isArray(rounds)) {
+    text += rounds.map(r => {
+      const defense = r.blue_defense || {}
+      const counters = defense.counters || []
+
+      return `### Round ${r.round} - Defense
+      
+${counters.map(c => `- **Counter to "${c.to_attack}":** ${c.counter}`).join('\n')}
+
+**Concessions:** ${defense.concessions}
+**Strengthened Position:** ${defense.strengthened_position}
+
+---`
+    }).join('\n\n')
+  }
+
+  return text
+}
 function buildDebateColumns(result, metadata) {
   if (!result) return []
   const rounds = result.rounds || []
@@ -16,21 +70,12 @@ function buildDebateColumns(result, metadata) {
     {
       title: 'Blue Team',
       badge: 'Defense',
-      content: {
-        opening: result.opening,
-        defenses: rounds.map((round) => ({
-          round: round.round,
-          defense: round.blue_defense
-        }))
-      }
+      content: formatBlueTeam(result.opening, rounds)
     },
     {
       title: 'Red Team',
       badge: 'Attack',
-      content: rounds.map((round) => ({
-        round: round.round,
-        attack: round.red_attack
-      }))
+      content: formatRedTeam(rounds)
     },
     {
       title: 'Judge',
@@ -150,22 +195,20 @@ export default function ParallelLab() {
         <button
           type="button"
           onClick={() => setMode('debate')}
-          className={`px-3 py-2 text-sm border ${
-            mode === 'debate'
-              ? 'bg-amber-500/20 border-amber-400/50 text-amber-100'
-              : 'bg-slate-900/40 border-white/10 text-gray-200'
-          }`}
+          className={`px-3 py-2 text-sm border ${mode === 'debate'
+            ? 'bg-amber-500/20 border-amber-400/50 text-amber-100'
+            : 'bg-slate-900/40 border-white/10 text-gray-200'
+            }`}
         >
           Debate: Red vs Blue
         </button>
         <button
           type="button"
           onClick={() => setMode('emergence')}
-          className={`px-3 py-2 text-sm border ${
-            mode === 'emergence'
-              ? 'bg-amber-500/20 border-amber-400/50 text-amber-100'
-              : 'bg-slate-900/40 border-white/10 text-gray-200'
-          }`}
+          className={`px-3 py-2 text-sm border ${mode === 'emergence'
+            ? 'bg-amber-500/20 border-amber-400/50 text-amber-100'
+            : 'bg-slate-900/40 border-white/10 text-gray-200'
+            }`}
         >
           Emergence Compare
         </button>

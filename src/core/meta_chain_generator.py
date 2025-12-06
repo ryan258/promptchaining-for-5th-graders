@@ -441,6 +441,8 @@ class MetaChainGenerator:
 
 Analyze this goal: "{goal}"
 
+Context: {json.dumps(context, indent=2) if context else "None"}
+
 What cognitive operations are needed to achieve it?
 
 Available cognitive moves:

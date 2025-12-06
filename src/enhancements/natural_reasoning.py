@@ -39,6 +39,22 @@ def get_model():
     return (client, model_names[0])
 
 
+def _calculate_total_tokens(usage_list: List[Any]) -> int:
+    """Helper to calculate total tokens from a list of usage stats."""
+    total = 0
+    for usage in usage_list:
+        if isinstance(usage, dict):
+            total += usage.get("total_tokens", 0)
+            if "total_tokens" not in usage:
+                total += usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+        else:
+            # Handle object with attributes
+            total += getattr(usage, "total_tokens", 0)
+            if not hasattr(usage, "total_tokens"):
+                total += getattr(usage, "prompt_tokens", 0) + getattr(usage, "completion_tokens", 0)
+    return total
+
+
 # ============================================================================
 # PATTERN 1: SCIENTIFIC METHOD
 # ============================================================================
@@ -215,7 +231,7 @@ Return as JSON:
         "pattern": "scientific_method",
         "hypothesis": hypothesis,
         "steps_completed": len(result),
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "verdict": result[-1].get("verdict", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
 
@@ -376,7 +392,7 @@ Return as JSON:
         "pattern": "socratic_dialogue",
         "belief": belief,
         "rounds": depth,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "belief_changed": result[-1].get("confidence_change", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
 
@@ -575,7 +591,7 @@ Return as JSON:
         "pattern": "design_thinking",
         "problem": problem,
         "target_user": target_user,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "assessment": result[-1].get("overall_assessment", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
 
@@ -791,7 +807,7 @@ Return as JSON:
     metadata = {
         "pattern": "judicial_reasoning",
         "case": case,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "ruling": result[-1].get("ruling", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
 
@@ -928,7 +944,7 @@ Return as JSON:
         "pattern": "five_whys",
         "problem": problem,
         "depth": depth,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "root_cause": result[-1].get("root_cause", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
 

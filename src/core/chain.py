@@ -9,6 +9,7 @@ from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
 import os
 import datetime
+import time
 
 # Import artifact store for persistent knowledge accumulation
 try:
@@ -295,25 +296,35 @@ class MinimalChainable:
             usage = None
             
             for attempt in range(max_retries):
-                # We expect the callable to return (content, usage) or just content
-                result_raw = callable(model, prompt)
-                
-                usage = None
-                if isinstance(result_raw, tuple) and len(result_raw) == 2:
-                    result, usage = result_raw
-                else:
-                    result = result_raw
+                try:
+                    # We expect the callable to return (content, usage) or just content
+                    result_raw = callable(model, prompt)
+                    
+                    usage = None
+                    if isinstance(result_raw, tuple) and len(result_raw) == 2:
+                        result, usage = result_raw
+                    else:
+                        result = result_raw
 
-                # STEP 4: Try to parse JSON responses (robust to fences/truncation)
-                parsed_result = _coerce_json(result)
-                
-                # Validation: If prompt asks for JSON but we got a string, retry
-                if "JSON" in prompt and isinstance(parsed_result, str) and attempt < max_retries - 1:
-                    print(f"⚠️ Step {i+1} Attempt {attempt + 1}/{max_retries}: Failed to parse JSON. Retrying...")
-                    continue
-                
-                result = parsed_result
-                break
+                    # STEP 4: Try to parse JSON responses (robust to fences/truncation)
+                    parsed_result = _coerce_json(result)
+                    
+                    # Validation: If prompt asks for JSON but we got a string, retry
+                    if "JSON" in prompt and isinstance(parsed_result, str) and attempt < max_retries - 1:
+                        print(f"⚠️ Step {i+1} Attempt {attempt + 1}/{max_retries}: Failed to parse JSON. Retrying...")
+                        continue
+                    
+                    result = parsed_result
+                    break
+                except Exception as e:
+                    print(f"⚠️ Step {i+1} Attempt {attempt + 1}/{max_retries} failed: {e}")
+                    if attempt == max_retries - 1:
+                        # On final failure, stop the chain to prevent downstream pollution
+                        print(f"❌ Step {i+1} failed after {max_retries} attempts. Stopping chain.")
+                        raise e
+                    
+                    # Brief backoff for JSON validation failures (API backoff is handled in main.py)
+                    time.sleep(1 * (attempt + 1))
 
             # Save this result so future prompts can reference it
             output.append(result)

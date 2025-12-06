@@ -87,7 +87,7 @@ def _build_pattern_kwargs(pattern_name: str, payload: Dict[str, Any]) -> Dict[st
         return {
             "belief": belief,
             "teacher_persona": payload.get("teacher_persona", "Philosopher"),
-            "depth": payload.get("depth", 5)
+            "depth": int(payload.get("depth", 5))
         }
 
     if pattern_name == "design_thinking":
@@ -116,7 +116,7 @@ def _build_pattern_kwargs(pattern_name: str, payload: Dict[str, Any]) -> Dict[st
             raise HTTPException(status_code=400, detail="problem is required for five_whys")
         return {
             "problem": problem,
-            "depth": payload.get("depth", 5),
+            "depth": int(payload.get("depth", 5)),
             "context": payload.get("context", "")
         }
 
@@ -173,13 +173,13 @@ EMERGENCE_CHAIN_FUNCTIONS = {
     ),
     "five_whys": lambda topic, **kwargs: REASONING_PATTERNS["five_whys"]["function"](
         problem=topic,
-        depth=kwargs.get("depth", 5),
+        depth=int(kwargs.get("depth", 5)),
         context=kwargs.get("context", "")
     ),
     "socratic_dialogue": lambda topic, **kwargs: REASONING_PATTERNS["socratic_dialogue"]["function"](
         belief=topic,
         teacher_persona=kwargs.get("teacher_persona", "Philosopher"),
-        depth=kwargs.get("depth", 5)
+        depth=int(kwargs.get("depth", 5))
     ),
     "judicial_reasoning": lambda topic, **kwargs: REASONING_PATTERNS["judicial_reasoning"]["function"](
         case=topic,

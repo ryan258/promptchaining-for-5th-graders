@@ -39,6 +39,19 @@ def get_model():
     return (client, model_names[0])
 
 
+def _calculate_total_tokens(usage_list: List[Any]) -> int:
+    """Helper to calculate total tokens from a list of usage stats."""
+    total = 0
+    for usage in usage_list:
+        if isinstance(usage, dict):
+            total += usage.get("total_tokens", 0)
+            if "total_tokens" not in usage:
+                total += usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+        else:
+            # Handle object with attributes
+            total += getattr(usage, "total_tokens", 0)
+    return total
+
 # ============================================================================
 # CORE COMPARISON FRAMEWORK
 # ============================================================================
@@ -104,7 +117,7 @@ def measure_emergence(
 
     baseline_output = baseline_result[0]
     baseline_time = (datetime.now() - baseline_start).total_seconds()
-    baseline_tokens = sum(baseline_usage)
+    baseline_tokens = _calculate_total_tokens(baseline_usage)
 
     print(f"  ✅ Baseline completed in {baseline_time:.1f}s, {baseline_tokens} tokens")
 
@@ -291,7 +304,7 @@ Return as JSON:
   "summary": "Which approach is better and why (2-3 sentences)"
 }}"""
 
-    result, _, _, _ = MinimalChainable.run(
+    result, _ = MinimalChainable.run(
         context={},
         model=model_info,
         callable=prompt,

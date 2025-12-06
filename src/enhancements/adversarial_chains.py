@@ -37,6 +37,19 @@ def get_model():
     return (client, model_names[0])
 
 
+def _calculate_total_tokens(usage_list: List[Any]) -> int:
+    """Helper to calculate total tokens from a list of usage stats."""
+    total = 0
+    for usage in usage_list:
+        if isinstance(usage, dict):
+            total += usage.get("total_tokens", 0)
+            if "total_tokens" not in usage:
+                total += usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+        else:
+            # Handle object with attributes
+            total += getattr(usage, "total_tokens", 0)
+    return total
+
 # ============================================================================
 # PATTERN 1: RED TEAM vs BLUE TEAM
 # ============================================================================
@@ -244,7 +257,7 @@ Return as JSON:
         "pattern": "red_vs_blue",
         "topic": topic,
         "rounds": rounds,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "winner": result[-1].get("winner", "Unknown") if isinstance(result[-1], dict) else "Unknown",
         "blue_score": result[-1].get("blue_team_strength", 0) if isinstance(result[-1], dict) else 0,
         "red_score": result[-1].get("red_team_strength", 0) if isinstance(result[-1], dict) else 0
@@ -425,7 +438,7 @@ Return as JSON:
     metadata = {
         "pattern": "dialectical",
         "thesis": thesis,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "synthesis_quality": result[-1].get("verdict", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
 
@@ -606,7 +619,7 @@ Return as JSON:
         "pattern": "adversarial_socratic",
         "claim": claim,
         "rounds": depth,
-        "total_tokens": sum(usage),
+        "total_tokens": _calculate_total_tokens(usage),
         "survived": result[-1].get("survived", "Unknown") if isinstance(result[-1], dict) else "Unknown",
         "credibility_impact": result[-1].get("credibility", "Unknown") if isinstance(result[-1], dict) else "Unknown"
     }
