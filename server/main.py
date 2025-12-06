@@ -15,6 +15,7 @@ app = FastAPI(title="Prompt Chaining Tools SPA")
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 TOOLS_DIR = os.path.join(PROJECT_ROOT, 'tools')
+ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, 'artifacts')
 
 class Tool(BaseModel):
     name: str
@@ -135,6 +136,82 @@ async def run_tool(request: RunRequest):
 
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Tool execution timed out")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/artifacts")
+async def list_artifacts():
+    """List all artifacts in the artifacts directory."""
+    if not os.path.exists(ARTIFACTS_DIR):
+        return []
+
+    artifacts = []
+    try:
+        for topic in os.listdir(ARTIFACTS_DIR):
+            topic_path = os.path.join(ARTIFACTS_DIR, topic)
+            if not os.path.isdir(topic_path) or topic.startswith('.'):
+                continue
+
+            # Get artifact files in this topic
+            for filename in os.listdir(topic_path):
+                if filename.startswith('.'):
+                    continue
+
+                file_path = os.path.join(topic_path, filename)
+                if os.path.isfile(file_path):
+                    stat = os.stat(file_path)
+                    artifacts.append({
+                        "topic": topic,
+                        "filename": filename,
+                        "path": file_path,
+                        "size": stat.st_size,
+                        "modified": stat.st_mtime
+                    })
+    except Exception as e:
+        logger.error(f"Error listing artifacts: {e}")
+
+    # Sort by modified time (newest first)
+    artifacts.sort(key=lambda x: x["modified"], reverse=True)
+    return artifacts
+
+@app.get("/artifacts/{topic}/{filename}")
+async def get_artifact(topic: str, filename: str):
+    """Get the content of a specific artifact."""
+    file_path = os.path.join(ARTIFACTS_DIR, topic, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Artifact not found")
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        # Try to parse as JSON
+        try:
+            content = json.loads(content)
+            return {"content": content, "type": "json"}
+        except json.JSONDecodeError:
+            return {"content": content, "type": "text"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/artifacts/{topic}/{filename}")
+async def delete_artifact(topic: str, filename: str):
+    """Delete a specific artifact."""
+    file_path = os.path.join(ARTIFACTS_DIR, topic, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Artifact not found")
+
+    try:
+        os.remove(file_path)
+
+        # Remove topic directory if empty
+        topic_path = os.path.join(ARTIFACTS_DIR, topic)
+        if os.path.isdir(topic_path) and not os.listdir(topic_path):
+            os.rmdir(topic_path)
+
+        return {"status": "success", "message": "Artifact deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

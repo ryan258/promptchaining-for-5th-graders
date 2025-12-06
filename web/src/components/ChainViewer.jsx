@@ -61,7 +61,7 @@ function formatValue(value) {
 }
 
 // Main ChainViewer component
-export default function ChainViewer({ executionTrace }) {
+export default function ChainViewer({ executionTrace, currentStep, totalSteps }) {
     if (!executionTrace || !executionTrace.steps) {
         return null
     }
@@ -74,6 +74,16 @@ export default function ChainViewer({ executionTrace }) {
                 <p className="text-gray-400 text-sm">
                     Follow the AI's step-by-step reasoning process
                 </p>
+
+                {/* Progress Indicator */}
+                {currentStep && totalSteps && currentStep <= totalSteps && (
+                    <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                        <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full"></div>
+                        <span className="text-sm font-medium text-blue-300">
+                            Executing Step {currentStep} of {totalSteps}
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Steps */}

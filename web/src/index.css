@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -46,47 +50,26 @@ body {
 input,
 select,
 textarea {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  width: 100%;
-  font-size: 1rem;
-  transition: all 0.2s;
+  @apply bg-slate-900/60 border border-white/20 text-white px-4 py-3 rounded-lg w-full text-base transition-all duration-200;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-  /* Blue 500 */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  @apply outline-none border-blue-500 ring-2 ring-blue-500/30;
 }
 
 /* Buttons */
 button {
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
-  padding: 0.75rem 1.5rem;
-  font-size: 1em;
-  font-weight: 600;
-  font-family: inherit;
-  background-color: #3b82f6;
-  cursor: pointer;
-  transition: border-color 0.25s;
-  color: white;
+  @apply rounded-lg border border-transparent px-6 py-3 text-base font-semibold bg-blue-500 text-white cursor-pointer transition-colors duration-200;
 }
 
 button:hover {
-  background-color: #2563eb;
+  @apply bg-blue-600;
 }
 
 button:disabled {
-  background-color: #475569;
-  cursor: not-allowed;
-  opacity: 0.7;
+  @apply bg-slate-600 cursor-not-allowed opacity-70;
 }
 
 /* Markdown Styles */
@@ -138,249 +121,88 @@ button:disabled {
   font-style: italic;
 }
 
-/* Utilities */
-.flex-col {
-  display: flex;
-  flex-direction: column;
-}
-
-.gap-4 {
-  gap: 1rem;
-}
-
-.gap-2 {
-  gap: 0.5rem;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.text-sm {
-  font-size: 0.875rem;
-}
-
-.text-gray-400 {
-  color: #9ca3af;
-}
-
-.font-bold {
-  font-weight: 700;
-}
-
-.text-xl {
-  font-size: 1.25rem;
-}
-
-.text-2xl {
-  font-size: 1.5rem;
-}
-
-.text-blue-400 {
-  color: #60a5fa;
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: .5;
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.5s ease-out forwards;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Chain Visualization Styles */
 .chain-step {
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
+  @apply bg-slate-800/50 border border-white/10 rounded-2xl p-6 transition-all duration-300;
 }
 
 .chain-step:hover {
-  background: rgba(30, 41, 59, 0.7);
-  border-color: rgba(255, 255, 255, 0.2);
+  @apply bg-slate-800/70 border-white/20;
 }
 
 .step-number {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  color: white;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  @apply w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-lg shadow-blue-500/30;
 }
 
 .section-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #9ca3af;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
+  @apply text-xs uppercase tracking-wider text-gray-400 mb-2 flex items-center gap-2 font-semibold;
 }
 
 .content-box {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 0.75rem;
-  padding: 1rem;
-  border: 1px solid;
-  transition: all 0.2s ease;
+  @apply bg-black/30 rounded-xl p-4 border transition-all duration-200;
 }
 
 .prompt-box {
-  border-color: rgba(168, 85, 247, 0.3);
-  background: rgba(168, 85, 247, 0.05);
+  @apply border-purple-500/30 bg-purple-500/5;
 }
 
 .prompt-box:hover {
-  border-color: rgba(168, 85, 247, 0.5);
-  background: rgba(168, 85, 247, 0.1);
+  @apply border-purple-500/50 bg-purple-500/10;
 }
 
 .response-box {
-  border-color: rgba(34, 197, 94, 0.3);
-  background: rgba(34, 197, 94, 0.05);
+  @apply border-green-500/30 bg-green-500/5;
 }
 
 .response-box:hover {
-  border-color: rgba(34, 197, 94, 0.5);
-  background: rgba(34, 197, 94, 0.1);
+  @apply border-green-500/50 bg-green-500/10;
 }
 
 .step-arrow {
-  text-align: center;
-  margin: 1.5rem 0;
-  position: relative;
+  @apply text-center my-6 relative;
 }
 
 .arrow-line {
-  width: 2px;
-  height: 2rem;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
-  margin: 0 auto;
+  @apply w-0.5 h-8 bg-gradient-to-b from-white/30 to-white/10 mx-auto;
 }
 
 .arrow-text {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 0.5rem;
-  font-style: italic;
+  @apply text-xs text-slate-500 mt-2 italic;
 }
 
 /* JSON Formatting */
 .json-card {
-  background: rgba(15, 23, 42, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.75rem;
-  transition: all 0.2s ease;
+  @apply bg-slate-900/50 border border-white/10 rounded-lg p-3 transition-all duration-200;
 }
 
 .json-card:hover {
-  background: rgba(15, 23, 42, 0.7);
-  border-color: rgba(255, 255, 255, 0.2);
+  @apply bg-slate-900/70 border-white/20;
 }
 
 .json-key {
-  color: #93c5fd;
-  font-weight: 600;
-  font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-  font-size: 0.875rem;
+  @apply text-blue-300 font-semibold font-mono text-sm;
 }
 
 .json-value {
-  color: #e2e8f0;
-  font-size: 0.875rem;
-  line-height: 1.6;
+  @apply text-slate-200 text-sm leading-relaxed;
 }
 
 .json-object {
-  padding-left: 0.5rem;
+  @apply pl-2;
 }
 
 .json-row {
-  padding: 0.25rem 0;
-  border-left: 2px solid rgba(59, 130, 246, 0.2);
-  padding-left: 0.75rem;
-  margin-bottom: 0.5rem;
+  @apply py-1 border-l-2 border-blue-500/20 pl-3 mb-2;
 }
 
 /* Final Summary */
 .final-summary {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  padding: 2rem;
-  box-shadow: 0 4px 30px rgba(34, 197, 94, 0.2);
+  @apply bg-slate-800/70 backdrop-blur-md rounded-2xl p-8 shadow-lg shadow-green-500/20;
   animation: slideUp 0.5s ease-out forwards;
 }
 
 .final-result-box {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-top: 1rem;
+  @apply bg-black/20 border border-green-500/20 rounded-xl p-6 mt-4;
 }
 
 /* Prose styling for ReactMarkdown */
@@ -448,17 +270,4 @@ button:disabled {
 .prose a {
   color: var(--tw-prose-links);
   text-decoration: underline;
-}
-
-/* Spacing utilities */
-.space-y-2 > * + * {
-  margin-top: 0.5rem;
-}
-
-.space-y-3 > * + * {
-  margin-top: 0.75rem;
-}
-
-.space-y-8 > * + * {
-  margin-top: 2rem;
 }
