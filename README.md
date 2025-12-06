@@ -530,17 +530,36 @@ result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
 ```
 .
 ├── 📄 README.md                          # You are here
-├── 📄 QUICKSTART.md                      # 5-minute getting started guide
-├── 📄 ARCHITECTURE.md                    # System design deep-dive
-├── 📄 MS_BLOG_TOOLS_SUMMARY.md           # MS blog tools documentation
-├── 📄 IDEAS.md                           # Future enhancements
 │
-├── 🔧 Core Framework
-│   ├── chain.py                          # MinimalChainable, FusionChain
-│   ├── main.py                           # Model setup and utilities
-│   ├── artifact_store.py                 # Persistent knowledge system
-│   ├── chain_composer.py                 # Multi-chain workflows
-│   └── meta_chain_generator.py           # Self-improving chain design
+├── 🔧 Source Code
+│   ├── src/core/                         # Core framework
+│   │   ├── chain.py                      # MinimalChainable, FusionChain
+│   │   ├── main.py                       # Model setup and utilities
+│   │   ├── artifact_store.py             # Persistent knowledge system
+│   │   ├── chain_composer.py             # Multi-chain workflows
+│   │   └── meta_chain_generator.py       # Self-improving chain design
+│   │
+│   ├── src/enhancements/                 # Framework enhancements
+│   │   ├── natural_reasoning.py          # 5 expert reasoning patterns
+│   │   ├── adversarial_chains.py         # Dialectical reasoning
+│   │   └── emergence_measurement.py      # Scientific validation
+│   │
+│   └── src/utils/                        # Utility modules
+│       ├── artifact_browser.py           # Artifact inspector
+│       └── demo_utils.py                 # Demo helpers
+│
+├── 🧪 Tests
+│   ├── tests/test_chain.py               # Core chain tests
+│   ├── tests/test_artifacts.py           # Artifact system tests
+│   ├── tests/test_chain_composer.py      # Composer tests
+│   └── tests/test_meta_chain.py          # Meta-chain tests
+│
+├── 📚 Documentation
+│   ├── docs/QUICKSTART.md                # 5-minute getting started
+│   ├── docs/ARCHITECTURE.md              # System design deep-dive
+│   ├── docs/FRAMEWORK_ENHANCEMENTS.md    # Enhancements guide
+│   ├── docs/MS_BLOG_TOOLS_SUMMARY.md     # MS blog tools docs
+│   └── docs/IDEAS.md                     # Future enhancements
 │
 ├── 🛠️ Built-In Tools
 │   ├── tools/learning/
@@ -549,33 +568,32 @@ result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
 │   │
 │   ├── tools/ms_blog/
 │   │   ├── ms_content_tools.py           # MS blog content generator
-│   │   ├── test_ms_tools.py              # Comprehensive test suite
+│   │   ├── cli.py                        # Command-line interface
 │   │   └── README.md                     # Full documentation
 │   │
 │   └── tools/tool_utils.py               # Shared utilities
 │
+├── 🎬 Demos
+│   ├── demos/natural_reasoning_demo.py   # Expert reasoning patterns
+│   ├── demos/adversarial_chains_demo.py  # Dialectical reasoning
+│   ├── demos/emergence_measurement_demo.py # Validation framework
+│   ├── demos/meta_chain_demo.py          # Self-improving chains
+│   └── demos/ms_blog_demo.py             # MS blog tool showcase
+│
 ├── 🎨 Web Interface
 │   ├── server/main.py                    # FastAPI backend
 │   └── web/                              # React frontend
-│       ├── src/components/
-│       │   ├── ChainViewer.jsx           # Execution visualization
-│       │   ├── ResultViewer.jsx          # Results display
-│       │   └── ToolSelector.jsx          # Tool picker
-│       └── package.json
 │
-├── 🎬 Demos
-│   ├── demos/ms_blog_demo.py             # MS blog tool showcase
-│   ├── demos/meta_chain_demo.py          # Self-improving chains
-│   ├── demos/curriculum_builder_demo.py  # Chain composition
-│   └── demos/artifact_composition_demo.py # Artifact system
-│
-├── 📊 Output & Logs
+├── 📊 Runtime Data
 │   ├── output/                           # Generated content
 │   ├── logs/                             # Execution logs
 │   └── artifacts/                        # Saved artifacts
 │
+├── 🔧 Scripts
+│   └── scripts/                          # Utility scripts
+│
 └── ⚙️ Configuration
-    ├── .env                              # API keys (create from .env.example)
+    ├── .env.example                      # API key template
     ├── context/user_profile.json         # User preferences
     └── requirements.txt                  # Python dependencies
 ```

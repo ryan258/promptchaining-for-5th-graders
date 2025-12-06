@@ -19,7 +19,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from natural_reasoning import (
+from src.enhancements.natural_reasoning import (
     scientific_method,
     socratic_dialogue,
     design_thinking,

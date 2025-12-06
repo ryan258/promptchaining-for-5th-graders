@@ -22,9 +22,9 @@ except ImportError:
 
 project_root = setup_project_root(__file__)
 
-from chain import MinimalChainable
-from main import build_models, prompt
-from artifact_store import ArtifactStore
+from src.core.chain import MinimalChainable
+from src.core.main import build_models, prompt
+from src.core.artifact_store import ArtifactStore
 
 
 def concept_simplifier(topic: str, additional_context: str = ""):

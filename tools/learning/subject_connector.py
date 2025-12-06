@@ -22,8 +22,8 @@ except ImportError:
 
 project_root = setup_project_root(__file__)
 
-from chain import MinimalChainable
-from main import build_models, prompt
+from src.core.chain import MinimalChainable
+from src.core.main import build_models, prompt
 
 
 def subject_connector(subject_a: str, subject_b: str):

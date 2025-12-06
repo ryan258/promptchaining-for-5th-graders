@@ -21,7 +21,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from emergence_measurement import (
+from src.enhancements.emergence_measurement import (
     measure_emergence,
     batch_measure,
     generate_report,
@@ -34,7 +34,7 @@ try:
     from tools.learning.subject_connector import subject_connector
 except ImportError:
     print("⚠️  Note: Learning tools not available. Using natural_reasoning patterns instead.")
-    from natural_reasoning import scientific_method, design_thinking
+    from src.enhancements.natural_reasoning import scientific_method, design_thinking
 
     # Wrap them to match expected signature
     def concept_simplifier(topic):

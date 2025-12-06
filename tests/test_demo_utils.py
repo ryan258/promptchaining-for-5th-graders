@@ -2,7 +2,13 @@ import os
 import sys
 import unittest
 from unittest.mock import patch, MagicMock
-import demo_utils
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from src.utils import demo_utils
 
 class TestDemoUtils(unittest.TestCase):
     

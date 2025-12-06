@@ -31,9 +31,9 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
-from chain import MinimalChainable
-from main import build_models, prompt
-from artifact_store import ArtifactStore
+from .chain import MinimalChainable
+from .main import build_models, prompt
+from .artifact_store import ArtifactStore
 
 
 # ============================================================================

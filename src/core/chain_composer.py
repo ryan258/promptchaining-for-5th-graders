@@ -24,9 +24,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import importlib.util
 
-from chain import MinimalChainable
-from main import build_models, prompt
-from artifact_store import ArtifactStore
+from .chain import MinimalChainable
+from .main import build_models, prompt
+from .artifact_store import ArtifactStore
 
 
 @dataclass

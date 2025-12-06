@@ -6,9 +6,14 @@ Quick test to verify artifact system works correctly.
 import os
 import sys
 import json
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 # Test basic artifact store functionality
-from artifact_store import ArtifactStore, resolve_artifact_references
+from src.core.artifact_store import ArtifactStore, resolve_artifact_references
 
 
 def test_artifact_store_basic():

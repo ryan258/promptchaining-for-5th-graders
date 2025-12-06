@@ -3,7 +3,6 @@
 # Think of this as the cookbook that shows you how to cook with our tools
 
 from typing import List, Dict, Union, Tuple
-from chain import MinimalChainable, FusionChain # Our magic prompt chaining tools
 from openai import OpenAI # The tool that lets us talk to AI models via OpenRouter
 import json # Helps us work with data that looks like {"key": "value"}
 from dotenv import load_dotenv # Helps us load secret keys from a file

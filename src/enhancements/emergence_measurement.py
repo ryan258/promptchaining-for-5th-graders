@@ -22,11 +22,11 @@ from typing import Dict, List, Optional, Any, Tuple, Callable
 from datetime import datetime
 
 # Add project root to path
-project_root = Path(__file__).parent
+project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from chain import MinimalChainable
-from main import build_models, prompt
+from src.core.chain import MinimalChainable
+from src.core.main import build_models, prompt
 
 
 # ============================================================================

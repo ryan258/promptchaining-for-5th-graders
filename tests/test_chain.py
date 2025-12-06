@@ -2,9 +2,15 @@
 # This file contains tests that make sure our prompt chaining works correctly
 # Think of tests like quality checks - we try different scenarios to make sure nothing breaks
 
+import sys
+from pathlib import Path
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 import random  # Helps us make random choices for testing
 import time  # Lets us simulate different completion speeds
-from chain import FusionChain, FusionChainResult, MinimalChainable  # Our magic tools
+from src.core.chain import FusionChain, FusionChainResult, MinimalChainable  # Our magic tools
 
 
 def test_chainable_solo():

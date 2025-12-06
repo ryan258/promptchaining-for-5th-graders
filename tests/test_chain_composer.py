@@ -4,8 +4,14 @@ Quick test of chain composer functionality.
 """
 
 import sys
-from chain_composer import ChainComposer, ChainStep, ChainRecipe
-from artifact_store import ArtifactStore
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from src.core.chain_composer import ChainComposer, ChainStep, ChainRecipe
+from src.core.artifact_store import ArtifactStore
 
 
 def test_basic_composition():
