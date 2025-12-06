@@ -4,6 +4,16 @@ import ToolGrid from './components/ToolGrid'
 import InputForm from './components/InputForm'
 import ResultViewer from './components/ResultViewer'
 import ArtifactSidebar from './components/ArtifactSidebar'
+import MetaChainStudio from './components/MetaChainStudio'
+import PatternLauncher from './components/PatternLauncher'
+import ParallelLab from './components/ParallelLab'
+
+const TABS = [
+  { id: 'tools', label: 'Tools' },
+  { id: 'meta', label: 'Meta-Chain' },
+  { id: 'patterns', label: 'Patterns' },
+  { id: 'parallel', label: 'Debates & Emergence' }
+]
 
 function App() {
   const [tools, setTools] = useState([])
@@ -14,6 +24,7 @@ function App() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState('tools')
 
   useEffect(() => {
     fetch('/api/tools')
@@ -62,21 +73,79 @@ function App() {
     }
   }
 
+  const renderToolRunner = () => (
+    <div className="glass-card text-left max-w-2xl mx-auto w-full">
+      {tools.length === 0 && !error ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin text-blue-400" size={32} />
+        </div>
+      ) : (
+        <>
+          <ToolGrid
+            tools={tools}
+            selectedTool={selectedTool}
+            onSelect={setSelectedTool}
+          />
+
+          <InputForm
+            topic={topic}
+            setTopic={setTopic}
+            context={context}
+            setContext={setContext}
+            onEnter={handleRun}
+          />
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={handleRun}
+              disabled={loading || !topic}
+              className="flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="animate-spin" size={20} /> : <Play size={20} />}
+              {loading ? 'Executing chain...' : 'Run Tool'}
+            </button>
+          </div>
+
+          {loading && (
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Loader2 className="animate-spin text-blue-400" size={16} />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-300">Chain executing...</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    This may take a minute. Each step builds on the previous one.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded flex items-start gap-2 text-red-200 text-sm">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <pre className="whitespace-pre-wrap font-mono">{error}</pre>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <>
       {/* Artifact Sidebar - render at root level */}
       <ArtifactSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex flex-col gap-4 p-4">
-        <header className="max-w-2xl mx-auto w-full mb-4">
-          <div className="flex items-center justify-between">
+        <header className="max-w-5xl mx-auto w-full mb-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex-1">
-              <h1 className="text-2xl font-bold flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Terminal className="text-blue-400" />
-                Prompt Chaining Tools
+                Prompt Chaining Lab
               </h1>
-              <p className="text-gray-400 text-sm mt-2 text-center">
-                Select a tool, provide a topic, and watch the AI work.
+              <p className="text-gray-400 text-sm mt-2">
+                Run tools, design meta-chains, launch reasoning patterns, and visualize debates.
               </p>
             </div>
 
@@ -89,68 +158,50 @@ function App() {
               Artifacts
             </button>
           </div>
+
+          <div className="flex flex-wrap gap-2 mt-4">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-2 text-sm border ${
+                  activeTab === tab.id
+                    ? 'bg-blue-500/20 border-blue-400/50 text-blue-100'
+                    : 'bg-slate-900/40 border-white/10 text-gray-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </header>
 
-        <div className="glass-card text-left max-w-2xl mx-auto w-full">
-          {tools.length === 0 && !error ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="animate-spin text-blue-400" size={32} />
-            </div>
-          ) : (
-            <>
-              <ToolGrid
-                tools={tools}
-                selectedTool={selectedTool}
-                onSelect={setSelectedTool}
-              />
-
-              <InputForm
-                topic={topic}
-                setTopic={setTopic}
-                context={context}
-                setContext={setContext}
-                onEnter={handleRun}
-              />
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={handleRun}
-                  disabled={loading || !topic}
-                  className="flex items-center gap-2"
-                >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Play size={20} />}
-                  {loading ? 'Executing chain...' : 'Run Tool'}
-                </button>
+        {activeTab === 'tools' && (
+          <>
+            {renderToolRunner()}
+            {result && (
+              <div className="mt-8 max-w-4xl mx-auto w-full animate-fade-in">
+                <ResultViewer result={result} />
               </div>
+            )}
+          </>
+        )}
 
-              {/* Execution Progress */}
-              {loading && (
-                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Loader2 className="animate-spin text-blue-400" size={16} />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-blue-300">Chain executing...</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        This may take a minute. Each step builds on the previous one.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+        {activeTab === 'meta' && (
+          <div className="max-w-5xl mx-auto w-full">
+            <MetaChainStudio />
+          </div>
+        )}
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-900/30 border border-red-500/50 rounded flex items-start gap-2 text-red-200 text-sm">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <pre className="whitespace-pre-wrap font-mono">{error}</pre>
-            </div>
-          )}
-        </div>
+        {activeTab === 'patterns' && (
+          <div className="max-w-5xl mx-auto w-full">
+            <PatternLauncher />
+          </div>
+        )}
 
-        {result && (
-          <div className="mt-8 max-w-4xl mx-auto w-full animate-fade-in">
-            <ResultViewer result={result} />
+        {activeTab === 'parallel' && (
+          <div className="max-w-5xl mx-auto w-full">
+            <ParallelLab />
           </div>
         )}
       </div>
