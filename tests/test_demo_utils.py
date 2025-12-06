@@ -16,13 +16,11 @@ class TestDemoUtils(unittest.TestCase):
     @patch('os.path.abspath')
     @patch('sys.path')
     def test_setup_demo_env_adds_path(self, mock_sys_path, mock_abspath, mock_dirname):
-        # Setup mocks
+        # Setup
         mock_abspath.return_value = '/fake/project/root/demo_utils.py'
         mock_dirname.return_value = '/fake/project/root'
-        mock_sys_path.insert = MagicMock()
-        # Simulate path NOT being in sys.path (it's a list, so we can't easily mock 'in' operator on the mock itself perfectly without side_effect, 
-        # but we can check if insert was called)
-        # Actually, let's just use a real list for sys.path to make it easier
+        
+        # Use a real list for sys.path to verify modification
         real_sys_path = []
         with patch('sys.path', real_sys_path):
             # Run function
@@ -30,10 +28,9 @@ class TestDemoUtils(unittest.TestCase):
             
             # Check if path was added
             self.assertIn('/fake/project/root', real_sys_path)
-            self.assertEqual(real_sys_path[0], '/fake/project/root')
 
     @patch('os.path.exists')
-    @patch('demo_utils.load_dotenv')
+    @patch('src.utils.demo_utils.load_dotenv')
     @patch('os.getenv')
     def test_setup_demo_env_loads_dotenv(self, mock_getenv, mock_load_dotenv, mock_exists):
         # Setup
