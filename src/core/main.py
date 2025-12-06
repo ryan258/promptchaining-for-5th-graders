@@ -62,31 +62,37 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
     """
     client, model_name = model_info
     
-    try:
-        response = client.chat.completions.create(
-            model=model_name,
-            messages=[
-                {"role": "user", "content": prompt_text}
-            ],
-            # We need to set these to avoid the default 16-token limit!
-            max_tokens=1000, 
-            temperature=0.7,
-            extra_headers={
-                "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders"),
-                "X-Title": os.getenv("OPENROUTER_APP_NAME", "Prompt Chaining for 5th Graders"),
-            }
-        )
-        
-        content = response.choices[0].message.content
-        usage = response.usage
-        
-        # Return both content and usage
-        return content, usage
-        
-    except Exception as e:
-        print(f"⚠️ API call failed: {e}")
-        # Return empty content and None for usage so the chain can continue (or fail gracefully)
-        return f"Error: {str(e)}", None
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "user", "content": prompt_text}
+                ],
+                # We need to set these to avoid the default 16-token limit!
+                max_tokens=1000, 
+                temperature=0.7,
+                extra_headers={
+                    "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "https://github.com/ryanjohnson/promptchaining-for-5th-graders"),
+                    "X-Title": os.getenv("OPENROUTER_APP_NAME", "Prompt Chaining for 5th Graders"),
+                }
+            )
+            
+            content = response.choices[0].message.content
+            usage = response.usage
+            
+            if not content:
+                print(f"⚠️ Attempt {attempt + 1}/{max_retries}: Received empty content. Retrying...")
+                continue
+            
+            # Return both content and usage
+            return content, usage
+            
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt == max_retries - 1:
+                return f"Error: {str(e)}", None
 
 
 def prompt_chainable_poc():

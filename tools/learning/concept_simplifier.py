@@ -62,7 +62,7 @@ def concept_simplifier(topic: str, additional_context: str = ""):
             # Prompt 1: Decompose with expert educator lens
             """You are an expert educator specializing in making complex topics accessible to {{audience}}.
 
-Decompose '{{topic}}' into 3-6 essential components using this framework:
+Decompose '{{topic}}' into exactly 3 essential components using this framework:
 1. **Core mechanism/process** - What actually happens?
 2. **Key inputs/requirements** - What's needed?
 3. **Outputs/results** - What's produced?
@@ -83,14 +83,14 @@ Example for "Machine Learning":
   ]
 }
 
-Respond in JSON:
+Respond **ONLY** with raw JSON (no markdown, no prose):
 {
   "components": [
     {"name": "Component name (3-8 words)", "why_it_matters": "Practical significance in 1-2 sentences (max 40 words)"}
   ]
 }
 
-Provide exactly 3-6 components for '{{topic}}'. If the concept is simple, use 3. If complex, use up to 6.""",
+Provide exactly 3 components for '{{topic}}'. Keep the entire JSON under 140 words. Do not add explanations, commentary, or code fences.""",
 
             # Prompt 2: Create high-quality analogies
             """You are a master communicator who excels at creating memorable analogies.
@@ -114,7 +114,7 @@ When it breaks down: "Unlike recipes, neural networks adjust thousands of 'ingre
 ❌ BAD (too vague): "It's like a brain"
 ❌ BAD (too technical): "It's like a tensor operation"
 
-Respond in JSON:
+Respond **ONLY** with raw JSON (no markdown, no prose):
 {
   "analogies": [
     {
@@ -125,7 +125,7 @@ Respond in JSON:
   ]
 }
 
-Create exactly one analogy per component from the previous step.""",
+Create exactly one analogy per component from the previous step. Keep each analogy + breakdown to 40 words max and keep the entire JSON under 150 words. Do not add explanations, commentary, or code fences.""",
 
             # Prompt 3: Provide concrete, testable examples
             """You are a learning designer who creates practical exercises to verify understanding.
@@ -147,7 +147,7 @@ Example format for "Encryption":
 ❌ BAD self-check (too easy): "What is encryption?" (just asks for definition)
 ❌ BAD self-check (too hard): "Explain the mathematics of RSA cryptography" (too technical)
 
-Respond in JSON:
+Respond **ONLY** with raw JSON (no markdown, no prose):
 {
   "examples": [
     {
@@ -158,7 +158,7 @@ Respond in JSON:
   ]
 }
 
-Provide exactly one example per component.""",
+Provide exactly one example per component. Keep each example + question to 40 words max and keep the entire JSON under 150 words. Do not add explanations, commentary, or code fences.""",
 
             # Prompt 4: Synthesize into cohesive explainer
             """You are a skilled technical writer creating a concise yet complete explanation.
@@ -185,14 +185,14 @@ Example opening for "Blockchain":
 ✅ GOOD: "A blockchain is a shared record book that many people keep copies of, making it nearly impossible to cheat because everyone can verify what's written."
 ❌ BAD: "Blockchain is a distributed ledger technology utilizing cryptographic hashing." (too technical)
 
-Respond in JSON:
+Respond **ONLY** with raw JSON (no markdown, no prose):
 {
-  "explainer": "Your 6-10 sentence explanation as a single continuous text (no bullet points)",
-  "pitfalls": ["Common misunderstanding #1 (max 20 words)", "Common misunderstanding #2 (max 20 words)"],
-  "next_steps": ["Actionable next step #1 (max 15 words)", "Actionable next step #2 (max 15 words)"]
+ "explainer": "Your 6-10 sentence explanation as a single continuous text (no bullet points)",
+ "pitfalls": ["Common misunderstanding #1 (max 20 words)", "Common misunderstanding #2 (max 20 words)"],
+ "next_steps": ["Actionable next step #1 (max 15 words)", "Actionable next step #2 (max 15 words)"]
 }
 
-Keep explainer to 150-200 words total. Provide 2-3 pitfalls and 2-3 next_steps."""
+Keep explainer to 120-150 words total. Provide 2-3 pitfalls and 2-3 next_steps. If any input is missing or unclear, still return valid JSON with your best effort; never return empty output. Do not add explanations, commentary, or code fences."""
         ],
     )
 

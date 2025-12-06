@@ -172,6 +172,49 @@ class MinimalChainable:
         if topic is None and artifact_store is not None:
             topic = context.get("topic") or context.get("subject_A") or context.get("subject_a")
 
+        # Helper to coerce loose markdown/json strings into real JSON when possible
+        def _coerce_json(text: str):
+            if not isinstance(text, str):
+                return text
+
+            # Strip code fences if present
+            fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+            candidate = fence_match.group(1) if fence_match else text
+
+            # Grab the main JSON-looking slice
+            start = None
+            for ch in ["{", "["]:
+                pos = candidate.find(ch)
+                if pos != -1 and (start is None or pos < start):
+                    start = pos
+            if start is None:
+                return text
+
+            end = max(candidate.rfind("}"), candidate.rfind("]"))
+            if end == -1:
+                return text
+
+            snippet = candidate[start : end + 1]
+
+            def attempt_load(s: str):
+                try:
+                    return json.loads(s)
+                except Exception:
+                    return None
+
+            parsed = attempt_load(snippet)
+            if parsed is not None:
+                return parsed
+
+            # Try to balance braces if truncated
+            open_braces = snippet.count("{")
+            close_braces = snippet.count("}")
+            open_brackets = snippet.count("[")
+            close_brackets = snippet.count("]")
+            fixed = snippet + ("}" * max(0, open_braces - close_braces)) + ("]" * max(0, open_brackets - close_brackets))
+            parsed = attempt_load(fixed)
+            return parsed if parsed is not None else text
+
         # Go through each prompt one by one
         for i, prompt in enumerate(prompts):
 
@@ -198,62 +241,79 @@ class MinimalChainable:
                 # Get the response from j prompts ago
                 previous_output = output[i - j]
 
+                # Try to parse stringified JSON so {{output[-1].key}} still works
+                parsed_output = previous_output
+                if isinstance(previous_output, str):
+                    try:
+                        parsed_output = json.loads(previous_output)
+                    except (json.JSONDecodeError, TypeError):
+                        parsed_output = previous_output
+
                 # Handle JSON (dictionary) outputs specially
-                if isinstance(previous_output, dict):
+                if isinstance(parsed_output, dict):
                     # If they want the whole JSON object
                     if f"{{{{output[-{j}]}}}}" in prompt:
                         # Replace with the JSON as a string
                         prompt = prompt.replace(
-                            f"{{{{output[-{j}]}}}}", json.dumps(previous_output)
+                            f"{{{{output[-{j}]}}}}", json.dumps(parsed_output)
                         )
                     
                     # If they want a specific key from the JSON
-                    for key, value in previous_output.items():
+                    for key, value in parsed_output.items():
                         if f"{{{{output[-{j}].{key}}}}}" in prompt:
                             # Replace {{output[-1].title}} with the actual title
+                            replacement = (
+                                json.dumps(value, ensure_ascii=False)
+                                if isinstance(value, (dict, list))
+                                else str(value)
+                            )
                             prompt = prompt.replace(
-                                f"{{{{output[-{j}].{key}}}}}", str(value)
+                                f"{{{{output[-{j}].{key}}}}}", replacement
                             )
                             
-                # Handle regular text outputs
+                # Handle regular text outputs or fallback when JSON parsing failed
                 else:
                     if f"{{{{output[-{j}]}}}}" in prompt:
                         # Replace with the previous text response
                         prompt = prompt.replace(
                             f"{{{{output[-{j}]}}}}", str(previous_output)
                         )
+                    # Best-effort: if we still see scoped references, replace them with the raw text
+                    prompt = re.sub(
+                        rf"{{{{output\[-{j}\]\.[^}}]+}}}}",
+                        str(previous_output),
+                        prompt
+                    )
 
             # Save the prompt with all variables filled in
             # This helps us debug and see exactly what we sent to the AI
             context_filled_prompts.append(prompt)
 
-            # STEP 3: Send the prompt to the AI model
-            # We expect the callable to return (content, usage) or just content
-            result_raw = callable(model, prompt)
-            
+            # STEP 3: Send the prompt to the AI model (with retries for JSON validation)
+            max_retries = 3
+            result = None
             usage = None
-            if isinstance(result_raw, tuple) and len(result_raw) == 2:
-                result, usage = result_raw
-            else:
-                result = result_raw
-
-            # STEP 4: Try to parse JSON responses
-            # Sometimes AIs return JSON data, and we want to handle it smartly
-            try:
-                # First, check if JSON is wrapped in markdown code blocks
-                # Look for ```json or ``` followed by JSON
-                json_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", result)
+            
+            for attempt in range(max_retries):
+                # We expect the callable to return (content, usage) or just content
+                result_raw = callable(model, prompt)
                 
-                if json_match:
-                    # Extract and parse the JSON from the markdown
-                    result = json.loads(json_match.group(1))
+                usage = None
+                if isinstance(result_raw, tuple) and len(result_raw) == 2:
+                    result, usage = result_raw
                 else:
-                    # Try to parse the whole response as JSON
-                    result = json.loads(result)
-                    
-            except json.JSONDecodeError:
-                # If it's not JSON, that's fine - keep it as regular text
-                pass
+                    result = result_raw
+
+                # STEP 4: Try to parse JSON responses (robust to fences/truncation)
+                parsed_result = _coerce_json(result)
+                
+                # Validation: If prompt asks for JSON but we got a string, retry
+                if "JSON" in prompt and isinstance(parsed_result, str) and attempt < max_retries - 1:
+                    print(f"⚠️ Step {i+1} Attempt {attempt + 1}/{max_retries}: Failed to parse JSON. Retrying...")
+                    continue
+                
+                result = parsed_result
+                break
 
             # Save this result so future prompts can reference it
             output.append(result)
@@ -262,6 +322,184 @@ class MinimalChainable:
             if artifact_store is not None and topic:
                 # Extract semantic step name from the original prompt
                 step_name = MinimalChainable._extract_role_from_prompt(prompts[i])
+                if not step_name:
+                    step_name = f"step_{i + 1}"
+                else:
+                    # Convert role to step name: "Expert Educator" → "expert_educator"
+                    step_name = re.sub(r'[^a-z0-9]+', '_', step_name.lower()).strip('_')
+
+                # Save the artifact with metadata
+                artifact_store.save(
+                    topic=topic,
+                    step_name=step_name,
+                    data=result,
+                    metadata={
+                        "prompt_index": i,
+                        "original_prompt": prompts[i][:100] + "..." if len(prompts[i]) > 100 else prompts[i],
+                        "artifacts_used": artifact_keys_used
+                    }
+                )
+
+            # Store usage if available
+            if usage:
+                # Convert usage object to dict if possible to ensure JSON serializability
+                if hasattr(usage, "model_dump"):
+                    usage_dict = usage.model_dump()
+                elif hasattr(usage, "dict"):
+                    usage_dict = usage.dict()
+                elif hasattr(usage, "__dict__"):
+                    usage_dict = usage.__dict__
+                else:
+                    usage_dict = usage
+
+                usage_stats_list.append(usage_dict)
+
+        # Build execution trace if requested
+        if return_trace:
+            execution_trace = {
+                "steps": [],
+                "final_result": output[-1] if output else None,
+                "total_tokens": 0
+            }
+
+            for i, (filled_prompt, response) in enumerate(zip(context_filled_prompts, output)):
+                # Extract role from the original prompt (before variable substitution)
+                role = MinimalChainable._extract_role_from_prompt(prompts[i])
+                if not role:
+                    role = f"Step {i + 1}"
+
+                # Get token usage for this step
+                tokens = None
+                if i < len(usage_stats_list):
+                    usage = usage_stats_list[i]
+                    if isinstance(usage, dict):
+                        prompt_tokens = usage.get('prompt_tokens', 0)
+                        completion_tokens = usage.get('completion_tokens', 0)
+                        tokens = prompt_tokens + completion_tokens
+                        execution_trace["total_tokens"] += tokens
+
+                execution_trace["steps"].append({
+                    "step_number": i + 1,
+                    "role": role,
+                    "prompt": filled_prompt,
+                    "response": response,
+                    "tokens": tokens
+                })
+
+            return output, context_filled_prompts, usage_stats_list, execution_trace
+
+        # Return outputs, filled-in prompts, and usage stats (if requested)
+        if return_usage:
+            return output, context_filled_prompts, usage_stats_list
+
+        return output, context_filled_prompts
+
+    @staticmethod
+    def to_delim_text_file(name: str, content: List[Union[str, dict]]) -> str:
+        """
+        This function saves our results to a text file in a pretty format.
+        
+        It's like creating a scrapbook of our prompt chain - each result
+        gets its own section with chain emoji to show the progression.
+        """
+        result_string = ""  # We'll build up the final text here
+        
+        # Create a file with the given name
+        with open(f"{name}.txt", "w", encoding="utf-8") as outfile:
+            # Go through each item in our content
+            for i, item in enumerate(content, 1):  # Start counting from 1
+                
+                # Convert dictionaries and lists to JSON strings
+                if isinstance(item, dict):
+                    item = json.dumps(item)
+                if isinstance(item, list):
+                    item = json.dumps(item)
+                
+                # Create a pretty header with chain emoji
+                # More emoji = later in the chain
+                chain_text_delim = (
+                    f"{'🔗' * i} -------- Prompt Chain Result #{i} -------------\n\n"
+                )
+                
+                # Write to file and build our return string
+                outfile.write(chain_text_delim)
+                outfile.write(item)
+                outfile.write("\n\n")
+
+                result_string += chain_text_delim + item + "\n\n"
+
+        return result_string
+
+    @staticmethod
+    def log_to_markdown(
+        demo_name: str, 
+        prompts: List[str], 
+        responses: List[Any], 
+        usage_stats: List[Any] = None
+    ) -> str:
+        """
+        Logs the run results to a markdown file in the /logs directory.
+        """
+        # Get the project root directory (where this file is)
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        logs_dir = os.path.join(project_root, "logs")
+        
+        # Create logs directory if it doesn't exist
+        if not os.path.exists(logs_dir):
+            os.makedirs(logs_dir)
+            
+        # Generate timestamped filename
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"{timestamp}_{demo_name}.md"
+        filepath = os.path.join(logs_dir, filename)
+        
+        markdown_content = f"# 🪵 Log: {demo_name}\n\n"
+        markdown_content += f"**Date:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        
+        # Calculate cost if usage stats are available
+        total_cost = 0.0
+        if usage_stats:
+            # Approximate pricing (e.g. GPT-4o-mini / Gemini Flash levels)
+            # NOTE: This is a hardcoded approximation. Real costs vary by model.
+            # Input: $0.15 / 1M tokens
+            # Output: $0.60 / 1M tokens
+            INPUT_PRICE = 0.15 / 1_000_000
+            OUTPUT_PRICE = 0.60 / 1_000_000
+            
+            total_input_tokens = 0
+            total_output_tokens = 0
+            
+            for usage in usage_stats:
+                # Handle both object and dict access
+                if isinstance(usage, dict):
+                    prompt_tokens = usage.get('prompt_tokens', 0)
+                    completion_tokens = usage.get('completion_tokens', 0)
+                else:
+                    prompt_tokens = getattr(usage, 'prompt_tokens', 0)
+                    completion_tokens = getattr(usage, 'completion_tokens', 0)
+                    
+                total_input_tokens += prompt_tokens
+                total_output_tokens += completion_tokens
+                
+            total_cost = (total_input_tokens * INPUT_PRICE) + (total_output_tokens * OUTPUT_PRICE)
+            
+            markdown_content += f"**Total Cost**: ${total_cost:.6f}\n"
+            markdown_content += f"**Tokens**: {total_input_tokens} in / {total_output_tokens} out\n\n"
+        
+        markdown_content += "## 🗣️ Prompts Sent\n\n"
+        for i, prompt in enumerate(prompts, 1):
+            markdown_content += f"### Prompt #{i}\n"
+            markdown_content += f"```text\n{prompt}\n```\n\n"
+            
+        markdown_content += "## 🤖 AI Responses\n\n"
+        for i, response in enumerate(responses, 1):
+            markdown_content += f"### Response #{i}\n"
+            
+            # Format response nicely
+            if isinstance(response, (dict, list)):
+                formatted_response = json.dumps(response, indent=2)
+                markdown_content += f"```json\n{formatted_response}\n```\n\n"
+            else:
                 if not step_name:
                     step_name = f"step_{i + 1}"
                 else:
