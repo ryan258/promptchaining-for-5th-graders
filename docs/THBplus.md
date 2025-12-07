@@ -244,21 +244,20 @@ AI tutors will improve education outcomes more than traditional methods
 
 **When results appear:**
 
-**Three columns will show up - walk through them:**
+**A chronological feed will appear - walk through it:**
 
-1. **Blue Team column (left):**
+1. **Blue Team Opening (top):**
    - "Here's the opening defense"
    - Scroll and read a compelling point
-   - "Look at Round 1 defense - responding to Red's attack"
 
-2. **Red Team column (middle):**
-   - "And here's Red Team attacking the position"
-   - "See how it's finding weaknesses and counterarguments?"
-   - "Round 2 attack - getting more aggressive"
+2. **Rounds Feed (middle):**
+   - "Look at Round 1 - Red attacks, Blue defends"
+   - "See how they respond to each other directly?"
+   - "Red Team finds weaknesses, Blue Team counters"
 
-3. **Judge column (right):**
-   - **This is the impressive part**
-   - "The judge is evaluating both sides"
+3. **Judge's Verdict (bottom):**
+   - **The big reveal**
+   - "The judge evaluates the entire debate"
    - Point to the winner badge
    - Read the verdict reasoning out loud
    - "Look at the scores - Blue Team [X]/10, Red Team [Y]/10"
@@ -327,17 +326,17 @@ Why do humans dream
 
 **When results appear:**
 
-**Three columns:**
+**Side-by-side comparison:**
 
-1. **Chain Output (left):**
-   - "This is the multi-step scientific method approach"
-   - Scroll through it - should be detailed
-
-2. **Baseline Output (middle):**
+1. **Baseline Output (left):**
    - "This is the single-prompt approach"
    - "Notice the difference in structure?"
 
-3. **Scores & Winner (right):**
+2. **Chain Output (right):**
+   - "This is the multi-step scientific method approach"
+   - Scroll through it - should be detailed
+
+3. **Analysis & Metrics (below):**
    - **The big reveal**
    - Point to winner badge: "Winner: Chain" (hopefully!)
    - "Look at these 5 metrics"

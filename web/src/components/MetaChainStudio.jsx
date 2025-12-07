@@ -185,6 +185,18 @@ export default function MetaChainStudio() {
         </div>
       </div>
 
+      {/* Tool Description */}
+      <div className="bg-slate-900/50 p-4 rounded-lg border border-white/5">
+        <p className="text-gray-300 text-sm mb-2">
+          The Meta-Chain Studio uses a "Designer AI" to build a custom reasoning chain for your specific goal.
+          It selects the best cognitive moves (like "analogize" or "critique") and writes the prompts for you.
+        </p>
+        <div className="flex items-start gap-2 text-xs text-gray-400">
+          <span className="uppercase tracking-wider font-bold text-blue-400/80 shrink-0">Output:</span>
+          A fully executed custom chain, complete with intermediate steps and final result.
+        </div>
+      </div>
+
       <div className="glass-card space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -195,6 +207,7 @@ export default function MetaChainStudio() {
               onChange={(e) => setGoal(e.target.value)}
               placeholder="Teach quantum physics through historical analogies"
             />
+            <p className="text-[10px] text-gray-500 mt-1">What do you want the chain to achieve? Be specific.</p>
           </div>
           <div>
             <label className="text-sm font-semibold text-blue-300">Context (optional)</label>
@@ -204,11 +217,13 @@ export default function MetaChainStudio() {
               onChange={(e) => setContext(e.target.value)}
               placeholder="Audience, constraints, or special instructions"
             />
+            <p className="text-[10px] text-gray-500 mt-1">Optional details to guide the Designer AI.</p>
           </div>
         </div>
 
         <div>
-          <p className="text-sm font-semibold text-blue-300 mb-2">Desired cognitive moves</p>
+          <p className="text-sm font-semibold text-blue-300 mb-1">Desired cognitive moves</p>
+          <p className="text-[10px] text-gray-500 mb-2">Select specific reasoning steps you want the chain to include (optional).</p>
           <div className="flex flex-wrap gap-2">
             {cognitiveMoves.map((move) => {
               const isActive = selectedMoves.includes(move)
@@ -217,11 +232,10 @@ export default function MetaChainStudio() {
                   key={move}
                   type="button"
                   onClick={() => toggleMove(move)}
-                  className={`px-3 py-2 text-sm border ${
-                    isActive
+                  className={`px-3 py-2 text-sm border ${isActive
                       ? 'bg-blue-500/20 border-blue-400/50 text-blue-100'
                       : 'bg-slate-900/40 border-white/10 text-gray-200'
-                  }`}
+                    }`}
                 >
                   {move.replace(/_/g, ' ')}
                 </button>

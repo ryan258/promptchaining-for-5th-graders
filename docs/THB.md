@@ -291,9 +291,9 @@ Go to: **http://localhost:5173**
 5. Wait 60-90 seconds
 
 **✅ Pass:** You see:
-- 3 columns: Belief | Dialogue | Synthesis
-- Dialogue column shows back-and-forth questioning
-- No errors
+- Chronological feed: Belief -> Rounds -> Synthesis
+- Dialogue shows back-and-forth questioning
+- Final synthesis card at the bottom
 
 ---
 
@@ -308,9 +308,9 @@ Go to: **http://localhost:5173**
 4. Wait 30-60 seconds
 
 **✅ Pass:** You see:
-- 3 columns: Problem | Why Chain | Synthesis
+- Chronological feed: Problem -> Why Chain -> Synthesis
 - Why Chain shows 5 levels of "why"
-- Root cause identified
+- Root cause identified in final card
 
 ---
 
@@ -341,12 +341,11 @@ Go to: **http://localhost:5173**
 
 **✅ Pass:** You see:
 - "Running..." message
-- 3 columns appear:
-  - Blue Team (defense)
-  - Red Team (attacks)
-  - Judge (verdict)
-- Each column has structured content
-- Judge shows winner badge
+- Chronological feed appears:
+  - Blue Team (Opening)
+  - Rounds (Red Attack / Blue Defense)
+  - Judge's Verdict (at the bottom)
+- Judge shows winner badge and detailed scoring
 - Metadata below shows scores
 
 **What you're seeing:**
@@ -373,13 +372,13 @@ Go to: **http://localhost:5173**
 5. Wait 120-180 seconds (SLOW - runs chain twice)
 
 **✅ Pass:** You see:
-- 3 columns:
-  - Chain Output
-  - Baseline Output
-  - Scores & Winner
+- Comparison Grid (Side-by-side):
+  - Baseline Output (Left)
+  - Chain Output (Right)
+- Analysis & Metrics section below:
+  - Executive Summary
+  - Detailed Scores (Novelty, Depth, etc.)
 - Winner badge shows "Chain" or "Baseline" or "Tie"
-- Scores column shows 5 metrics (novelty, depth, coherence, pedagogical, actionability)
-- Performance metadata (tokens, time)
 
 **What you're seeing:**
 - Same topic processed two ways:

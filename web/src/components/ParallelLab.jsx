@@ -8,6 +8,19 @@ const DEFAULT_CHAINS = [
   { value: 'five_whys', label: '5 Whys' }
 ]
 
+const MODE_INFO = {
+  debate: {
+    label: 'Debate: Red vs Blue',
+    description: 'Simulate a fierce debate between two AI personas to stress-test an idea.',
+    output: 'Produces a round-by-round transcript of attacks and defenses, followed by a final judgment.'
+  },
+  emergence: {
+    label: 'Emergence Compare',
+    description: 'Compare a standard "baseline" prompt against a complex "chain" to see if better reasoning emerges.',
+    output: 'Displays side-by-side outputs, a detailed analysis of the differences, and scoring metrics.'
+  }
+}
+
 
 function safeRender(value) {
   if (value === null || value === undefined) return ''
@@ -473,6 +486,15 @@ export default function ParallelLab() {
         </button>
       </div>
 
+      {/* Mode Description */}
+      <div className="bg-slate-900/50 p-4 rounded-lg border border-white/5">
+        <p className="text-gray-300 text-sm mb-2">{MODE_INFO[mode].description}</p>
+        <div className="flex items-start gap-2 text-xs text-gray-400">
+          <span className="uppercase tracking-wider font-bold text-amber-400/80 shrink-0">Output:</span>
+          {MODE_INFO[mode].output}
+        </div>
+      </div>
+
       <div className="glass-card space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -485,6 +507,7 @@ export default function ParallelLab() {
               onChange={(e) => handleChange('topic', e.target.value)}
               placeholder="E.g., The future of AI in healthcare"
             />
+            <p className="text-[10px] text-gray-500 mt-1">The main subject or question to be discussed.</p>
           </div>
           {mode === 'debate' ? (
             <div>
@@ -497,6 +520,7 @@ export default function ParallelLab() {
                 onChange={(e) => handleChange('position_to_defend', e.target.value)}
                 placeholder="Aggressive DMTs should be prioritized"
               />
+              <p className="text-[10px] text-gray-500 mt-1">The specific stance the Blue Team (Defense) will take.</p>
             </div>
           ) : (
             <div>
@@ -513,6 +537,7 @@ export default function ParallelLab() {
                   </option>
                 ))}
               </select>
+              <p className="text-[10px] text-gray-500 mt-1">Select the complex reasoning chain to test against the baseline.</p>
             </div>
           )}
         </div>
@@ -530,6 +555,7 @@ export default function ParallelLab() {
                 min={1}
                 max={5}
               />
+              <p className="text-[10px] text-gray-500 mt-1">Number of back-and-forth exchanges (3 is standard).</p>
             </div>
           </div>
         ) : (
@@ -544,6 +570,7 @@ export default function ParallelLab() {
                 onChange={(e) => handleChange('context', e.target.value)}
                 placeholder="Constraints or extra details for the chain"
               />
+              <p className="text-[10px] text-gray-500 mt-1">Optional background info to guide the chain's reasoning.</p>
             </div>
             <div>
               <label className="text-xs uppercase tracking-wide text-gray-400 block mb-1">
@@ -555,6 +582,7 @@ export default function ParallelLab() {
                 onChange={(e) => handleChange('baseline_prompt', e.target.value)}
                 placeholder="Custom mega-prompt to compare against"
               />
+              <p className="text-[10px] text-gray-500 mt-1">Optional: Override the default simple prompt to test against a specific baseline.</p>
             </div>
           </div>
         )}

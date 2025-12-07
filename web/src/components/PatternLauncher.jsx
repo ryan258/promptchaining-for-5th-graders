@@ -4,38 +4,58 @@ import MultiColumnViewer from './MultiColumnViewer'
 
 const FIELD_CONFIG = {
   scientific_method: [
-    { key: 'hypothesis', label: 'Hypothesis', placeholder: 'MS fatigue is worsened by dehydration' },
-    { key: 'context', label: 'Context', placeholder: 'What makes this hypothesis interesting?', type: 'textarea' },
-    { key: 'evidence_sources', label: 'Evidence sources (one per line)', type: 'textarea' }
+    { key: 'hypothesis', label: 'Hypothesis', placeholder: 'MS fatigue is worsened by dehydration', help: 'The core statement you want to test scientifically.' },
+    { key: 'context', label: 'Context', placeholder: 'What makes this hypothesis interesting?', type: 'textarea', help: 'Background info to help the AI understand the domain.' },
+    { key: 'evidence_sources', label: 'Evidence sources (one per line)', type: 'textarea', help: 'List any specific papers, data, or observations to consider.' }
   ],
   socratic_dialogue: [
-    { key: 'belief', label: 'Belief to test', placeholder: 'AI will replace most doctors' },
-    { key: 'teacher_persona', label: 'Questioner persona', placeholder: 'Philosopher' },
-    { key: 'depth', label: 'Rounds', type: 'number', placeholder: '5' }
+    { key: 'belief', label: 'Belief to test', placeholder: 'AI will replace most doctors', help: 'A strong opinion or claim to be challenged.' },
+    { key: 'teacher_persona', label: 'Questioner persona', placeholder: 'Philosopher', help: 'The style of the Socratic questioner (e.g., Skeptic, Child, Professor).' },
+    { key: 'depth', label: 'Rounds', type: 'number', placeholder: '5', help: 'How many back-and-forth exchanges to generate (3-5 is usually best).' }
   ],
   design_thinking: [
-    { key: 'problem', label: 'Problem to solve', placeholder: 'Medication adherence for MS patients' },
-    { key: 'target_user', label: 'Target user', placeholder: 'MS patient managing fatigue' },
-    { key: 'constraints', label: 'Constraints (one per line)', type: 'textarea' }
+    { key: 'problem', label: 'Problem to solve', placeholder: 'Medication adherence for MS patients', help: 'The user need or pain point you want to address.' },
+    { key: 'target_user', label: 'Target user', placeholder: 'MS patient managing fatigue', help: 'Who are we solving this for? Be specific.' },
+    { key: 'constraints', label: 'Constraints (one per line)', type: 'textarea', help: 'Technical, financial, or physical limitations to respect.' }
   ],
   judicial_reasoning: [
-    { key: 'case', label: 'Case', placeholder: 'Should insurance cover off-label MS treatments?' },
-    { key: 'relevant_principles', label: 'Principles (one per line)', type: 'textarea' },
-    { key: 'precedents', label: 'Precedents (one per line)', type: 'textarea' }
+    { key: 'case', label: 'Case', placeholder: 'Should insurance cover off-label MS treatments?', help: 'The legal or ethical question to be judged.' },
+    { key: 'relevant_principles', label: 'Principles (one per line)', type: 'textarea', help: 'Laws, ethical guidelines, or precedents to apply.' },
+    { key: 'precedents', label: 'Precedents (one per line)', type: 'textarea', help: 'Past cases or examples that might influence the ruling.' }
   ],
   five_whys: [
-    { key: 'problem', label: 'Problem', placeholder: 'I missed my medication dose' },
-    { key: 'context', label: 'Context', placeholder: 'What happened around the miss?', type: 'textarea' },
-    { key: 'depth', label: 'Whys', type: 'number', placeholder: '5' }
+    { key: 'problem', label: 'Problem', placeholder: 'I missed my medication dose', help: 'The surface-level issue that occurred.' },
+    { key: 'context', label: 'Context', placeholder: 'What happened around the miss?', type: 'textarea', help: 'Details about the situation when the problem happened.' },
+    { key: 'depth', label: 'Whys', type: 'number', placeholder: '5', help: 'How deep to drill down (5 is the standard).' }
   ]
 }
 
-const PATTERN_LABELS = {
-  scientific_method: 'Scientific Method',
-  socratic_dialogue: 'Socratic Dialogue',
-  design_thinking: 'Design Thinking',
-  judicial_reasoning: 'Judicial Reasoning',
-  five_whys: '5 Whys'
+const PATTERN_INFO = {
+  scientific_method: {
+    label: 'Scientific Method',
+    description: 'Rigorously test a hypothesis through simulated experimentation and analysis.',
+    output: 'Generates a structured experimental design, predictions, and analysis of potential results.'
+  },
+  socratic_dialogue: {
+    label: 'Socratic Dialogue',
+    description: 'Explore a belief through a probing question-and-answer session with a persona.',
+    output: 'Produces a transcript of the dialogue and a final synthesis of how the belief evolved.'
+  },
+  design_thinking: {
+    label: 'Design Thinking',
+    description: 'Solve a user problem using the 5-stage Design Thinking process.',
+    output: 'Walks through Empathize, Define, Ideate, Prototype, and Test phases with specific artifacts for each.'
+  },
+  judicial_reasoning: {
+    label: 'Judicial Reasoning',
+    description: 'Weigh evidence and principles to reach a fair verdict on a complex case.',
+    output: 'Delivers a structured judgment with facts, arguments, and a final ruling.'
+  },
+  five_whys: {
+    label: '5 Whys',
+    description: 'Drill down into a problem to find its root cause by asking "Why?" five times.',
+    output: 'Visualizes the chain of causality and suggests systemic solutions.'
+  }
 }
 
 function safeRender(value) {
@@ -585,10 +605,21 @@ export default function PatternLauncher() {
                   : 'bg-slate-900/40 border-white/10 text-gray-200'
                   }`}
               >
-                {PATTERN_LABELS[pattern.name] || pattern.name}
+                {PATTERN_INFO[pattern.name]?.label || pattern.name}
               </button>
             ))}
         </div>
+
+        {/* Pattern Description */}
+        {selectedPattern && PATTERN_INFO[selectedPattern] && (
+          <div className="bg-slate-900/50 p-4 rounded-lg border border-white/5 mb-4">
+            <p className="text-gray-300 text-sm mb-2">{PATTERN_INFO[selectedPattern].description}</p>
+            <div className="flex items-start gap-2 text-xs text-gray-400">
+              <span className="uppercase tracking-wider font-bold text-purple-400/80 shrink-0">Output:</span>
+              {PATTERN_INFO[selectedPattern].output}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {fields.map((field) => (
@@ -611,6 +642,7 @@ export default function PatternLauncher() {
                   placeholder={field.placeholder}
                 />
               )}
+              {field.help && <p className="text-[10px] text-gray-500 mt-1">{field.help}</p>}
             </div>
           ))}
         </div>
@@ -634,7 +666,7 @@ export default function PatternLauncher() {
             <DesignThinkingFeed result={result} />
           ) : (
             <MultiColumnViewer
-              title={PATTERN_LABELS[selectedPattern] || selectedPattern}
+              title={PATTERN_INFO[selectedPattern]?.label || selectedPattern}
               subtitle={metadata?.hypothesis || metadata?.problem || metadata?.case}
               columns={buildColumns(selectedPattern, result)}
             />
