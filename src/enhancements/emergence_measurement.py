@@ -136,8 +136,8 @@ def measure_emergence(
         "topic": topic,
         "chain_approach": chain_function.__name__,
         "outputs": {
-            "chain": chain_output[:1000] + "..." if len(chain_output) > 1000 else chain_output,
-            "baseline": baseline_output[:1000] + "..." if len(str(baseline_output)) > 1000 else baseline_output
+            "chain": chain_output,
+            "baseline": baseline_output
         },
         "scores": scores,
         "performance": {

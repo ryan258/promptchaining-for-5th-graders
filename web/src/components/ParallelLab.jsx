@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Swords, Gauge, Loader2, Play, Shield, Gavel } from 'lucide-react'
-import MultiColumnViewer from './MultiColumnViewer'
+
 
 const DEFAULT_CHAINS = [
   { value: 'scientific_method', label: 'Scientific Method' },
@@ -11,7 +11,13 @@ const DEFAULT_CHAINS = [
 
 function safeRender(value) {
   if (value === null || value === undefined) return ''
-  if (typeof value === 'object') return JSON.stringify(value)
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value, null, 2)
+    } catch (e) {
+      return String(value)
+    }
+  }
   return String(value)
 }
 
@@ -27,7 +33,8 @@ function DebateFeed({ result, metadata }) {
       return JSON.parse(judgment)
     } catch (e) {
       console.warn('Failed to parse judgment:', e)
-      return { reasoning: judgment }
+      // Fallback: try to preserve as much as possible, or just wrap the string
+      return { reasoning: judgment, winner: 'Undecided (Parse Error)' }
     }
   }, [judgment])
 
@@ -49,10 +56,10 @@ function DebateFeed({ result, metadata }) {
           <div className="space-y-4 text-gray-300">
             <div>
               <strong className="text-blue-200 block mb-1">Thesis</strong>
-              <p>{safeRender(opening.thesis)}</p>
+              <p className="whitespace-pre-wrap">{safeRender(opening.thesis)}</p>
             </div>
             <div className="grid gap-2">
-              {opening.arguments?.map((arg, i) => (
+              {Array.isArray(opening.arguments) && opening.arguments.map((arg, i) => (
                 <div key={i} className="bg-slate-900/30 p-3 rounded">
                   <strong className="text-blue-200">{safeRender(arg.point)}:</strong> {safeRender(arg.reasoning)}
                 </div>
@@ -60,7 +67,7 @@ function DebateFeed({ result, metadata }) {
             </div>
             <div>
               <strong className="text-blue-200 block mb-1">Conclusion</strong>
-              <p>{safeRender(opening.conclusion)}</p>
+              <p className="whitespace-pre-wrap">{safeRender(opening.conclusion)}</p>
             </div>
           </div>
         </div>
@@ -68,7 +75,12 @@ function DebateFeed({ result, metadata }) {
 
       {/* Rounds Feed */}
       <div className="space-y-6 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-700 before:to-transparent">
-        {rounds?.map((round, idx) => (
+        {(!rounds || rounds.length === 0) && (
+          <div className="text-center p-8 glass-card text-gray-400 italic">
+            No debate rounds generated yet.
+          </div>
+        )}
+        {Array.isArray(rounds) && rounds.map((round, idx) => (
           <div key={idx} className="relative">
             <div className="sticky top-4 z-10 flex justify-center mb-4">
               <span className="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-mono text-gray-400 shadow-xl">
@@ -84,7 +96,7 @@ function DebateFeed({ result, metadata }) {
                   <Swords size={16} className="text-red-400" />
                 </div>
                 <div className="space-y-3 text-sm text-gray-300">
-                  {round.red_attack?.attacks?.map((atk, i) => (
+                  {Array.isArray(round.red_attack?.attacks) && round.red_attack.attacks.map((atk, i) => (
                     <div key={i} className="bg-red-900/10 p-2 rounded border border-red-500/10">
                       <strong className="text-red-200 block">{safeRender(atk.target)}</strong>
                       {safeRender(atk.attack)}
@@ -103,7 +115,7 @@ function DebateFeed({ result, metadata }) {
                   <Shield size={16} className="text-blue-400" />
                 </div>
                 <div className="space-y-3 text-sm text-gray-300">
-                  {round.blue_defense?.counters?.map((counter, i) => (
+                  {Array.isArray(round.blue_defense?.counters) && round.blue_defense.counters.map((counter, i) => (
                     <div key={i} className="bg-blue-900/10 p-2 rounded border border-blue-500/10">
                       <strong className="text-blue-200 block">Re: {safeRender(counter.to_attack)}</strong>
                       {safeRender(counter.counter)}
@@ -205,21 +217,152 @@ function DebateFeed({ result, metadata }) {
 }
 
 
-function buildEmergenceColumns(result, metadata) {
-  if (!result) return []
-  return [
-    { title: 'Chain Output', content: result.outputs?.chain },
-    { title: 'Baseline Output', content: result.outputs?.baseline },
-    {
-      title: 'Scores & Winner',
-      badge: metadata?.winner || result.winner,
-      content: {
-        scores: result.scores,
-        performance: result.performance,
-        analysis: result.analysis
-      }
+
+function EmergenceFeed({ result, metadata }) {
+  if (!result) return null
+  const { outputs, scores, analysis, winner } = result
+  const qualitative = scores?.qualitative || {}
+  const scoreData = scores?.scores || {}
+
+  const formatOutput = (content) => {
+    if (!content) return ''
+    if (typeof content === 'object') {
+      return JSON.stringify(content, null, 2)
     }
-  ]
+    try {
+      const json = JSON.parse(content)
+      return JSON.stringify(json, null, 2)
+    } catch (e) {
+      return content
+    }
+  }
+
+  return (
+    <div className="space-y-8 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h3 className="text-2xl font-bold text-white">Emergence Comparison</h3>
+        <p className="text-gray-400">{safeRender(metadata?.topic)}</p>
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-200 text-sm font-medium">
+          <Gavel size={14} />
+          Winner: {safeRender(winner || metadata?.winner || 'Undecided')}
+        </div>
+      </div>
+
+      {/* Comparison Grid */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Baseline Output */}
+        <div className="glass-card border-l-4 border-slate-500 flex flex-col h-[600px]">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
+            <h4 className="text-lg font-semibold text-slate-200">Baseline Prompt</h4>
+            <span className="px-2 py-1 text-xs rounded bg-slate-500/20 text-slate-300 border border-slate-500/30">Standard</span>
+          </div>
+          <div className="flex-grow overflow-auto bg-slate-950/30 p-4 rounded border border-white/5 font-mono text-xs text-gray-300">
+            <pre className="whitespace-pre-wrap">{formatOutput(outputs?.baseline)}</pre>
+          </div>
+        </div>
+
+        {/* Chain Output */}
+        <div className="glass-card border-l-4 border-amber-500 flex flex-col h-[600px]">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
+            <h4 className="text-lg font-semibold text-amber-200">Chain Output</h4>
+            <span className="px-2 py-1 text-xs rounded bg-amber-500/20 text-amber-200 border border-amber-500/30">Emergent</span>
+          </div>
+          <div className="flex-grow overflow-auto bg-slate-950/30 p-4 rounded border border-white/5 font-mono text-xs text-gray-300">
+            <pre className="whitespace-pre-wrap">{formatOutput(outputs?.chain)}</pre>
+          </div>
+        </div>
+      </div>
+
+      {/* Analysis & Metrics */}
+      <div className="glass-card border-t-4 border-amber-500 bg-gradient-to-b from-slate-900 to-amber-900/10">
+        <h3 className="text-xl font-bold text-amber-100 mb-6">Analysis & Metrics</h3>
+
+        <div className="space-y-8">
+          {/* Summary */}
+          <div className="bg-amber-500/10 p-4 rounded border border-amber-500/20">
+            <strong className="text-amber-200 block text-sm uppercase tracking-wider mb-2">Executive Summary</strong>
+            <p className="text-amber-100/90 leading-relaxed">
+              {safeRender(qualitative.summary || analysis)}
+            </p>
+          </div>
+
+          {/* Detailed Scores */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <strong className="text-slate-400 block text-xs uppercase tracking-wider mb-3">Baseline Performance</strong>
+              <div className="space-y-3">
+                {Object.entries(scoreData.approach_b || {}).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400 capitalize">{key}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-slate-500" style={{ width: `${value * 10}%` }} />
+                      </div>
+                      <span className="font-mono text-slate-300 w-6 text-right">{value}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {Array.isArray(qualitative.approach_b_strengths) && qualitative.approach_b_strengths.length > 0 && (
+                <div className="mt-4">
+                  <strong className="text-slate-500 block text-xs uppercase tracking-wider mb-1">Strengths</strong>
+                  <div className="flex flex-wrap gap-1">
+                    {qualitative.approach_b_strengths.map((s, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-xs border border-slate-700">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <strong className="text-amber-400 block text-xs uppercase tracking-wider mb-3">Chain Performance</strong>
+              <div className="space-y-3">
+                {Object.entries(scoreData.approach_a || {}).map(([key, value]) => (
+                  <div key={key} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400 capitalize">{key}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500" style={{ width: `${value * 10}%` }} />
+                      </div>
+                      <span className="font-mono text-amber-300 w-6 text-right">{value}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {Array.isArray(qualitative.approach_a_strengths) && qualitative.approach_a_strengths.length > 0 && (
+                <div className="mt-4">
+                  <strong className="text-amber-500/70 block text-xs uppercase tracking-wider mb-1">Strengths</strong>
+                  <div className="flex flex-wrap gap-1">
+                    {qualitative.approach_a_strengths.map((s, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded bg-amber-900/30 text-amber-300 text-xs border border-amber-500/30">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Novel Insights */}
+          <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+            <div>
+              <strong className="text-slate-400 block text-xs uppercase tracking-wider mb-2">Baseline's Best Insight</strong>
+              <p className="text-sm text-gray-400 italic bg-slate-950/30 p-3 rounded border border-white/5">
+                "{safeRender(qualitative.most_novel_insight_b || 'N/A')}"
+              </p>
+            </div>
+            <div>
+              <strong className="text-amber-400 block text-xs uppercase tracking-wider mb-2">Chain's Best Insight</strong>
+              <p className="text-sm text-gray-300 italic bg-amber-900/10 p-3 rounded border border-amber-500/10">
+                "{safeRender(qualitative.most_novel_insight_a || 'N/A')}"
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function ParallelLab() {
@@ -237,12 +380,7 @@ export default function ParallelLab() {
     setError(null)
   }, [mode])
 
-  const columns = useMemo(() => {
-    if (mode === 'debate') return [] // Handled by DebateFeed
 
-    if (mode === 'emergence') return buildEmergenceColumns(result, metadata)
-    return []
-  }, [mode, result, metadata])
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -435,11 +573,7 @@ export default function ParallelLab() {
           {mode === 'debate' ? (
             <DebateFeed result={result} metadata={metadata} />
           ) : (
-            <MultiColumnViewer
-              title="Emergence Comparison"
-              subtitle={metadata?.topic || form.topic}
-              columns={columns}
-            />
+            <EmergenceFeed result={result} metadata={metadata} />
           )}
           <div className="glass-card">
             <div className="flex items-center gap-2 mb-2">
