@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BookOpen, Loader2, Send } from 'lucide-react'
-import MultiColumnViewer from './MultiColumnViewer'
+import { BookOpen, Loader2, Send, Gavel } from 'lucide-react'
 
 const FIELD_CONFIG = {
   scientific_method: [
@@ -114,33 +113,33 @@ function SocraticFeed({ result }) {
               </span>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
               {/* Teacher Question */}
-              <div className="glass-card border-l-4 border-amber-500 md:text-right">
-                <div className="flex items-center justify-between md:flex-row-reverse mb-3">
+              <div className="glass-card border-l-4 border-amber-500 ml-8 md:ml-auto md:w-[85%]">
+                <div className="flex items-center justify-between mb-2">
                   <h5 className="font-semibold text-amber-200">Teacher</h5>
                   <BookOpen size={16} className="text-amber-400" />
                 </div>
-                <div className="space-y-3 text-sm text-gray-300">
+                <div className="space-y-2 text-sm text-gray-300">
                   <p className="text-lg text-white font-medium">"{safeRender(round.question?.question)}"</p>
-                  <div className="bg-amber-900/10 p-2 rounded border border-amber-500/10">
-                    <strong className="text-amber-200 block text-xs uppercase">Targeting</strong>
-                    {safeRender(round.question?.target)}
+                  <div className="bg-amber-900/10 p-2 rounded border border-amber-500/10 inline-block">
+                    <strong className="text-amber-200 text-xs uppercase mr-2">Targeting:</strong>
+                    <span className="text-xs text-amber-100/80">{safeRender(round.question?.target)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Student Answer */}
-              <div className="glass-card border-l-4 border-blue-500">
-                <div className="flex items-center justify-between mb-3">
+              <div className="glass-card border-l-4 border-blue-500 mr-8 md:mr-auto md:w-[85%]">
+                <div className="flex items-center justify-between mb-2">
                   <h5 className="font-semibold text-blue-200">Student</h5>
                   <div className="w-4 h-4 rounded-full bg-blue-400" />
                 </div>
-                <div className="space-y-3 text-sm text-gray-300">
+                <div className="space-y-2 text-sm text-gray-300">
                   <p className="text-lg text-white font-medium">"{safeRender(round.answer?.answer)}"</p>
-                  <div className="bg-blue-900/10 p-2 rounded border border-blue-500/10">
-                    <strong className="text-blue-200 block text-xs uppercase">New Insight</strong>
-                    {safeRender(round.answer?.new_insight)}
+                  <div className="bg-blue-900/10 p-2 rounded border border-blue-500/10 inline-block">
+                    <strong className="text-blue-200 text-xs uppercase mr-2">Insight:</strong>
+                    <span className="text-xs text-blue-100/80">{safeRender(round.answer?.new_insight)}</span>
                   </div>
                 </div>
               </div>
@@ -455,44 +454,231 @@ function DesignThinkingFeed({ result }) {
   )
 }
 
+function ScientificMethodFeed({ result }) {
+  if (!result) return null
+  const { observations, predictions, experimental_design, analysis, conclusion } = result
 
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* 1. Observations & Predictions */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="glass-card border-l-4 border-cyan-500">
+          <h4 className="text-lg font-semibold text-cyan-100 mb-3">Observations</h4>
+          <div className="space-y-3 text-sm text-gray-300">
+            {observations?.observations && (
+              <ul className="list-disc list-inside space-y-1 text-gray-400">
+                {observations.observations.map((obs, i) => (
+                  <li key={i}>{safeRender(obs)}</li>
+                ))}
+              </ul>
+            )}
+            {observations?.existing_knowledge && (
+              <div>
+                <strong className="text-cyan-200/80 block text-xs uppercase tracking-wider mb-1">Context</strong>
+                <p>{safeRender(observations.existing_knowledge)}</p>
+              </div>
+            )}
+          </div>
+        </div>
 
-function buildColumns(pattern, result) {
-  if (!result) return []
+        <div className="glass-card border-l-4 border-purple-500">
+          <h4 className="text-lg font-semibold text-purple-100 mb-3">Predictions</h4>
+          <div className="space-y-3 text-sm text-gray-300">
+            {predictions?.if_true && (
+              <div>
+                <strong className="text-purple-200/80 block text-xs uppercase tracking-wider mb-1">If Hypothesis True</strong>
+                <ul className="list-disc list-inside space-y-1 text-gray-400">
+                  {predictions.if_true.map((p, i) => (
+                    <li key={i}>{safeRender(p)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {predictions?.test_method && (
+              <div>
+                <strong className="text-purple-200/80 block text-xs uppercase tracking-wider mb-1">Test Method</strong>
+                <p>{safeRender(predictions.test_method)}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-  if (pattern === 'design_thinking') {
-    return [] // Handled by DesignThinkingFeed
-  }
+      {/* 2. Experimental Design */}
+      <div className="glass-card border-l-4 border-blue-500">
+        <h4 className="text-lg font-semibold text-blue-100 mb-3">Experimental Design</h4>
+        <div className="space-y-4">
+          <div className="bg-blue-900/10 p-4 rounded border border-blue-500/10 text-sm text-blue-100/90 whitespace-pre-wrap">
+            {safeRender(experimental_design?.experimental_design || experimental_design)}
+          </div>
 
-  if (pattern === 'scientific_method') {
-    return [
-      { title: 'Observations', content: result.observations },
-      { title: 'Predictions', content: result.predictions },
-      { title: 'Experimental Design', content: result.experimental_design },
-      { title: 'Analysis', content: result.analysis },
-      { title: 'Conclusion', content: result.conclusion }
-    ]
-  }
+          {experimental_design?.control_variables && (
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <strong className="text-blue-300 block mb-1">Controls</strong>
+                <ul className="list-disc list-inside text-gray-400">
+                  {experimental_design.control_variables.map((v, i) => <li key={i}>{safeRender(v)}</li>)}
+                </ul>
+              </div>
+              <div>
+                <strong className="text-blue-300 block mb-1">Variables</strong>
+                <div className="space-y-1 text-gray-400">
+                  <p><span className="text-gray-500">Independent:</span> {safeRender(experimental_design.independent_variable)}</p>
+                  <p><span className="text-gray-500">Dependent:</span> {safeRender(experimental_design.dependent_variable)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-  if (pattern === 'five_whys') {
-    return [] // Handled by FiveWhysFeed
-  }
+      {/* 3. Analysis */}
+      <div className="glass-card border-l-4 border-amber-500">
+        <h4 className="text-lg font-semibold text-amber-100 mb-3">Analysis</h4>
+        <div className="space-y-3 text-sm text-gray-300">
+          <p className="leading-relaxed">{safeRender(analysis?.expected_results || analysis)}</p>
+          {analysis?.strength_of_evidence && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs uppercase tracking-wider text-amber-500">Strength of Evidence:</span>
+              <span className="font-semibold text-amber-100">{safeRender(analysis.strength_of_evidence)}</span>
+            </div>
+          )}
+        </div>
+      </div>
 
-  if (pattern === 'judicial_reasoning') {
-    return [
-      { title: 'Facts', content: result.facts },
-      { title: 'Principles', content: result.principles },
-      { title: 'Arguments', content: result.arguments },
-      { title: 'Ruling', content: result.ruling }
-    ]
-  }
+      {/* 4. Conclusion */}
+      <div className="glass-card border-t-4 border-green-500 bg-gradient-to-b from-slate-900 to-green-900/10">
+        <h3 className="text-xl font-bold text-green-100 mb-4">Conclusion</h3>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-bold border ${conclusion?.verdict?.toLowerCase().includes('supported') ? 'bg-green-500/20 text-green-200 border-green-500/30' :
+              conclusion?.verdict?.toLowerCase().includes('refuted') ? 'bg-red-500/20 text-red-200 border-red-500/30' :
+                'bg-yellow-500/20 text-yellow-200 border-yellow-500/30'
+              }`}>
+              {safeRender(conclusion?.verdict || 'Unknown Verdict')}
+            </span>
+            <span className="text-sm text-gray-400">Confidence: {safeRender(conclusion?.confidence)}</span>
+          </div>
 
-  if (pattern === 'socratic_dialogue') {
-    return [] // Handled by SocraticFeed
-  }
+          <p className="text-lg font-medium text-white leading-relaxed">
+            {safeRender(conclusion?.reasoning || conclusion)}
+          </p>
 
-  return []
+          {conclusion?.implications && (
+            <div className="bg-slate-950/50 p-4 rounded border border-white/5 mt-4">
+              <strong className="text-green-300 block text-xs uppercase tracking-wider mb-2">Implications</strong>
+              <p className="text-sm text-gray-300">{safeRender(conclusion.implications)}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
+
+function JudicialReasoningFeed({ result }) {
+  if (!result) return null
+  const { facts, principles, arguments: args, ruling } = result
+
+  return (
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* 1. Facts & Principles */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="glass-card border-l-4 border-slate-500">
+          <h4 className="text-lg font-semibold text-slate-200 mb-3">Facts of the Case</h4>
+          <div className="space-y-3 text-sm text-gray-300">
+            {facts?.undisputed_facts && (
+              <div>
+                <strong className="text-slate-400 block text-xs uppercase tracking-wider mb-1">Undisputed</strong>
+                <ul className="list-disc list-inside text-gray-400">
+                  {facts.undisputed_facts.slice(0, 3).map((f, i) => <li key={i}>{safeRender(f)}</li>)}
+                </ul>
+              </div>
+            )}
+            {facts?.context && <p className="text-xs text-gray-500 mt-2">{safeRender(facts.context)}</p>}
+          </div>
+        </div>
+        <div className="glass-card border-l-4 border-indigo-500">
+          <h4 className="text-lg font-semibold text-indigo-200 mb-3">Relevant Principles</h4>
+          <div className="space-y-2 text-sm">
+            {principles?.principles && principles.principles.map((p, i) => (
+              <div key={i} className="bg-indigo-900/10 p-2 rounded border border-indigo-500/10">
+                <strong className="text-indigo-300 block">{safeRender(p.principle)}</strong>
+                <p className="text-gray-400 text-xs">{safeRender(p.applies_how)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Arguments */}
+      <div className="glass-card border-l-4 border-amber-500">
+        <h4 className="text-lg font-semibold text-amber-100 mb-3">Arguments</h4>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Position A */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <strong className="text-amber-200 text-sm">Position A</strong>
+            </div>
+            <p className="text-xs text-gray-400 italic mb-2">{safeRender(args?.position_A?.position)}</p>
+            <ul className="space-y-2">
+              {args?.position_A?.arguments && args.position_A.arguments.map((arg, i) => (
+                <li key={i} className="bg-amber-900/10 p-2 rounded border border-amber-500/10 text-sm text-gray-300">
+                  {safeRender(arg)}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Position B */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <strong className="text-amber-200 text-sm">Position B</strong>
+            </div>
+            <p className="text-xs text-gray-400 italic mb-2">{safeRender(args?.position_B?.position)}</p>
+            <ul className="space-y-2">
+              {args?.position_B?.arguments && args.position_B.arguments.map((arg, i) => (
+                <li key={i} className="bg-amber-900/10 p-2 rounded border border-amber-500/10 text-sm text-gray-300">
+                  {safeRender(arg)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Ruling */}
+      <div className="glass-card border-t-4 border-red-500 bg-gradient-to-b from-slate-900 to-red-900/10">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 rounded-full bg-red-500/20 border border-red-500/30">
+            <Gavel size={20} className="text-red-200" />
+          </div>
+          <h3 className="text-xl font-bold text-red-100">Final Ruling</h3>
+        </div>
+        <div className="space-y-4">
+          <p className="text-lg font-medium text-white leading-relaxed">{safeRender(ruling?.ruling || ruling?.verdict || ruling)}</p>
+
+          {ruling?.core_reasoning && (
+            <div className="bg-slate-950/50 p-4 rounded border border-white/5">
+              <strong className="text-red-300 block text-xs uppercase tracking-wider mb-2">Reasoning</strong>
+              <p className="text-sm text-gray-300 leading-relaxed">{safeRender(ruling.core_reasoning)}</p>
+            </div>
+          )}
+
+          {ruling?.balancing && (
+            <div className="text-xs text-gray-500 italic">
+              <strong className="text-gray-400 not-italic">Balancing:</strong> {safeRender(ruling.balancing)}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
+
 
 export default function PatternLauncher() {
   const [patterns, setPatterns] = useState([])
@@ -664,13 +850,11 @@ export default function PatternLauncher() {
             <FiveWhysFeed result={result} />
           ) : selectedPattern === 'design_thinking' ? (
             <DesignThinkingFeed result={result} />
-          ) : (
-            <MultiColumnViewer
-              title={PATTERN_INFO[selectedPattern]?.label || selectedPattern}
-              subtitle={metadata?.hypothesis || metadata?.problem || metadata?.case}
-              columns={buildColumns(selectedPattern, result)}
-            />
-          )}
+          ) : selectedPattern === 'scientific_method' ? (
+            <ScientificMethodFeed result={result} />
+          ) : selectedPattern === 'judicial_reasoning' ? (
+            <JudicialReasoningFeed result={result} />
+          ) : null}
 
           <div className="glass-card">
             <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">Metadata</p>
