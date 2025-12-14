@@ -27,7 +27,7 @@ function safeRender(value) {
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value, null, 2)
-    } catch (e) {
+    } catch {
       return String(value)
     }
   }
@@ -35,8 +35,7 @@ function safeRender(value) {
 }
 
 function DebateFeed({ result, metadata }) {
-  if (!result) return null
-  const { opening, rounds, judgment } = result
+  const { opening, rounds, judgment } = result || {}
 
   // Parse judgment if it's a string, or use it directly if it's an object
   const judgeData = useMemo(() => {
@@ -44,12 +43,14 @@ function DebateFeed({ result, metadata }) {
     if (typeof judgment === 'object') return judgment
     try {
       return JSON.parse(judgment)
-    } catch (e) {
-      console.warn('Failed to parse judgment:', e)
+    } catch {
+      console.warn('Failed to parse judgment')
       // Fallback: try to preserve as much as possible, or just wrap the string
       return { reasoning: judgment, winner: 'Undecided (Parse Error)' }
     }
   }, [judgment])
+
+  if (!result) return null
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
@@ -245,7 +246,7 @@ function EmergenceFeed({ result, metadata }) {
     try {
       const json = JSON.parse(content)
       return JSON.stringify(json, null, 2)
-    } catch (e) {
+    } catch {
       return content
     }
   }

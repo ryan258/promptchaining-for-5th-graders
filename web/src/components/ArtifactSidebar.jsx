@@ -7,15 +7,14 @@ export default function ArtifactSidebar({ isOpen, onClose }) {
   const [loading, setLoading] = useState(true)
   const [selectedArtifact, setSelectedArtifact] = useState(null)
   const [expandedTopics, setExpandedTopics] = useState(new Set())
-  const [starred, setStarred] = useState(new Set())
-
-  // Load starred items from localStorage
-  useEffect(() => {
-    const savedStarred = localStorage.getItem('starred_artifacts')
-    if (savedStarred) {
-      setStarred(new Set(JSON.parse(savedStarred)))
+  const [starred, setStarred] = useState(() => {
+    try {
+      const saved = localStorage.getItem('starred_artifacts')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
     }
-  }, [])
+  })
 
   // Save starred items to localStorage
   const toggleStar = (topic, filename) => {

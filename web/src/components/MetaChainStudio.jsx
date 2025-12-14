@@ -91,8 +91,8 @@ export default function MetaChainStudio() {
       setDesign(data.design)
       setPromptEdits(prompts)
       setTemplateName((data.design.goal || '').slice(0, 50))
-    } catch (err) {
-      setError(err.message)
+    } catch {
+      setError('Failed to design chain')
     } finally {
       setDesigning(false)
     }
@@ -156,7 +156,7 @@ export default function MetaChainStudio() {
       } else {
         setStorageWarning('')
       }
-    } catch (err) {
+    } catch {
       setStorageWarning('Saving templates failed (storage blocked).')
     }
   }
@@ -233,8 +233,8 @@ export default function MetaChainStudio() {
                   type="button"
                   onClick={() => toggleMove(move)}
                   className={`px-3 py-2 text-sm border ${isActive
-                      ? 'bg-blue-500/20 border-blue-400/50 text-blue-100'
-                      : 'bg-slate-900/40 border-white/10 text-gray-200'
+                    ? 'bg-blue-500/20 border-blue-400/50 text-blue-100'
+                    : 'bg-slate-900/40 border-white/10 text-gray-200'
                     }`}
                 >
                   {move.replace(/_/g, ' ')}
