@@ -393,7 +393,7 @@ print(aggregate['statistical_significance'])
 
 **Use for:** Validating your chains work better, publishing research findings, convincing stakeholders with data.
 
-**📖 Full Documentation:** See [FRAMEWORK_ENHANCEMENTS.md](FRAMEWORK_ENHANCEMENTS.md) for complete guide, examples, and API reference.
+**📖 Full Documentation:** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete guide, examples, and API reference.
 
 **🎬 Demos:**
 ```bash
@@ -556,9 +556,9 @@ result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
 │
 ├── 📚 Documentation
 │   ├── docs/QUICKSTART.md                # 5-minute getting started
-│   ├── docs/ARCHITECTURE.md              # System design deep-dive
-│   ├── docs/FRAMEWORK_ENHANCEMENTS.md    # Enhancements guide
-│   ├── docs/MS_BLOG_TOOLS_SUMMARY.md     # MS blog tools docs
+│   ├── docs/ARCHITECTURE.md              # System design & features
+│   ├── docs/TESTING.md                   # Testing guide
+│   ├── docs/DEMOS.md                     # Demo scripts
 │   └── docs/IDEAS.md                     # Future enhancements
 │
 ├── 🛠️ Built-In Tools
@@ -678,12 +678,13 @@ python demos/meta_chain_demo.py
 
 | Document | Description |
 |----------|-------------|
-| [QUICKSTART.md](QUICKSTART.md) | Get up and running in 5 minutes |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Deep dive into system design |
-| [tools/ms_blog/README.md](tools/ms_blog/README.md) | MS blog tools complete guide |
-| [MS_BLOG_TOOLS_SUMMARY.md](MS_BLOG_TOOLS_SUMMARY.md) | MS tools implementation summary |
-| [IDEAS.md](IDEAS.md) | Future features and enhancements |
-| [WHATS_NEW.md](WHATS_NEW.md) | Recent updates and changes |
+| [QUICKSTART.md](docs/QUICKSTART.md) | Get up and running in 5 minutes |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, core features, and technical specs |
+| [TESTING.md](docs/TESTING.md) | Guide to testing frameworks and verification |
+| [DEMOS.md](docs/DEMOS.md) | Demo scripts and walkthroughs (Full & Quick) |
+| [IDEAS.md](docs/IDEAS.md) | Future features and roadmap |
+| [WHATS_NEW.md](docs/WHATS_NEW.md) | Recent updates and changes |
+
 
 ### Key Concepts
 

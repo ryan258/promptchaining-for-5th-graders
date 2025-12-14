@@ -20,7 +20,7 @@ This transforms your framework from "run chains" to "orchestrate intelligence at
 - `demos/artifact_composition_demo.py` - Shows artifact reuse
 - `test_artifacts.py` - Test suite ✅ ALL PASSED
 - `artifact_browser.py` - CLI to explore artifacts
-- `ARTIFACT_SYSTEM.md` - Complete documentation
+- `ARCHITECTURE.md` - Complete documentation
 
 **What It Does:**
 ```python
@@ -50,7 +50,7 @@ run_chain(prompts=[
 - `chain_composer.py` (600+ lines) - Orchestration engine
 - `demos/curriculum_builder_demo.py` - Shows composition
 - `test_chain_composer.py` - Test suite ✅ ALL PASSED
-- `CHAIN_COMPOSER.md` - Complete documentation
+- `ARCHITECTURE.md` - Complete documentation
 
 **What It Does:**
 ```python
@@ -262,8 +262,7 @@ test_chain_composer.py    - ✅ ALL TESTS PASSED
 
 ### Documentation
 ```
-ARTIFACT_SYSTEM.md        - Complete artifact docs
-CHAIN_COMPOSER.md         - Complete composer docs
+ARCHITECTURE.md           - Complete system documentation
 WHATS_NEW.md              - This file
 ```
 
