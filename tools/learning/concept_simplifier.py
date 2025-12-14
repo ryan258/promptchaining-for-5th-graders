@@ -10,15 +10,14 @@ Usage:
 """
 
 import os
-import json
-from datetime import datetime
+
 
 try:
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
 except ImportError:
     import sys
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
 
 project_root = setup_project_root(__file__)
 
@@ -196,21 +195,8 @@ Keep explainer to 120-150 words total. Provide 2-3 pitfalls and 2-3 next_steps. 
         ],
     )
 
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     output_dir = os.path.join(project_root, "output", "learning", "concept_simplifier")
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Save the execution trace (includes full chain visualization data)
-    output_path = os.path.join(output_dir, f"{timestamp}-{topic[:50].replace(' ', '_')}.json")
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(execution_trace, f, indent=2)
-
-    log_file = MinimalChainable.log_to_markdown("concept_simplifier", context_filled_prompts, result, usage_stats)
-
-    print(f"✅ Saved JSON to: {output_path}")
-    print(f"✅ Log saved to: {log_file}")
-    print()
-    print(artifact_store.visualize())
+    save_chain_output(project_root, output_dir, "concept_simplifier", topic, execution_trace, result, context_filled_prompts, usage_stats, artifact_store)
 
 
 def main():

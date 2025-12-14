@@ -101,3 +101,40 @@ def get_input_from_args(description, default_context_help="Additional context"):
         sys.exit(1)
         
     return topic, args.context
+
+def save_chain_output(project_root, output_dir, tool_name, topic, execution_trace, result, context_filled_prompts, usage_stats, artifact_store=None):
+    """
+    Standard function to save chain outputs and logs.
+    """
+    from datetime import datetime
+    try:
+        from src.core.chain import MinimalChainable
+    except ImportError:
+        print("⚠️ Warning: Could not import MinimalChainable for logging")
+        return None, None
+
+    os.makedirs(output_dir, exist_ok=True)
+    
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    
+    # Save JSON trace
+    # Simple sanitization
+    safe_topic = "".join([c if c.isalnum() else "_" for c in topic[:50]])
+    json_filename = f"{timestamp}-{safe_topic}.json"
+    output_path = os.path.join(output_dir, json_filename)
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(execution_trace, f, indent=2)
+        
+    # Log to Markdown
+    log_file = MinimalChainable.log_to_markdown(tool_name, context_filled_prompts, result, usage_stats)
+    
+    print(f"✅ Saved JSON to: {output_path}")
+    print(f"✅ Log saved to: {log_file}")
+    print()
+    
+    if artifact_store:
+        print(artifact_store.visualize())
+        
+    return output_path, log_file
+

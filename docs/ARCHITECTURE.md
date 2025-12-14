@@ -13,6 +13,15 @@ graph TD
     L5 --> L6[Layer 6: Meta-Chains]
 ```
 
+## Design Philosophy
+**Local-First, Single-User, High-Capability**
+
+This project is built for a single local user ("The Builder").
+- **No Auth**: We assume you are running this locally. No logins, no passwords.
+- **No Rate Limiting**: You are the only user. We don't artificially throttle you.
+- **Flat & Simple**: We prefer simple scripts and clean code over complex enterprise abstractions.
+- **Power over Safety**: We expose raw power (CLI, direct file access) rather than sandboxing everything.
+
 ---
 
 ## Layer 1: Prompts
@@ -137,6 +146,21 @@ Scientifically checks if chains outperform single prompts (`baseline`).
 - **Method**: Runs Topic X through a Chain and a Baseline Prompt.
 - **Evaluation**: An LLM Judge scores both outputs on: Novelty, Depth, Coherence, Pedagogical value, Actionability.
 - **Result**: Data-backed verdict on "Emergence"—whether the chain unlocked insights the single prompt missed.
+
+---
+
+## Engineering Standards
+
+### 1. DRY Tooling Architecture
+All backend tools reuse core logic to ensure consistency and maintainability:
+- **Shared Utilities**: `tools/tool_utils.py` centralizes common tasks.
+- **Unified Output**: `save_chain_output` standardizes how JSON traces, Markdown logs, and Artifacts are persisted. This ensures every tool immediately supports the full visualization suite.
+
+### 2. Component-Based Frontend
+The Web UI uses a modular architecture for reasoning patterns:
+- **Pattern Registry**: `PatternLauncher.jsx` acts as a dispatcher.
+- **Isolated Feeds**: Each reasoning pattern (e.g., `SocraticFeed`, `ScientificMethodFeed`) is a standalone component in `web/src/components/patterns/`.
+- **Shared Rendering**: Common display logic is extracted to `utils.js`.
 
 ---
 

@@ -1,4 +1,27 @@
-# 🚀 What We Built Today
+# 🚀 What's New
+
+## DRY Refactoring & Modularization (Clean-up)
+
+We performed a comprehensive DRY (Don't Repeat Yourself) audit and refactored key areas of the codebase to improve maintainability and separate concerns.
+
+### 1. Frontend Modularization (`web/src/components/patterns/`)
+*   **Problem:** `PatternLauncher.jsx` was a monolithic ~800 line file containing all logic for 5 different reasoning patterns.
+*   **Solution:** Extracted each pattern into its own dedicated component:
+    *   `SocraticFeed.jsx`
+    *   `FiveWhysFeed.jsx`
+    *   `DesignThinkingFeed.jsx`
+    *   `ScientificMethodFeed.jsx`
+    *   `JudicialReasoningFeed.jsx`
+*   **Shared Utils:** Created `utils.js` for common formatting (`safeRender`) and input normalization.
+
+### 2. Backend Standardization (`tools/tool_utils.py`)
+*   **Problem:** Each tool script manually implemented JSON tracing and Markdown logging, leading to duplicated code and inconsistent outputs.
+*   **Solution:** Centralized logic into `save_chain_output()` in `tool_utils.py`.
+*   **Benefit:** All future tools immediately get standardized logging, artifact saving, and visualization support with one function call.
+
+---
+
+## Meta-Level Orchestration (Previous)
 
 ## TL;DR
 

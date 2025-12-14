@@ -582,7 +582,8 @@ result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
 │
 ├── 🎨 Web Interface
 │   ├── server/main.py                    # FastAPI backend
-│   └── web/                              # React frontend
+│   ├── web/                              # React frontend
+│   │   └── src/components/patterns/      # Reasoning UI patterns
 │
 ├── 📊 Runtime Data
 │   ├── output/                           # Generated content
