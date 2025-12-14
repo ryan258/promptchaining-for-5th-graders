@@ -169,12 +169,18 @@ def test_chainable_reference_entire_json_output():
         "Reference JSON: {{output[-1]}}"  # Should get the whole JSON as a string
     ]
 
-    result, _ = MinimalChainable.run(context, MockModel(), mock_callable_prompt, chains)
+    result, context_filled_prompts = MinimalChainable.run(context, MockModel(), mock_callable_prompt, chains)
 
     assert len(result) == 2
     assert isinstance(result[0], dict)
     assert result[0] == {"key": "value"}
-    assert result[1] == 'Reference JSON: {"key": "value"}'  # Whole JSON as string
+    
+    # Check the substituted prompt directly to verify the loopback worked
+    assert context_filled_prompts[1] == 'Reference JSON: {"key": "value"}'
+    
+    # The result gets parsed back into a dict by _coerce_json because the mock echoes the JSON
+    assert isinstance(result[1], dict)
+    assert result[1] == {"key": "value"}
 
 
 def test_chainable_reference_long_output_value():
