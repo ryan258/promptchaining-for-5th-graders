@@ -108,7 +108,7 @@ def save_chain_output(project_root, output_dir, tool_name, topic, execution_trac
     """
     from datetime import datetime
     try:
-        from src.core.chain import MinimalChainable
+        from lib.core.chain import MinimalChainable
     except ImportError:
         print("⚠️ Warning: Could not import MinimalChainable for logging")
         return None, None

@@ -15,12 +15,10 @@
 
 ## 📋 Prerequisites (One-Time Setup)
 
-### 1. Check Python & Node Installed
+### 1. Check Python Installed
 
 ```bash
 python3 --version  # Should be 3.8+
-node --version     # Should be 18+
-npm --version      # Should be 9+
 ```
 
 If missing, install them first.
@@ -31,10 +29,6 @@ If missing, install them first.
 # Backend dependencies
 pip install -r requirements.txt
 
-# Frontend dependencies
-cd web
-npm install
-cd ..
 ```
 
 ### 3. Set Up OpenRouter API Key
@@ -76,39 +70,19 @@ INFO:     Uvicorn running on http://0.0.0.0:8000
 
 ---
 
-### Step 2: Start Frontend Server
+### Step 2: Open Browser
 
-Open Terminal 2 (new terminal):
-
-```bash
-cd web
-npm run dev
-```
-
-**✅ Success looks like:**
-```
-VITE v7.2.6  ready in 823 ms
-
-➜  Local:   http://localhost:5173/
-➜  Network: use --host to expose
-```
-
-**Leave this terminal running. Do not close it.**
-
----
-
-### Step 3: Open Browser
-
-Go to: **http://localhost:5173**
+Go to: **http://localhost:8000**
 
 **✅ You should see:**
-- Header: "Prompt Chaining Lab"
-- 4 tabs: Tools | Meta-Chain | Patterns | Debates & Emergence
-- "Tools" tab is selected by default
+- Header: "Prompt Chaining Workshop"
+- Sections for Tools, Reasoning Patterns, Adversarial Patterns, Meta-Chain, and Artifacts
 
 ---
 
 ## 🧪 Test Suite
+
+**Note:** The UI is now a single Candlelight page (FastAPI + Jinja2 + HTMX). Any older references to tabs or cards map to the matching sections on the page.
 
 ### TEST 1: Basic Tools (5 minutes)
 
@@ -469,15 +443,15 @@ Walk through the UI and check:
 
 ---
 
-### Issue: Frontend won't start / shows blank page
+### Issue: UI won't load / shows blank page
 
 **Fix:**
 ```bash
-# Terminal 2
-cd web
-rm -rf node_modules
-npm install
-npm run dev
+# Ensure the FastAPI server is running
+python3 server/main.py
+
+# Open the Candlelight UI
+open http://localhost:8000
 ```
 
 ---

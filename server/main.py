@@ -4,8 +4,10 @@ import glob
 import subprocess
 import json
 import logging
-from fastapi import FastAPI, HTTPException, Body
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException, Body, Request, Form
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
@@ -13,32 +15,33 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from src.core.meta_chain_generator import MetaChainGenerator
-from src.core.chain import MinimalChainable
-from src.core.main import prompt as core_prompt
-from src.enhancements.natural_reasoning import REASONING_PATTERNS
-from src.enhancements.adversarial_chains import ADVERSARIAL_PATTERNS
-from src.enhancements.emergence_measurement import measure_emergence
+from lib.core.meta_chain_generator import MetaChainGenerator
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import prompt as core_prompt
+from lib.enhancements.natural_reasoning import REASONING_PATTERNS
+from lib.enhancements.adversarial_chains import ADVERSARIAL_PATTERNS
+from lib.enhancements.emergence_measurement import measure_emergence
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Prompt Chaining Tools SPA")
+app = FastAPI(title="Prompt Chaining Tools")
 
-# Allow local dev frontends to call the API
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+TEMPLATES_DIR = os.path.join(PROJECT_ROOT, "server", "templates")
+STATIC_DIR = os.path.join(PROJECT_ROOT, "server", "static")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+def _pretty_json(data: Any) -> str:
+    if isinstance(data, str):
+        return data
+    try:
+        return json.dumps(data, indent=2, ensure_ascii=False)
+    except TypeError:
+        return str(data)
+
+templates.env.filters["pretty_json"] = _pretty_json
 
 TOOLS_DIR = os.path.join(PROJECT_ROOT, 'tools')
 ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, 'artifacts')
@@ -66,7 +69,10 @@ class MetaExecuteRequest(BaseModel):
     design: Dict[str, Any]
 
 OUTPUT_JSON_MARKER = "✅ Saved JSON to:"
-OUTPUT_MARKDOWN_MARKER = "✅ Timeline saved to:"
+OUTPUT_LOG_MARKERS = [
+    "✅ Log saved to:",
+    "✅ Timeline saved to:",
+]
 
 def _build_pattern_kwargs(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     """Normalize incoming payloads to the expected pattern function args."""
@@ -188,27 +194,23 @@ EMERGENCE_CHAIN_FUNCTIONS = {
     )
 }
 
-@app.get("/tools", response_model=List[Tool])
-async def list_tools():
+def _scan_tools() -> List[Tool]:
     """Scan the tools directory and return available tools."""
     tools = []
-    # Find all .py files in tools/*/*.py
     pattern = os.path.join(TOOLS_DIR, "*", "*.py")
     for file_path in glob.glob(pattern):
         if "__init__" in file_path:
             continue
-            
+
         category = os.path.basename(os.path.dirname(file_path))
         filename = os.path.basename(file_path)
         name = filename.replace(".py", "")
-        
-        # Extract description from docstring (simple approach)
+
         description = "No description available."
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
                 if '"""' in content:
-                    # Very basic extraction of the first docstring
                     parts = content.split('"""')
                     if len(parts) >= 3:
                         description = parts[1].strip().split("\n")[0]
@@ -221,75 +223,90 @@ async def list_tools():
             path=file_path,
             description=description
         ))
-    
-    # Sort by category then name
+
     tools.sort(key=lambda x: (x.category, x.name))
     return tools
+
+
+def _resolve_tool_path(category: str, tool_name: str) -> Optional[str]:
+    """Return a verified tool path for known tools."""
+    for tool in _scan_tools():
+        if tool.category == category and tool.name == tool_name:
+            return tool.path
+    return None
+
+@app.get("/tools", response_model=List[Tool])
+async def list_tools():
+    """Scan the tools directory and return available tools."""
+    return _scan_tools()
+
+def _execute_tool(category: str, tool_name: str, topic: str, context: Optional[str] = "") -> Dict[str, Any]:
+    tool_path = _resolve_tool_path(category, tool_name)
+    if not tool_path or not os.path.exists(tool_path):
+        raise HTTPException(status_code=404, detail="Tool not found")
+
+    cmd = ["python3", tool_path, topic]
+    if context:
+        cmd.extend(["--context", context])
+
+    logger.info("Running command: %s", " ".join(cmd))
+
+    result = subprocess.run(
+        cmd,
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+
+    if result.returncode != 0:
+        return {
+            "status": "error",
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+        }
+
+    output_content = ""
+    output_type = "text"
+    output_file = None
+
+    for line in result.stdout.split("\n"):
+        if OUTPUT_JSON_MARKER in line:
+            output_file = line.split(OUTPUT_JSON_MARKER)[1].strip()
+            output_type = "json"
+        else:
+            for marker in OUTPUT_LOG_MARKERS:
+                if marker in line:
+                    output_file = line.split(marker)[1].strip()
+                    output_type = "markdown"
+                    break
+
+    if output_file and not os.path.isabs(output_file):
+        output_file = os.path.join(PROJECT_ROOT, output_file)
+
+    if output_file and os.path.exists(output_file):
+        with open(output_file, "r", encoding="utf-8") as f:
+            output_content = f.read()
+            if output_type == "json":
+                try:
+                    output_content = json.loads(output_content)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+    else:
+        output_content = result.stdout
+
+    return {
+        "status": "success",
+        "output": output_content,
+        "type": output_type,
+        "logs": result.stdout,
+    }
 
 @app.post("/run")
 async def run_tool(request: RunRequest):
     """Execute a tool as a subprocess and return the output."""
-    tool_path = os.path.join(TOOLS_DIR, request.category, f"{request.tool_name}.py")
-    
-    if not os.path.exists(tool_path):
-        raise HTTPException(status_code=404, detail="Tool not found")
-
-    # Construct command
-    cmd = ["python3", tool_path, request.topic]
-    if request.context:
-        cmd.extend(["--context", request.context])
-
-    logger.info(f"Running command: {' '.join(cmd)}")
-
     try:
-        # Run the tool
-        result = subprocess.run(
-            cmd,
-            cwd=PROJECT_ROOT,
-            capture_output=True,
-            text=True,
-            timeout=300 # 5 minute timeout
-        )
-
-        if result.returncode != 0:
-            return {
-                "status": "error",
-                "stdout": result.stdout,
-                "stderr": result.stderr
-            }
-
-        # Parse stdout to find the output file
-        output_content = ""
-        output_type = "text"
-        output_file = None
-
-        for line in result.stdout.split("\n"):
-            if OUTPUT_JSON_MARKER in line:
-                output_file = line.split(OUTPUT_JSON_MARKER)[1].strip()
-                output_type = "json"
-            elif OUTPUT_MARKDOWN_MARKER in line:
-                output_file = line.split(OUTPUT_MARKDOWN_MARKER)[1].strip()
-                output_type = "markdown"
-
-        if output_file and os.path.exists(output_file):
-            with open(output_file, "r", encoding="utf-8") as f:
-                output_content = f.read()
-                if output_type == "json":
-                    try:
-                        output_content = json.loads(output_content)
-                    except (json.JSONDecodeError, ValueError):
-                        pass # Keep as string if parse fails
-        else:
-            # Fallback: return stdout if no file found
-            output_content = result.stdout
-
-        return {
-            "status": "success",
-            "output": output_content,
-            "type": output_type,
-            "logs": result.stdout
-        }
-
+        return _execute_tool(request.category, request.tool_name, request.topic, request.context)
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Tool execution timed out")
     except Exception as e:
@@ -309,28 +326,29 @@ async def list_reasoning_patterns():
         })
     return patterns
 
-
-@app.post("/patterns/{pattern_name}")
-async def run_pattern(pattern_name: str, payload: Dict[str, Any] = Body(...)):
-    """Execute a reasoning pattern and return structured output."""
+def _execute_pattern(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     pattern = REASONING_PATTERNS.get(pattern_name)
     if not pattern:
         raise HTTPException(status_code=404, detail=f"Pattern '{pattern_name}' not found")
 
     kwargs = _build_pattern_kwargs(pattern_name, payload or {})
-
-    try:
-        result, metadata = pattern["function"](**kwargs)
-    except Exception as e:
-        logger.error(f"Error running pattern {pattern_name}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    result, metadata = pattern["function"](**kwargs)
 
     return {
         "status": "success",
         "pattern": pattern_name,
         "result": result,
-        "metadata": metadata
+        "metadata": metadata,
     }
+
+@app.post("/patterns/{pattern_name}")
+async def run_pattern(pattern_name: str, payload: Dict[str, Any] = Body(...)):
+    """Execute a reasoning pattern and return structured output."""
+    try:
+        return _execute_pattern(pattern_name, payload or {})
+    except Exception as e:
+        logger.error(f"Error running pattern {pattern_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/adversarial")
@@ -346,28 +364,29 @@ async def list_adversarial_patterns():
         })
     return patterns
 
-
-@app.post("/adversarial/{pattern_name}")
-async def run_adversarial(pattern_name: str, payload: Dict[str, Any] = Body(...)):
-    """Run adversarial reasoning flows (red vs blue, dialectical, etc.)."""
+def _execute_adversarial(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     pattern = ADVERSARIAL_PATTERNS.get(pattern_name)
     if not pattern:
         raise HTTPException(status_code=404, detail=f"Adversarial pattern '{pattern_name}' not found")
 
     kwargs = _build_adversarial_kwargs(pattern_name, payload or {})
-
-    try:
-        result, metadata = pattern["function"](**kwargs)
-    except Exception as e:
-        logger.error(f"Error running adversarial pattern {pattern_name}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    result, metadata = pattern["function"](**kwargs)
 
     return {
         "status": "success",
         "pattern": pattern_name,
         "result": result,
-        "metadata": metadata
+        "metadata": metadata,
     }
+
+@app.post("/adversarial/{pattern_name}")
+async def run_adversarial(pattern_name: str, payload: Dict[str, Any] = Body(...)):
+    """Run adversarial reasoning flows (red vs blue, dialectical, etc.)."""
+    try:
+        return _execute_adversarial(pattern_name, payload or {})
+    except Exception as e:
+        logger.error(f"Error running adversarial pattern {pattern_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/meta-chain/design")
@@ -530,6 +549,261 @@ async def delete_artifact(topic: str, filename: str):
         return {"status": "success", "message": "Artifact deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _group_tools_by_category(tools: List[Tool]) -> Dict[str, List[Tool]]:
+    grouped: Dict[str, List[Tool]] = {}
+    for tool in tools:
+        grouped.setdefault(tool.category, []).append(tool)
+    return grouped
+
+
+@app.get("/", response_class=HTMLResponse)
+async def ui_index(request: Request):
+    tools = _scan_tools()
+    reasoning = [
+        {
+            "name": name,
+            "description": info.get("description", ""),
+            "use_when": info.get("use_when", ""),
+            "example": info.get("example", ""),
+        }
+        for name, info in REASONING_PATTERNS.items()
+    ]
+    adversarial = [
+        {
+            "name": name,
+            "description": info.get("description", ""),
+            "use_when": info.get("use_when", ""),
+            "example": info.get("example", ""),
+        }
+        for name, info in ADVERSARIAL_PATTERNS.items()
+    ]
+
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "tools_by_category": _group_tools_by_category(tools),
+            "reasoning_patterns": reasoning,
+            "adversarial_patterns": adversarial,
+        },
+    )
+
+
+@app.post("/ui/run-tool", response_class=HTMLResponse)
+async def ui_run_tool(
+    request: Request,
+    tool_key: str = Form(...),
+    topic: str = Form(...),
+    context: str = Form(""),
+):
+    if ":" not in tool_key:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": "Invalid tool selection."},
+        )
+
+    category, tool_name = tool_key.split(":", 1)
+
+    try:
+        result = _execute_tool(category, tool_name, topic, context)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Tool run failed: {e}"},
+        )
+
+    return templates.TemplateResponse(
+        "partials/tool_result.html",
+        {"request": request, "result": result},
+    )
+
+
+def _parse_json_payload(payload_json: str) -> Dict[str, Any]:
+    payload_json = (payload_json or "").strip()
+    if not payload_json:
+        return {}
+    return json.loads(payload_json)
+
+
+@app.post("/ui/run-pattern", response_class=HTMLResponse)
+async def ui_run_pattern(
+    request: Request,
+    pattern_name: str = Form(...),
+    topic: str = Form(""),
+    payload_json: str = Form(""),
+):
+    try:
+        payload = _parse_json_payload(payload_json)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Invalid JSON payload: {e}"},
+        )
+
+    if not payload and topic:
+        payload = {"topic": topic}
+
+    try:
+        result = _execute_pattern(pattern_name, payload)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Pattern failed: {e}"},
+        )
+
+    return templates.TemplateResponse(
+        "partials/pattern_result.html",
+        {"request": request, "result": result},
+    )
+
+
+@app.post("/ui/run-adversarial", response_class=HTMLResponse)
+async def ui_run_adversarial(
+    request: Request,
+    pattern_name: str = Form(...),
+    topic: str = Form(""),
+    payload_json: str = Form(""),
+):
+    try:
+        payload = _parse_json_payload(payload_json)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Invalid JSON payload: {e}"},
+        )
+
+    if not payload and topic:
+        payload = {"topic": topic}
+
+    try:
+        result = _execute_adversarial(pattern_name, payload)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Adversarial run failed: {e}"},
+        )
+
+    return templates.TemplateResponse(
+        "partials/pattern_result.html",
+        {"request": request, "result": result},
+    )
+
+
+@app.post("/ui/meta-design", response_class=HTMLResponse)
+async def ui_meta_design(
+    request: Request,
+    goal: str = Form(...),
+    context_json: str = Form(""),
+    constraints: str = Form(""),
+):
+    try:
+        context = _parse_json_payload(context_json)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Invalid context JSON: {e}"},
+        )
+
+    constraint_list = []
+    if constraints:
+        for item in constraints.replace(",", "\n").splitlines():
+            item = item.strip()
+            if item:
+                constraint_list.append(item)
+
+    generator = MetaChainGenerator()
+    try:
+        design = generator.design_chain(goal, context, constraint_list)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Meta-chain design failed: {e}"},
+        )
+
+    return templates.TemplateResponse(
+        "partials/meta_design.html",
+        {"request": request, "design": design.to_dict()},
+    )
+
+
+@app.post("/ui/meta-execute", response_class=HTMLResponse)
+async def ui_meta_execute(
+    request: Request,
+    design_json: str = Form(...),
+):
+    try:
+        design_data = _parse_json_payload(design_json)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Invalid design JSON: {e}"},
+        )
+
+    prompts = design_data.get("prompts") or []
+    if not prompts:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": "Design must include prompts to execute."},
+        )
+
+    generator = MetaChainGenerator()
+    try:
+        outputs, filled_prompts, usage, trace = MinimalChainable.run(
+            context=design_data.get("context") or {},
+            model=generator.model_info,
+            callable=core_prompt,
+            prompts=prompts,
+            return_trace=True,
+            artifact_store=generator.artifact_store,
+            topic=design_data.get("goal", "meta_chain_run").lower().replace(" ", "_")[:50],
+        )
+    except Exception as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": f"Meta-chain execute failed: {e}"},
+        )
+
+    trace["final_result"] = outputs[-1] if outputs else None
+
+    result = {
+        "status": "success",
+        "execution_trace": trace,
+        "outputs": outputs,
+        "prompts": filled_prompts,
+        "usage": usage,
+    }
+
+    return templates.TemplateResponse(
+        "partials/meta_execute.html",
+        {"request": request, "result": result},
+    )
+
+
+@app.get("/ui/artifacts", response_class=HTMLResponse)
+async def ui_artifacts(request: Request):
+    data = await list_artifacts()
+    return templates.TemplateResponse(
+        "partials/artifacts.html",
+        {"request": request, "artifacts": data},
+    )
+
+
+@app.get("/ui/artifacts/{topic}/{filename}", response_class=HTMLResponse)
+async def ui_artifact_detail(request: Request, topic: str, filename: str):
+    try:
+        data = await get_artifact(topic, filename)
+    except HTTPException as e:
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {"request": request, "message": e.detail},
+        )
+
+    return templates.TemplateResponse(
+        "partials/artifact_detail.html",
+        {"request": request, "artifact": data, "topic": topic, "filename": filename},
+    )
 
 if __name__ == "__main__":
     import uvicorn

@@ -24,8 +24,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.core.chain import MinimalChainable
-from src.core.main import build_models, prompt
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import build_models, prompt
 from tools.tool_utils import load_user_context
 
 

@@ -1,0 +1,17 @@
+{% if result.status == "success" %}
+  <div class="success">Tool completed.</div>
+  <div class="details">
+    <pre>{{ result.output | pretty_json }}</pre>
+  </div>
+  {% if result.logs %}
+  <details class="details">
+    <summary>Logs</summary>
+    <pre>{{ result.logs }}</pre>
+  </details>
+  {% endif %}
+{% else %}
+  <div class="error">Tool failed.</div>
+  <div class="details">
+    <pre>{{ result.stderr or result.stdout }}</pre>
+  </div>
+{% endif %}

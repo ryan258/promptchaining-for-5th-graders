@@ -8,7 +8,7 @@ from tools.tool_utils import save_chain_output
 
 @pytest.fixture
 def mock_chainable():
-    with patch('src.core.chain.MinimalChainable') as mock:
+    with patch('lib.core.chain.MinimalChainable') as mock:
         mock.log_to_markdown.return_value = "mock_log.md"
         yield mock
 

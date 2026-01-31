@@ -15,8 +15,8 @@ This framework lets you chain multiple LLM prompts together where **each step ca
 **Quick Example:**
 
 ```python
-from chain import MinimalChainable
-from main import build_models, prompt
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import build_models, prompt
 
 client, models = build_models()
 
@@ -124,19 +124,16 @@ python tools/learning/subject_connector.py "Poetry" --context "Machine Learning"
 python tools/ms_blog/ms_content_tools.py "I forget my medication" --energy low
 ```
 
-### Web UI (Optional)
+### Candlelight Web UI
 
 ```bash
-# Start backend
+# Start the FastAPI app
 python server/main.py
 
-# In another terminal, start frontend
-cd web && npm install && npm run dev
-
-# Open http://localhost:5173
+# Open http://localhost:8000
 ```
 
-The web UI shows beautiful step-by-step chain visualization with token usage tracking.
+The Candlelight UI runs on FastAPI + Jinja2 + HTMX and lives entirely in this repo.
 
 ---
 
@@ -147,8 +144,8 @@ The web UI shows beautiful step-by-step chain visualization with token usage tra
 Run prompts in sequence, each building on previous outputs:
 
 ```python
-from chain import MinimalChainable
-from main import build_models, prompt
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import build_models, prompt
 
 client, models = build_models()
 model = (client, models[0])
@@ -181,7 +178,7 @@ result, prompts, usage, trace = MinimalChainable.run(
 Run the same chain across multiple models and compare results:
 
 ```python
-from chain import FusionChain
+from lib.core.chain import FusionChain
 
 def evaluator(responses):
     # Your custom scoring logic
@@ -209,7 +206,7 @@ print(f"Model scores: {result.performance_scores}")
 Save and reuse outputs across chains:
 
 ```python
-from artifact_store import ArtifactStore
+from lib.core.artifact_store import ArtifactStore
 
 store = ArtifactStore()
 
@@ -532,19 +529,19 @@ result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
 ├── 📄 README.md                          # You are here
 │
 ├── 🔧 Source Code
-│   ├── src/core/                         # Core framework
+│   ├── lib/core/                         # Core framework
 │   │   ├── chain.py                      # MinimalChainable, FusionChain
-│   │   ├── main.py                       # Model setup and utilities
+│   │   ├── llm_client.py                 # Model setup and utilities
 │   │   ├── artifact_store.py             # Persistent knowledge system
 │   │   ├── chain_composer.py             # Multi-chain workflows
 │   │   └── meta_chain_generator.py       # Self-improving chain design
 │   │
-│   ├── src/enhancements/                 # Framework enhancements
+│   ├── lib/enhancements/                 # Framework enhancements
 │   │   ├── natural_reasoning.py          # 5 expert reasoning patterns
 │   │   ├── adversarial_chains.py         # Dialectical reasoning
 │   │   └── emergence_measurement.py      # Scientific validation
 │   │
-│   └── src/utils/                        # Utility modules
+│   └── lib/utils/                        # Utility modules
 │       ├── artifact_browser.py           # Artifact inspector
 │       └── demo_utils.py                 # Demo helpers
 │
@@ -581,9 +578,9 @@ result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
 │   └── demos/ms_blog_demo.py             # MS blog tool showcase
 │
 ├── 🎨 Web Interface
-│   ├── server/main.py                    # FastAPI backend
-│   ├── web/                              # React frontend
-│   │   └── src/components/patterns/      # Reasoning UI patterns
+│   ├── server/main.py                    # FastAPI app + routes
+│   ├── server/templates/                 # Jinja2 views
+│   └── server/static/                    # Candlelight CSS
 │
 ├── 📊 Runtime Data
 │   ├── output/                           # Generated content
@@ -801,7 +798,8 @@ Use responsibly.
 - [OpenRouter API](https://openrouter.ai/) - Multi-model LLM access
 - [Anthropic Claude](https://www.anthropic.com/) - Recommended model
 - [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
-- [React](https://react.dev/) - Frontend framework
+- [Jinja2](https://jinja.palletsprojects.com/) - HTML templating
+- [HTMX](https://htmx.org/) - Hypermedia interactions
 
 ---
 
@@ -842,9 +840,8 @@ python chain_test.py
 python tools/ms_blog/test_ms_tools.py
 ./verify_demos.sh
 
-# Web UI
-python server/main.py  # Backend
-cd web && npm run dev  # Frontend (in another terminal)
+# Candlelight Web UI
+python server/main.py
 ```
 
 ---

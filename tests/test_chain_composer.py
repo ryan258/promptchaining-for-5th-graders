@@ -10,8 +10,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.core.chain_composer import ChainComposer, ChainStep, ChainRecipe
-from src.core.artifact_store import ArtifactStore
+from lib.core.chain_composer import ChainComposer, ChainStep, ChainRecipe
+from lib.core.artifact_store import ArtifactStore
 
 
 def test_basic_composition():

@@ -82,8 +82,8 @@ Both reference tools follow this structure:
 
 ```python
 from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
-from chain import MinimalChainable
-from main import build_models, prompt
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import build_models, prompt
 
 def my_tool(topic: str, additional_context: str = ""):
     # 1. Load user preferences
@@ -188,9 +188,9 @@ These 2 reference implementations demonstrate all the patterns used across the f
 # Test CLI
 python tools/learning/your_tool.py "Test input" --context "Extra context"
 
-# Test with web UI
+# Test with Candlelight UI
 # 1. Start backend: python3 server/main.py
-# 2. Start frontend: cd web && npm run dev
+# 2. Open http://localhost:8000
 # 3. Select your tool in the UI
 ```
 

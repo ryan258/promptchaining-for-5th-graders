@@ -12,6 +12,7 @@ Usage:
 import os
 import json
 from datetime import datetime
+from typing import Optional
 
 try:
     from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
@@ -22,11 +23,12 @@ except ImportError:
 
 project_root = setup_project_root(__file__)
 
-from src.core.chain import MinimalChainable
-from src.core.main import build_models, prompt
+from lib.core.chain import MinimalChainable
+from lib.core.artifact_store import ArtifactStore
+from lib.core.llm_client import build_models, prompt
 
 
-def subject_connector(subject_a: str, subject_b: str):
+def subject_connector(subject_a: str, subject_b: str, artifact_store: Optional[ArtifactStore] = None):
     print("🔗 Subject Connector")
     print(f"Subject A: {subject_a}")
     print(f"Subject B: {subject_b}\n")
@@ -43,11 +45,15 @@ def subject_connector(subject_a: str, subject_b: str):
         "tone": tone,
     }
 
+    artifact_store = artifact_store or ArtifactStore()
+
     result, context_filled_prompts, usage_stats, execution_trace = MinimalChainable.run(
         context=context_data,
         model=model_info,
         callable=prompt,
         return_trace=True,
+        artifact_store=artifact_store,
+        topic=f"{subject_a}_vs_{subject_b}",
 
         prompts=[
             # Connections

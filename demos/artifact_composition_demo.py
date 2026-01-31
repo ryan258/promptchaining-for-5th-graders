@@ -16,9 +16,9 @@ import sys
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from chain import MinimalChainable
-from main import build_models, prompt
-from artifact_store import ArtifactStore
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import build_models, prompt
+from lib.core.artifact_store import ArtifactStore
 
 
 def artifact_composition_demo():

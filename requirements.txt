@@ -17,6 +17,21 @@ python-dotenv
 # Think of it like a robot that checks our work for us
 pytest
 
+# fastapi - Backend framework for the Candlelight UI
+fastapi
+
+# uvicorn - ASGI server for FastAPI
+uvicorn
+
+# jinja2 - HTML templating engine
+jinja2
+
+# python-multipart - Required for FastAPI form parsing
+python-multipart
+
+# chromadb - Required persistence layer (mandated stack)
+chromadb
+
 # pydantic - This helps us create clean, organized data structures
 # It's like having labeled boxes for our data, so everything stays organized
 # It also checks that the data is the right type (text vs number vs etc.)

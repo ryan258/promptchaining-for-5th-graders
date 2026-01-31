@@ -4,15 +4,10 @@
 
 We performed a comprehensive DRY (Don't Repeat Yourself) audit and refactored key areas of the codebase to improve maintainability and separate concerns.
 
-### 1. Frontend Modularization (`web/src/components/patterns/`)
-*   **Problem:** `PatternLauncher.jsx` was a monolithic ~800 line file containing all logic for 5 different reasoning patterns.
-*   **Solution:** Extracted each pattern into its own dedicated component:
-    *   `SocraticFeed.jsx`
-    *   `FiveWhysFeed.jsx`
-    *   `DesignThinkingFeed.jsx`
-    *   `ScientificMethodFeed.jsx`
-    *   `JudicialReasoningFeed.jsx`
-*   **Shared Utils:** Created `utils.js` for common formatting (`safeRender`) and input normalization.
+### 1. Candlelight UI (`server/templates/`)
+*   **Problem:** React/Vite added bloat and conflicted with the mandated stack.
+*   **Solution:** Replaced the frontend with FastAPI + Jinja2 + HTMX templates.
+*   **Result:** Single-page Candlelight interface for tools, patterns, meta-chains, and artifacts.
 
 ### 2. Backend Standardization (`tools/tool_utils.py`)
 *   **Problem:** Each tool script manually implemented JSON tracing and Markdown logging, leading to duplicated code and inconsistent outputs.

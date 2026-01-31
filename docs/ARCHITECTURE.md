@@ -156,11 +156,11 @@ All backend tools reuse core logic to ensure consistency and maintainability:
 - **Shared Utilities**: `tools/tool_utils.py` centralizes common tasks.
 - **Unified Output**: `save_chain_output` standardizes how JSON traces, Markdown logs, and Artifacts are persisted. This ensures every tool immediately supports the full visualization suite.
 
-### 2. Component-Based Frontend
-The Web UI uses a modular architecture for reasoning patterns:
-- **Pattern Registry**: `PatternLauncher.jsx` acts as a dispatcher.
-- **Isolated Feeds**: Each reasoning pattern (e.g., `SocraticFeed`, `ScientificMethodFeed`) is a standalone component in `web/src/components/patterns/`.
-- **Shared Rendering**: Common display logic is extracted to `utils.js`.
+### 2. Candlelight UI
+The Web UI is served directly from FastAPI:
+- **Templates**: Jinja2 views in `server/templates/`.
+- **Interactivity**: HTMX swaps partials without a JS framework.
+- **Styling**: Candlelight palette lives in `server/static/`.
 
 ---
 

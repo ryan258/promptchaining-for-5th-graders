@@ -8,29 +8,21 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.utils import demo_utils
+from lib.utils import demo_utils
 
 class TestDemoUtils(unittest.TestCase):
     
-    @patch('os.path.dirname')
-    @patch('os.path.abspath')
-    @patch('sys.path')
-    def test_setup_demo_env_adds_path(self, mock_sys_path, mock_abspath, mock_dirname):
-        # Setup
-        mock_abspath.return_value = '/fake/project/root/demo_utils.py'
-        mock_dirname.return_value = '/fake/project/root'
-        
+    def test_setup_demo_env_adds_path(self):
         # Use a real list for sys.path to verify modification
         real_sys_path = []
         with patch('sys.path', real_sys_path):
-            # Run function
             demo_utils.setup_demo_env()
-            
-            # Check if path was added
-            self.assertIn('/fake/project/root', real_sys_path)
+
+        expected_root = str(Path(demo_utils.__file__).resolve().parents[2])
+        self.assertIn(expected_root, real_sys_path)
 
     @patch('os.path.exists')
-    @patch('src.utils.demo_utils.load_dotenv')
+    @patch('lib.utils.demo_utils.load_dotenv')
     @patch('os.getenv')
     def test_setup_demo_env_loads_dotenv(self, mock_getenv, mock_load_dotenv, mock_exists):
         # Setup

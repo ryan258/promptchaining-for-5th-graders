@@ -17,7 +17,7 @@ import json
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from chain_composer import ChainComposer, ChainStep, ChainRecipe
+from lib.core.chain_composer import ChainComposer, ChainStep, ChainRecipe
 
 
 def curriculum_builder_demo():

@@ -10,7 +10,7 @@ sys.path.insert(0, str(project_root))
 
 import random  # Helps us make random choices for testing
 import time  # Lets us simulate different completion speeds
-from src.core.chain import FusionChain, FusionChainResult, MinimalChainable  # Our magic tools
+from lib.core.chain import FusionChain, FusionChainResult, MinimalChainable  # Our magic tools
 
 
 def test_chainable_solo():

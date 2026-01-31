@@ -82,7 +82,7 @@ python demos/meta_chain_demo.py
 python demos/curriculum_builder_demo.py
 ```
 
-## 6. Start the Web UI (Optional)
+## 6. Start the Candlelight Web UI
 
 Visualize your chains in a browser interface:
 
@@ -91,14 +91,7 @@ Visualize your chains in a browser interface:
    python server/main.py
    ```
 
-2. In a new terminal, start the frontend:
-   ```bash
-   cd web
-   npm install
-   npm run dev
-   ```
-
-3. Open `http://localhost:5173`
+2. Open `http://localhost:8000`
 
 ## Next Steps
 

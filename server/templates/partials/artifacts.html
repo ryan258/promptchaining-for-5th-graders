@@ -1,0 +1,16 @@
+{% if artifacts %}
+  <div class="artifact-list">
+    {% for artifact in artifacts %}
+      <div class="artifact-card">
+        <div><strong>{{ artifact.topic }}</strong> / {{ artifact.filename }}</div>
+        <div class="artifact-meta">{{ artifact.size }} bytes · {{ artifact.modified }}</div>
+        <div class="inline-actions">
+          <button class="secondary" hx-get="/ui/artifacts/{{ artifact.topic }}/{{ artifact.filename }}" hx-target="#artifact-detail-{{ loop.index }}" hx-swap="innerHTML">View</button>
+        </div>
+        <div id="artifact-detail-{{ loop.index }}" class="details"></div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="note">No artifacts yet.</div>
+{% endif %}

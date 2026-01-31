@@ -10,6 +10,7 @@ Usage:
 """
 
 import os
+from typing import Optional
 
 
 try:
@@ -21,12 +22,12 @@ except ImportError:
 
 project_root = setup_project_root(__file__)
 
-from src.core.chain import MinimalChainable
-from src.core.main import build_models, prompt
-from src.core.artifact_store import ArtifactStore
+from lib.core.chain import MinimalChainable
+from lib.core.llm_client import build_models, prompt
+from lib.core.artifact_store import ArtifactStore
 
 
-def concept_simplifier(topic: str, additional_context: str = ""):
+def concept_simplifier(topic: str, additional_context: str = "", artifact_store: Optional[ArtifactStore] = None):
     print("🧭 Concept Simplifier")
     print(f"Topic: {topic}")
     if additional_context:
@@ -41,7 +42,7 @@ def concept_simplifier(topic: str, additional_context: str = ""):
     model_info = (client, model_names[0])
 
     # Create artifact store for persistent knowledge
-    artifact_store = ArtifactStore()
+    artifact_store = artifact_store or ArtifactStore()
 
     context_data = {
         "topic": topic,
