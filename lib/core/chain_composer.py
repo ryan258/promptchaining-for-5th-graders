@@ -108,16 +108,30 @@ class ChainComposer:
     - Propagate context
     """
 
-    def __init__(self, artifact_store: Optional[ArtifactStore] = None):
+    def __init__(
+        self,
+        artifact_store: Optional[ArtifactStore] = None,
+        model_info: Optional[Any] = None,
+        llm_callable: Callable = prompt,
+    ):
         """
         Create a chain composer.
 
         Args:
             artifact_store: Optional artifact store (creates one if not provided)
+            model_info: Optional preconfigured (client, model_name) tuple for testability
+            llm_callable: Optional callable used by MinimalChainable.run
         """
         self.artifact_store = artifact_store or ArtifactStore()
-        self.client, self.model_names = build_models()
-        self.model_info = (self.client, self.model_names[0])
+        self.llm_callable = llm_callable
+
+        if model_info is None:
+            self.client, self.model_names = build_models()
+            self.model_info = (self.client, self.model_names[0])
+        else:
+            self.client = None
+            self.model_names = []
+            self.model_info = model_info
 
         # Track execution
         self.execution_trace = []
@@ -248,7 +262,7 @@ class ChainComposer:
         result, prompts, usage = MinimalChainable.run(
             context=context,
             model=self.model_info,
-            callable=prompt,
+            llm_callable=self.llm_callable,
             prompts=step.prompts,
             return_usage=True,
             artifact_store=self.artifact_store,
@@ -296,7 +310,7 @@ class ChainComposer:
 
         # Build a synthesis prompt that references all matching artifacts
         artifact_refs = "\n".join([
-            f"- {key}: {{{{artifact:{key.replace(':', ':')}}}}}"
+            f"- {key}: {{{{artifact:{key}}}}}"
             for key in matching_artifacts.keys()
         ])
 
@@ -321,7 +335,7 @@ Respond in JSON:
         result, prompts, usage = MinimalChainable.run(
             context=context,
             model=self.model_info,
-            callable=prompt,
+            llm_callable=self.llm_callable,
             prompts=[synthesis_prompt],
             return_usage=True,
             artifact_store=self.artifact_store,
@@ -345,16 +359,18 @@ Respond in JSON:
         }
 
     def _find_tool_path(self, tool_name: str) -> Optional[str]:
-        """Find the file path for a tool."""
+        """Find the file path for a tool, using paths anchored to the project root."""
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
         # Look in tools/learning/
-        learning_path = f"tools/learning/{tool_name}.py"
+        learning_path = os.path.join(project_root, "tools", "learning", f"{tool_name}.py")
         if os.path.exists(learning_path):
-            return os.path.abspath(learning_path)
+            return learning_path
 
         # Look in tools/
-        tools_path = f"tools/{tool_name}.py"
+        tools_path = os.path.join(project_root, "tools", f"{tool_name}.py")
         if os.path.exists(tools_path):
-            return os.path.abspath(tools_path)
+            return tools_path
 
         return None
 

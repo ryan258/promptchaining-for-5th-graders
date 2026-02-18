@@ -335,7 +335,7 @@ def test_fusion_chain_run():
     result = FusionChain.run(
         context=context,
         models=models,
-        callable=mock_callable_prompt,
+        llm_callable=mock_callable_prompt,
         prompts=chains,
         evaluator=mock_evaluator,
         get_model_name=mock_get_model_name,
@@ -433,7 +433,7 @@ def test_fusion_chain_preserves_model_order():
     result = FusionChain.run(
         context={"topic": "Ordering"},
         models=models,
-        callable=mock_callable_prompt,
+        llm_callable=mock_callable_prompt,
         prompts=["Prompt-1"],
         evaluator=mock_evaluator,
         get_model_name=lambda m: m.name,

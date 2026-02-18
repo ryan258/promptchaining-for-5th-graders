@@ -9,6 +9,8 @@ Quick validation tests to ensure all generators work correctly.
 import sys
 import os
 from pathlib import Path
+import pytest
+from unittest.mock import patch
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -22,6 +24,109 @@ from tools.ms_blog.ms_content_tools import (
     low_energy_pipeline,
     validate_content
 )
+
+
+def _mock_chain_run(
+    context,
+    model,
+    llm_callable=None,
+    prompts=None,
+    return_trace=False,
+    return_usage=False,
+    callable=None,
+    **kwargs
+):
+    """Deterministic mock for MinimalChainable.run used by unit tests."""
+    if llm_callable is None:
+        llm_callable = callable
+    if prompts is None:
+        prompts = []
+
+    first_prompt = prompts[0] if prompts else ""
+    usage = [{"prompt_tokens": 120, "completion_tokens": 80}]
+    trace = {"steps": [], "final_result": None, "total_tokens": 200}
+
+    prompt_card_md = """---
+title: "Test Prompt Card"
+---
+
+## Problem
+A clear test problem.
+
+## Prompt
+Use this prompt.
+
+## Examples
+Example output.
+"""
+    shortcut_md = """---
+title: "Test Shortcut"
+---
+
+## Why This Matters for MS
+It saves effort.
+
+## How
+Step-by-step usage.
+
+## Use Case
+A practical scenario.
+"""
+    guide_md = """---
+title: "Test Guide"
+---
+
+## Quick Path
+Fast setup.
+
+## Phase 1
+Start here.
+
+## Troubleshooting
+Fixes and checks.
+"""
+
+    if "Analyze this MS-related problem" in first_prompt:
+        result = [{}, {}, {}, {}, prompt_card_md]
+    elif "Analyze this accessibility tool/technique" in first_prompt:
+        result = [{}, {}, {}, {}, shortcut_md]
+    elif "Analyze this system for MS users" in first_prompt:
+        result = [{}, {}, {}, {}, {}, guide_md]
+    elif "Analyze this content seed idea" in first_prompt:
+        result = [{}, {}, {}, {}, {}, {
+            "summary": {"seed_idea": "test"},
+            "prompt_cards": [{"title": "Idea 1"}],
+            "shortcuts": [{"title": "Shortcut 1"}],
+            "guides": [{"title": "Guide 1"}],
+            "blog_posts": [{"title": "Blog 1"}],
+        }]
+    elif "Analyze this user input" in first_prompt:
+        result = [{
+            "format": "prompt_card",
+            "reasoning": "Best fit for a direct problem",
+            "parameters": {
+                "problem": "Test problem from selector",
+                "target_audience": "People with MS"
+            }
+        }]
+    else:
+        result = [{"ok": True}]
+
+    trace["final_result"] = result[-1]
+    filled_prompts = prompts
+
+    if return_trace:
+        return result, filled_prompts, usage, trace
+    if return_usage:
+        return result, filled_prompts, usage
+    return result, filled_prompts
+
+
+@pytest.fixture(autouse=True)
+def mock_chain_runner():
+    with patch("tools.ms_blog.ms_content_tools.MinimalChainable.run", side_effect=_mock_chain_run):
+        with patch("tools.ms_blog.ms_content_tools.MinimalChainable.log_to_markdown", return_value="mock_log.md"):
+            yield
 
 
 def test_prompt_card_generator():
@@ -46,11 +151,9 @@ def test_prompt_card_generator():
         print("✅ Prompt card generator working")
         print(f"   Generated {len(content)} characters")
         print(f"   Validation: {'PASSED' if metadata['validation']['valid'] else 'FAILED'}")
-        return True
-
     except Exception as e:
         print(f"❌ Prompt card generator failed: {e}")
-        return False
+        raise
 
 
 def test_shortcut_generator():
@@ -73,11 +176,9 @@ def test_shortcut_generator():
 
         print("✅ Shortcut generator working")
         print(f"   Generated {len(content)} characters")
-        return True
-
     except Exception as e:
         print(f"❌ Shortcut generator failed: {e}")
-        return False
+        raise
 
 
 def test_guide_generator():
@@ -100,11 +201,9 @@ def test_guide_generator():
 
         print("✅ Guide generator working")
         print(f"   Generated {len(content)} characters")
-        return True
-
     except Exception as e:
         print(f"❌ Guide generator failed: {e}")
-        return False
+        raise
 
 
 def test_content_idea_expander():
@@ -128,7 +227,7 @@ def test_content_idea_expander():
             # (idea expander can fail with short/simple inputs)
             print(f"⚠️  Idea expander returned error: {ideas.get('error')}")
             print("   (This can happen with minimal test inputs)")
-            return True  # Don't fail the test
+            return  # Don't fail the test
 
         assert 'prompt_cards' in ideas or 'summary' in ideas, "Should have content ideas"
 
@@ -137,11 +236,9 @@ def test_content_idea_expander():
             print(f"   Generated {len(ideas.get('prompt_cards', []))} prompt card ideas")
             print(f"   Generated {len(ideas.get('shortcuts', []))} shortcut ideas")
             print(f"   Generated {len(ideas.get('guides', []))} guide ideas")
-        return True
-
     except Exception as e:
         print(f"❌ Idea expander failed: {e}")
-        return False
+        raise
 
 
 def test_validation_function():
@@ -175,11 +272,9 @@ Example content.
 
         print("✅ Validation function working")
         print(f"   Test content valid: {result['valid']}")
-        return True
-
     except Exception as e:
         print(f"❌ Validation function failed: {e}")
-        return False
+        raise
 
 
 def test_low_energy_pipeline():
@@ -205,13 +300,11 @@ def test_low_energy_pipeline():
         print(f"   Format chosen: {result['metadata'].get('format_chosen')}")
         print(f"   Content length: {len(result['content'])} characters")
         print(f"   Validation: {'PASSED' if result['validation']['valid'] else 'NEEDS REVIEW'}")
-        return True
-
     except Exception as e:
         print(f"❌ Low-energy pipeline failed: {e}")
         import traceback
         traceback.print_exc()
-        return False
+        raise
 
 
 def run_all_tests():
@@ -233,8 +326,8 @@ def run_all_tests():
     results = []
     for name, test_func in tests:
         try:
-            passed = test_func()
-            results.append((name, passed))
+            test_func()
+            results.append((name, True))
         except Exception as e:
             print(f"\n❌ {name} crashed: {e}")
             import traceback

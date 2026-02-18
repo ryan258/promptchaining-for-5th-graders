@@ -113,6 +113,13 @@ def test_artifact_references():
     assert len(used4) == 2
     print("✅ Multiple artifact references work")
 
+    # Test wildcard references
+    prompt5 = "All summaries: {{artifact:*:summary}}"
+    resolved5, used5 = resolve_artifact_references(prompt5, store)
+    assert "ai:summary" in used5
+    assert "Artificial Intelligence is machine learning" in resolved5
+    print("✅ Wildcard artifact references work")
+
     print()
 
 

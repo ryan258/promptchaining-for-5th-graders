@@ -5,6 +5,7 @@ Quick test of chain composer functionality.
 
 import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -14,11 +15,30 @@ from lib.core.chain_composer import ChainComposer, ChainStep, ChainRecipe
 from lib.core.artifact_store import ArtifactStore
 
 
+def _mock_llm_callable(model, prompt):
+    """Deterministic mock used to avoid live network/model dependencies in tests."""
+    usage = {"prompt_tokens": 12, "completion_tokens": 8}
+
+    if "Create a simple data structure" in prompt:
+        return '{"data": ["item1", "item2", "item3"]}', usage
+
+    if "Count how many items are in the data" in prompt:
+        return '{"count": 3}', usage
+
+    if "Say hello and introduce yourself" in prompt:
+        return '{"greeting": "Hello", "name": "Test Assistant"}', usage
+
+    return '{"result": "ok"}', usage
+
+
 def test_basic_composition():
     """Test basic chain composition."""
     print("Testing basic chain composition...")
 
-    composer = ChainComposer()
+    composer = ChainComposer(
+        model_info=("mock-client", "mock-model"),
+        llm_callable=_mock_llm_callable
+    )
 
     # Create a simple composition
     steps = [
@@ -81,30 +101,35 @@ def test_artifact_flow():
     """Test that artifacts flow between steps."""
     print("Testing artifact flow...")
 
-    store = ArtifactStore(base_dir="/tmp/test_composer_artifacts")
-    composer = ChainComposer(artifact_store=store)
+    with TemporaryDirectory() as tmp_dir:
+        store = ArtifactStore(base_dir=tmp_dir)
+        composer = ChainComposer(
+            artifact_store=store,
+            model_info=("mock-client", "mock-model"),
+            llm_callable=_mock_llm_callable
+        )
 
-    # Step 1: Create an artifact
-    steps = [
-        ChainStep(
-            name="Create data",
-            step_type="chain",
-            topic="source_topic",
-            prompts=[
-                """Create a simple data structure.
+        # Step 1: Create an artifact
+        steps = [
+            ChainStep(
+                name="Create data",
+                step_type="chain",
+                topic="source_topic",
+                prompts=[
+                    """Create a simple data structure.
 
 Respond in JSON:
 {
   "data": ["item1", "item2", "item3"]
 }"""
-            ]
-        ),
-        ChainStep(
-            name="Use data",
-            step_type="chain",
-            topic="consumer_topic",
-            prompts=[
-                """You have access to this data: {{artifact:source_topic:step_1}}
+                ]
+            ),
+            ChainStep(
+                name="Use data",
+                step_type="chain",
+                topic="consumer_topic",
+                prompts=[
+                    """You have access to this data: {{artifact:source_topic:step_1}}
 
 Count how many items are in the data.
 
@@ -112,21 +137,21 @@ Respond in JSON:
 {
   "count": <number>
 }"""
-            ]
-        )
-    ]
+                ]
+            )
+        ]
 
-    result = composer.compose(steps)
+        result = composer.compose(steps)
 
-    # Check that both steps executed
-    assert len(result.steps_executed) == 2
+        # Check that both steps executed
+        assert len(result.steps_executed) == 2
 
-    # Check that second step got the artifact
-    consumer_artifact = store.get("consumer_topic", "step_1")
-    assert consumer_artifact is not None
+        # Check that second step got the artifact
+        consumer_artifact = store.get("consumer_topic", "step_1")
+        assert consumer_artifact is not None
 
-    print("✅ Artifacts flow between steps")
-    print()
+        print("✅ Artifacts flow between steps")
+        print()
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from .chain import MinimalChainable, FusionChain
 from .artifact_store import ArtifactStore
 from .chain_composer import ChainComposer, ChainStep
 from .meta_chain_generator import MetaChainGenerator
-from .llm_client import build_models, prompt
+from .llm_client import build_models, get_model, calculate_total_tokens, prompt
 
 __all__ = [
     'MinimalChainable',
@@ -14,5 +14,7 @@ __all__ = [
     'ChainStep',
     'MetaChainGenerator',
     'build_models',
+    'get_model',
+    'calculate_total_tokens',
     'prompt'
 ]

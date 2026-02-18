@@ -97,7 +97,7 @@ def my_tool(topic: str, additional_context: str = ""):
     result, prompts, usage, trace = MinimalChainable.run(
         context={"topic": topic, ...},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,  # ← Important for web UI!
         prompts=[...]
     )

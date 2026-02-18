@@ -50,7 +50,7 @@ def artifact_composition_demo():
     result_a, prompts_a, usage_a = MinimalChainable.run(
         context={"topic": topic_a},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_usage=True,
         artifact_store=artifact_store,
         topic=topic_a,
@@ -99,7 +99,7 @@ Respond in JSON:
     result_b, prompts_b, usage_b = MinimalChainable.run(
         context={"topic": topic_b},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_usage=True,
         artifact_store=artifact_store,
         topic=topic_b,
@@ -157,7 +157,7 @@ Respond in JSON:
             "topic_b": topic_b
         },
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_usage=True,
         artifact_store=artifact_store,
         topic=f"{topic_a}_vs_{topic_b}",

@@ -10,16 +10,14 @@ Usage:
 """
 
 import os
-import json
-from datetime import datetime
 from typing import Optional
 
 try:
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
 except ImportError:
     import sys
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args
+    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
 
 project_root = setup_project_root(__file__)
 
@@ -50,7 +48,7 @@ def subject_connector(subject_a: str, subject_b: str, artifact_store: Optional[A
     result, context_filled_prompts, usage_stats, execution_trace = MinimalChainable.run(
         context=context_data,
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         artifact_store=artifact_store,
         topic=f"{subject_a}_vs_{subject_b}",
@@ -109,18 +107,8 @@ Respond in JSON:
         ],
         )
 
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     output_dir = os.path.join(project_root, "output", "learning", "subject_connector")
-    os.makedirs(output_dir, exist_ok=True)
-
-    output_path = os.path.join(output_dir, f"{timestamp}-subject_connector.json")
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(execution_trace, f, indent=2)
-
-    log_file = MinimalChainable.log_to_markdown("subject_connector", context_filled_prompts, result, usage_stats)
-
-    print(f"✅ Saved JSON to: {output_path}")
-    print(f"✅ Log saved to: {log_file}")
+    save_chain_output(project_root, output_dir, "subject_connector", f"{subject_a}_vs_{subject_b}", execution_trace, result, context_filled_prompts, usage_stats, artifact_store)
 
 
 def main():

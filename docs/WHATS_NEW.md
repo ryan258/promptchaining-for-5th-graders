@@ -34,11 +34,11 @@ This transforms your framework from "run chains" to "orchestrate intelligence at
 ### Phase 1: Artifact System ✅
 
 **Files Created:**
-- `artifact_store.py` (357 lines) - Persistent knowledge store
+- `lib/core/artifact_store.py` (357 lines) - Persistent knowledge store
 - `demos/artifact_composition_demo.py` - Shows artifact reuse
-- `test_artifacts.py` - Test suite ✅ ALL PASSED
-- `artifact_browser.py` - CLI to explore artifacts
-- `ARCHITECTURE.md` - Complete documentation
+- `tests/test_artifacts.py` - Test suite
+- `lib/utils/artifact_browser.py` - CLI to explore artifacts
+- `docs/ARCHITECTURE.md` - Complete documentation
 
 **What It Does:**
 ```python
@@ -65,15 +65,15 @@ run_chain(prompts=[
 ### Phase 2: Chain Composer ✅
 
 **Files Created:**
-- `chain_composer.py` (600+ lines) - Orchestration engine
+- `lib/core/chain_composer.py` (600+ lines) - Orchestration engine
 - `demos/curriculum_builder_demo.py` - Shows composition
-- `test_chain_composer.py` - Test suite ✅ ALL PASSED
-- `ARCHITECTURE.md` - Complete documentation
+- `tests/test_chain_composer.py` - Test suite
+- `docs/ARCHITECTURE.md` - Complete documentation
 
 **What It Does:**
 ```python
 # One line to build a curriculum
-from chain_composer import quick_compose
+from lib.core.chain_composer import quick_compose
 
 result = quick_compose(
     "learning_curriculum",
@@ -158,13 +158,13 @@ for topic in topics:
 # - 20 × example collections
 
 # Browse it
-python artifact_browser.py
+python lib/utils/artifact_browser.py
 ```
 
 ### 2. Auto-Generate Curricula
 
 ```python
-from chain_composer import quick_compose
+from lib.core.chain_composer import quick_compose
 
 result = quick_compose(
     "learning_curriculum",
@@ -205,7 +205,7 @@ result = quick_compose(
 ### 5. Build Custom Workflows
 
 ```python
-from chain_composer import ChainComposer, ChainStep
+from lib.core.chain_composer import ChainComposer, ChainStep
 
 steps = [
     ChainStep(name="Analyze A", step_type="tool", ...),
@@ -226,8 +226,7 @@ result = composer.compose(steps)
 
 ```bash
 # 1. Test everything works
-python test_artifacts.py
-python test_chain_composer.py
+python -m pytest -q tests/test_artifacts.py tests/test_chain_composer.py
 
 # 2. Create some artifacts
 python tools/learning/concept_simplifier.py "Recursion"
@@ -245,7 +244,7 @@ python demos/curriculum_builder_demo.py
 
 ```bash
 # Interactive browser
-python artifact_browser.py
+python lib/utils/artifact_browser.py
 
 # Commands:
 #   list              - Show all topics
@@ -260,9 +259,9 @@ python artifact_browser.py
 
 ### Core System
 ```
-artifact_store.py         - Persistent knowledge store (357 lines)
-chain_composer.py         - Orchestration engine (600+ lines)
-chain.py                  - Updated with artifact support
+lib/core/artifact_store.py   - Persistent knowledge store (357 lines)
+lib/core/chain_composer.py   - Orchestration engine (600+ lines)
+lib/core/chain.py            - Updated with artifact support
 ```
 
 ### Tools & Demos
@@ -274,8 +273,8 @@ demos/curriculum_builder_demo.py      - Chain composition demo
 
 ### Testing
 ```
-test_artifacts.py         - ✅ ALL TESTS PASSED
-test_chain_composer.py    - ✅ ALL TESTS PASSED
+tests/test_artifacts.py
+tests/test_chain_composer.py
 ```
 
 ### Documentation

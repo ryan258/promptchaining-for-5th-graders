@@ -25,19 +25,8 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from lib.core.chain import MinimalChainable
-from lib.core.llm_client import build_models, prompt
+from lib.core.llm_client import get_model, prompt
 from tools.tool_utils import load_user_context
-
-
-# ============================================================================
-# BASE UTILITIES
-# ============================================================================
-
-def get_model():
-    """Get the default model for content generation."""
-    client, model_names = build_models()
-    # Use a capable model for content generation
-    return (client, model_names[0])
 
 
 def save_markdown(content: str, output_path: str) -> str:
@@ -245,7 +234,7 @@ Return ONLY the complete markdown, ready to save as a .md file."""
     result, filled_prompts, usage, trace = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=prompts
     )
@@ -403,7 +392,7 @@ Return ONLY the markdown."""
     result, filled_prompts, usage, trace = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=prompts
     )
@@ -584,7 +573,7 @@ Return ONLY the markdown."""
     result, filled_prompts, usage, trace = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=prompts
     )
@@ -771,7 +760,7 @@ Return ONLY valid JSON."""
     result, filled_prompts, usage, trace = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=prompts
     )
@@ -1019,7 +1008,7 @@ Respond in JSON:
     result, _, usage, _ = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=prompts
     )
@@ -1086,7 +1075,7 @@ Return the optimized markdown content. Do not include explanations or commentary
     result, filled_prompts, usage, _ = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=prompts
     )
@@ -1171,7 +1160,7 @@ Return JSON with:
     format_result, _, _, _ = MinimalChainable.run(
         context={},
         model=model_info,
-        callable=prompt,
+        llm_callable=prompt,
         return_trace=True,
         prompts=format_selector_prompts
     )

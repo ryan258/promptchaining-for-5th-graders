@@ -4,6 +4,7 @@ import glob
 import subprocess
 import json
 import logging
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Body, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -45,6 +46,14 @@ templates.env.filters["pretty_json"] = _pretty_json
 
 TOOLS_DIR = os.path.join(PROJECT_ROOT, 'tools')
 ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, 'artifacts')
+ARTIFACTS_ROOT = Path(ARTIFACTS_DIR).resolve()
+
+# Only expose tools that match the expected CLI contract:
+#   python3 <tool_path> <topic> [--context <text>]
+ALLOWED_TOOLS = {
+    ("learning", "concept_simplifier"),
+    ("learning", "subject_connector"),
+}
 
 class Tool(BaseModel):
     name: str
@@ -206,6 +215,9 @@ def _scan_tools() -> List[Tool]:
         filename = os.path.basename(file_path)
         name = filename.replace(".py", "")
 
+        if (category, name) not in ALLOWED_TOOLS:
+            continue
+
         description = "No description available."
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -234,6 +246,16 @@ def _resolve_tool_path(category: str, tool_name: str) -> Optional[str]:
         if tool.category == category and tool.name == tool_name:
             return tool.path
     return None
+
+
+def _safe_artifact_path(topic: str, filename: str) -> Path:
+    """Resolve artifact path and enforce containment within artifacts root."""
+    candidate = (ARTIFACTS_ROOT / topic / filename).resolve()
+    try:
+        candidate.relative_to(ARTIFACTS_ROOT)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail="Invalid artifact path") from e
+    return candidate
 
 @app.get("/tools", response_model=List[Tool])
 async def list_tools():
@@ -309,6 +331,8 @@ async def run_tool(request: RunRequest):
         return _execute_tool(request.category, request.tool_name, request.topic, request.context)
     except subprocess.TimeoutExpired:
         raise HTTPException(status_code=504, detail="Tool execution timed out")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -346,6 +370,8 @@ async def run_pattern(pattern_name: str, payload: Dict[str, Any] = Body(...)):
     """Execute a reasoning pattern and return structured output."""
     try:
         return _execute_pattern(pattern_name, payload or {})
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error running pattern {pattern_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -384,6 +410,8 @@ async def run_adversarial(pattern_name: str, payload: Dict[str, Any] = Body(...)
     """Run adversarial reasoning flows (red vs blue, dialectical, etc.)."""
     try:
         return _execute_adversarial(pattern_name, payload or {})
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error running adversarial pattern {pattern_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -418,7 +446,7 @@ async def execute_meta_chain(request: MetaExecuteRequest):
         outputs, filled_prompts, usage, trace = MinimalChainable.run(
             context=design_data.get("context") or {},
             model=generator.model_info,
-            callable=core_prompt,
+            llm_callable=core_prompt,
             prompts=prompts,
             return_trace=True,
             artifact_store=generator.artifact_store,
@@ -512,9 +540,9 @@ async def list_artifacts():
 @app.get("/artifacts/{topic}/{filename}")
 async def get_artifact(topic: str, filename: str):
     """Get the content of a specific artifact."""
-    file_path = os.path.join(ARTIFACTS_DIR, topic, filename)
+    file_path = _safe_artifact_path(topic, filename)
 
-    if not os.path.exists(file_path):
+    if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Artifact not found")
 
     try:
@@ -533,18 +561,18 @@ async def get_artifact(topic: str, filename: str):
 @app.delete("/artifacts/{topic}/{filename}")
 async def delete_artifact(topic: str, filename: str):
     """Delete a specific artifact."""
-    file_path = os.path.join(ARTIFACTS_DIR, topic, filename)
+    file_path = _safe_artifact_path(topic, filename)
 
-    if not os.path.exists(file_path):
+    if not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Artifact not found")
 
     try:
-        os.remove(file_path)
+        file_path.unlink()
 
         # Remove topic directory if empty
-        topic_path = os.path.join(ARTIFACTS_DIR, topic)
-        if os.path.isdir(topic_path) and not os.listdir(topic_path):
-            os.rmdir(topic_path)
+        topic_path = file_path.parent
+        if topic_path.is_dir() and not any(topic_path.iterdir()):
+            topic_path.rmdir()
 
         return {"status": "success", "message": "Artifact deleted"}
     except Exception as e:
@@ -753,7 +781,7 @@ async def ui_meta_execute(
         outputs, filled_prompts, usage, trace = MinimalChainable.run(
             context=design_data.get("context") or {},
             model=generator.model_info,
-            callable=core_prompt,
+            llm_callable=core_prompt,
             prompts=prompts,
             return_trace=True,
             artifact_store=generator.artifact_store,

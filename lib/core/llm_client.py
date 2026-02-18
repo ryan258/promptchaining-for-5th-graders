@@ -1,12 +1,35 @@
 # llm_client.py - Shared LLM client helpers
 # Keep LLM wiring separate from demos and app entrypoints.
 
-from typing import Tuple
+from typing import Any, List, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import time
 import random
+
+
+def get_model() -> Tuple[OpenAI, str]:
+    """Return a ready-to-use (client, model_name) tuple using the first configured model."""
+    client, model_names = build_models()
+    return client, model_names[0]
+
+
+def calculate_total_tokens(usage_list: List[Any]) -> int:
+    """Sum token counts from a list of usage dicts or usage objects."""
+    total = 0
+    for usage in usage_list:
+        if isinstance(usage, dict):
+            if "total_tokens" in usage:
+                total += usage["total_tokens"]
+            else:
+                total += usage.get("prompt_tokens", 0) + usage.get("completion_tokens", 0)
+        else:
+            if hasattr(usage, "total_tokens"):
+                total += getattr(usage, "total_tokens", 0)
+            else:
+                total += getattr(usage, "prompt_tokens", 0) + getattr(usage, "completion_tokens", 0)
+    return total
 
 
 def build_models():

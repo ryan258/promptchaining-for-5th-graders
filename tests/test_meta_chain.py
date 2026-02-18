@@ -5,6 +5,7 @@ Test suite for meta-chain generator.
 
 import sys
 from pathlib import Path
+import json
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -16,6 +17,56 @@ from lib.core.meta_chain_generator import (
     CognitiveMove,
     quick_generate
 )
+
+
+def _mock_meta_callable(model, prompt):
+    """Deterministic mock meta-chain LLM callable for offline tests."""
+    usage = {"prompt_tokens": 20, "completion_tokens": 10}
+
+    if "meta-cognitive architect" in prompt:
+        return json.dumps({
+            "goal_analysis": "Need a simple explanation flow",
+            "required_operations": [
+                {"move": "decompose", "why": "Identify parts", "order_priority": 1},
+                {"move": "analogize", "why": "Make concrete", "order_priority": 2},
+                {"move": "synthesize", "why": "Combine insights", "order_priority": 3}
+            ],
+            "optimal_sequence": ["decompose", "analogize", "synthesize"],
+            "reasoning": "Start with structure, then analogy, then synthesis."
+        }), usage
+
+    if "prompt engineering expert" in prompt:
+        return json.dumps({
+            "prompts": [
+                {
+                    "step": 1,
+                    "cognitive_move": "decompose",
+                    "prompt": "Break down {{topic}} into key parts.",
+                    "uses_previous_output": False
+                },
+                {
+                    "step": 2,
+                    "cognitive_move": "analogize",
+                    "prompt": "Create analogies for {{output[-1]}}.",
+                    "uses_previous_output": True
+                },
+                {
+                    "step": 3,
+                    "cognitive_move": "synthesize",
+                    "prompt": "Synthesize {{output[-2]}} and {{output[-1]}}.",
+                    "uses_previous_output": True
+                }
+            ]
+        }), usage
+
+    return "{}", usage
+
+
+def _build_test_generator() -> MetaChainGenerator:
+    return MetaChainGenerator(
+        model_info=("mock-client", "mock-model"),
+        llm_callable=_mock_meta_callable
+    )
 
 
 def test_cognitive_move_library():
@@ -87,7 +138,7 @@ def test_chain_design():
     """Test that meta-chain can design a chain."""
     print("Testing chain design...")
 
-    generator = MetaChainGenerator()
+    generator = _build_test_generator()
 
     # Design a chain (don't execute)
     design = generator.design_chain(
@@ -114,7 +165,7 @@ def test_design_visualization():
     """Test that design can be visualized."""
     print("Testing design visualization...")
 
-    generator = MetaChainGenerator()
+    generator = _build_test_generator()
 
     design = generator.design_chain(
         goal="Test visualization",
@@ -135,7 +186,7 @@ def test_design_serialization():
     """Test that design can be serialized."""
     print("Testing design serialization...")
 
-    generator = MetaChainGenerator()
+    generator = _build_test_generator()
 
     design = generator.design_chain(
         goal="Test serialization",

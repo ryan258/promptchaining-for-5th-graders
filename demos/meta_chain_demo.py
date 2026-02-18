@@ -23,7 +23,7 @@ import json
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from meta_chain_generator import MetaChainGenerator, quick_generate
+from lib.core.meta_chain_generator import MetaChainGenerator, quick_generate
 
 
 def demo_1_explain_through_analogies():

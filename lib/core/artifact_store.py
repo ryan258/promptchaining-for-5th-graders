@@ -6,6 +6,12 @@ import os
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 import re
+import hashlib
+
+try:
+    import chromadb
+except Exception:
+    chromadb = None
 
 
 class ArtifactStore:
@@ -33,6 +39,8 @@ class ArtifactStore:
         self.base_dir = base_dir
         self.artifacts: Dict[str, Any] = {}  # In-memory cache
         self.metadata: Dict[str, Dict] = {}  # When created, by what tool, etc.
+        self.chroma_client = None
+        self.chroma_collection = None
 
         # Create base directory if it doesn't exist
         if not os.path.exists(base_dir):
@@ -40,6 +48,10 @@ class ArtifactStore:
 
         # Load existing artifacts
         self._load_all()
+
+        # Optional Chroma mirror for local vector-backed retrieval.
+        # JSON files remain source-of-truth persistence.
+        self._init_chroma()
 
     def save(self, topic: str, step_name: str, data: Any, metadata: Optional[Dict] = None):
         """
@@ -71,6 +83,7 @@ class ArtifactStore:
 
         # Persist to disk
         self._save_to_disk(topic_key, step_name, data, artifact_metadata)
+        self._sync_to_chroma(artifact_key, data, artifact_metadata)
 
     def get(self, topic: str, step_name: str) -> Optional[Any]:
         """
@@ -114,8 +127,9 @@ class ArtifactStore:
         Returns:
             Dict of matching artifacts {key: data}
         """
-        # Convert pattern to regex
-        regex_pattern = pattern.replace("*", ".*")
+        # Convert wildcard pattern to regex safely
+        # Example: "*:components" -> "^.*:components$"
+        regex_pattern = re.escape(pattern).replace(r"\*", ".*")
         regex = re.compile(f"^{regex_pattern}$")
 
         matching = {}
@@ -291,6 +305,59 @@ class ArtifactStore:
                     self.artifacts[artifact_key] = data
                     self.metadata[artifact_key] = metadata
 
+    def _init_chroma(self):
+        """Initialize a local Chroma collection if chromadb is available."""
+        if chromadb is None:
+            return
+
+        try:
+            chroma_dir = os.path.join(self.base_dir, "_chroma")
+            os.makedirs(chroma_dir, exist_ok=True)
+            self.chroma_client = chromadb.PersistentClient(path=chroma_dir)
+            self.chroma_collection = self.chroma_client.get_or_create_collection(
+                name="artifacts"
+            )
+        except Exception:
+            # Chroma is optional; keep JSON artifact flow working even if unavailable.
+            self.chroma_client = None
+            self.chroma_collection = None
+
+    @staticmethod
+    def _cheap_embedding(text: str, dim: int = 16) -> List[float]:
+        """
+        Build a tiny deterministic embedding vector without external model downloads.
+        This keeps Chroma local-first and dependency-light for this project.
+        """
+        digest = hashlib.sha256(text.encode("utf-8")).digest()
+        values = []
+        for i in range(dim):
+            byte = digest[i % len(digest)]
+            values.append(byte / 255.0)
+        return values
+
+    def _sync_to_chroma(self, artifact_key: str, data: Any, metadata: Dict[str, Any]):
+        """Mirror a saved artifact into Chroma for optional semantic retrieval."""
+        if self.chroma_collection is None:
+            return
+
+        try:
+            document = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+            chroma_meta = {
+                "topic": str(metadata.get("topic", "")),
+                "step_name": str(metadata.get("step_name", "")),
+                "created_at": str(metadata.get("created_at", "")),
+            }
+            embedding = self._cheap_embedding(document)
+            self.chroma_collection.upsert(
+                ids=[artifact_key],
+                documents=[document],
+                metadatas=[chroma_meta],
+                embeddings=[embedding],
+            )
+        except Exception:
+            # Never let Chroma mirroring break primary artifact persistence.
+            return
+
 
 def resolve_artifact_references(prompt: str, artifact_store: ArtifactStore) -> Tuple[str, List[str]]:
     """
@@ -315,6 +382,18 @@ def resolve_artifact_references(prompt: str, artifact_store: ArtifactStore) -> T
     def replace_artifact(match):
         topic = match.group(1)
         step_name = match.group(2)
+
+        # Support wildcard lookups like {{artifact:*:step_1}} by expanding
+        # to a JSON object of all matching artifacts.
+        if "*" in topic or "*" in step_name:
+            topic_pattern = topic if "*" in topic else artifact_store._normalize_key(topic)
+            artifact_query = f"{topic_pattern}:{step_name}"
+            matching = artifact_store.query(artifact_query)
+            if not matching:
+                return f"{{{{artifact:{topic}:{step_name} [NOT FOUND]}}}}"
+
+            used_artifacts.extend(sorted(matching.keys()))
+            return json.dumps(matching)
 
         artifact = artifact_store.get(topic, step_name)
 

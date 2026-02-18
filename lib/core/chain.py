@@ -36,13 +36,14 @@ class FusionChain:
     def run(
         context: Dict[str, Any],
         models: List[Any],
-        callable: Callable,
-        prompts: List[str],
-        evaluator: Callable[[List[str]], Tuple[str, List[float]]],
-        get_model_name: Callable[[Any], str],
+        llm_callable: Optional[Callable] = None,
+        prompts: Optional[List[str]] = None,
+        evaluator: Optional[Callable[[List[str]], Tuple[str, List[float]]]] = None,
+        get_model_name: Optional[Callable[[Any], str]] = None,
         num_workers: int = 4,              # How many models to run at the same time
         artifact_store: Optional['ArtifactStore'] = None,  # Optional artifact store
-        topic: Optional[str] = None  # Optional topic for artifacts
+        topic: Optional[str] = None,  # Optional topic for artifacts
+        callable: Optional[Callable] = None,  # Legacy alias for llm_callable
     ) -> FusionChainResult:
         """
         This is like the regular run() function, but faster!
@@ -51,6 +52,18 @@ class FusionChain:
         at the same time. This is called "parallel processing" - doing
         multiple things at once to save time.
         """
+        # Backward compatibility:
+        # Historically this argument was named `callable`. Keep supporting it.
+        if llm_callable is None:
+            llm_callable = callable
+        if llm_callable is None:
+            raise ValueError("FusionChain.run requires `llm_callable` (or legacy `callable`).")
+        if prompts is None:
+            raise ValueError("FusionChain.run requires `prompts`.")
+        if evaluator is None:
+            raise ValueError("FusionChain.run requires `evaluator`.")
+        if get_model_name is None:
+            raise ValueError("FusionChain.run requires `get_model_name`.")
 
         def process_model(model):
             """
@@ -58,7 +71,7 @@ class FusionChain:
             We need this because of how parallel processing works.
             """
             outputs, context_filled_prompts, usage_stats = MinimalChainable.run(
-                context, model, callable, prompts,
+                context, model, llm_callable, prompts,
                 return_usage=True,
                 artifact_store=artifact_store,
                 topic=topic
@@ -140,12 +153,13 @@ class MinimalChainable:
     def run(
         context: Dict[str, Any],    # Variables to use in prompts (like {{topic}})
         model: Any,                 # The AI model to use
-        callable: Callable,        # Function that sends prompts to the AI
-        prompts: List[str],         # List of prompts to run in order
+        llm_callable: Optional[Callable] = None,  # Function that sends prompts to the AI
+        prompts: Optional[List[str]] = None,      # List of prompts to run in order
         return_usage: bool = False,  # Whether to return usage stats
         return_trace: bool = False,   # Whether to return execution trace
         artifact_store: Optional['ArtifactStore'] = None,  # Store for saving/loading artifacts
-        topic: Optional[str] = None  # Topic name for artifact storage (auto-detected if not provided)
+        topic: Optional[str] = None,  # Topic name for artifact storage (auto-detected if not provided)
+        callable: Optional[Callable] = None,  # Legacy alias for llm_callable
     ) -> Union[List[Any], Tuple[List[Any], List[str], List[Any]], Tuple[List[Any], List[str], List[Any], Dict]]:
         """
         This is where the magic happens!
@@ -159,6 +173,14 @@ class MinimalChainable:
             - If return_usage=True and return_trace=False: (outputs, context_filled_prompts, usage_stats)
             - If return_trace=True: (outputs, context_filled_prompts, usage_stats, execution_trace)
         """
+        # Backward compatibility:
+        # Historically this argument was named `callable`. Keep supporting it.
+        if llm_callable is None:
+            llm_callable = callable
+        if llm_callable is None:
+            raise ValueError("MinimalChainable.run requires `llm_callable` (or legacy `callable`).")
+        if prompts is None:
+            raise ValueError("MinimalChainable.run requires `prompts`.")
         
         # Create empty lists to store our results
         output = []                    # Stores AI responses
@@ -294,7 +316,7 @@ class MinimalChainable:
             for attempt in range(max_retries):
                 try:
                     # We expect the callable to return (content, usage) or just content
-                    result_raw = callable(model, prompt)
+                    result_raw = llm_callable(model, prompt)
                     
                     usage = None
                     if isinstance(result_raw, tuple) and len(result_raw) == 2:

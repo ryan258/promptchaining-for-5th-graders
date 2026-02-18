@@ -396,16 +396,30 @@ class MetaChainGenerator:
     chain to achieve it.
     """
 
-    def __init__(self, artifact_store: Optional[ArtifactStore] = None):
+    def __init__(
+        self,
+        artifact_store: Optional[ArtifactStore] = None,
+        model_info: Optional[Any] = None,
+        llm_callable: Any = prompt,
+    ):
         """
         Create a meta-chain generator.
 
         Args:
             artifact_store: Optional artifact store for the meta-chain itself
+            model_info: Optional preconfigured (client, model_name) tuple for testability
+            llm_callable: Optional callable used by MinimalChainable.run
         """
         self.artifact_store = artifact_store or ArtifactStore()
-        self.client, self.model_names = build_models()
-        self.model_info = (self.client, self.model_names[0])
+        self.llm_callable = llm_callable
+
+        if model_info is None:
+            self.client, self.model_names = build_models()
+            self.model_info = (self.client, self.model_names[0])
+        else:
+            self.client = None
+            self.model_names = []
+            self.model_info = model_info
 
         # Load cognitive move library
         self.move_library = CognitiveMoveLibrary()
@@ -501,7 +515,7 @@ Respond in JSON:
         result, _, _ = MinimalChainable.run(
             context={"goal": goal},
             model=self.model_info,
-            callable=prompt,
+            llm_callable=self.llm_callable,
             prompts=meta_prompts,
             return_usage=True,
             artifact_store=self.artifact_store,
@@ -589,7 +603,7 @@ Respond in JSON:
         result, prompts, usage = MinimalChainable.run(
             context=design.context,
             model=self.model_info,
-            callable=prompt,
+            llm_callable=self.llm_callable,
             prompts=design.prompts,
             return_usage=True,
             artifact_store=artifact_store,

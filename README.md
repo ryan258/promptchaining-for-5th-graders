@@ -23,7 +23,7 @@ client, models = build_models()
 result, _, _, _ = MinimalChainable.run(
     context={"topic": "Neural Networks"},
     model=(client, models[0]),
-    callable=prompt,
+    llm_callable=prompt,
     return_trace=True,
     prompts=[
         "Break down {{topic}} into 3-5 core components",
@@ -153,7 +153,7 @@ model = (client, models[0])
 result, prompts, usage, trace = MinimalChainable.run(
     context={"topic": "Recursion"},
     model=model,
-    callable=prompt,
+    llm_callable=prompt,
     return_trace=True,
     prompts=[
         "Define {{topic}} in one sentence",
@@ -191,7 +191,7 @@ def evaluator(responses):
 result = FusionChain.run(
     context={"topic": "AI Safety"},
     models=[(client, name) for name in model_names],
-    callable=prompt,
+    llm_callable=prompt,
     evaluator=evaluator,
     get_model_name=lambda m: m[1],
     prompts=[...]
@@ -214,7 +214,7 @@ store = ArtifactStore()
 result, _, _, _ = MinimalChainable.run(
     context={"topic": "Machine Learning"},
     model=model,
-    callable=prompt,
+    llm_callable=prompt,
     artifact_store=store,
     topic="machine_learning",
     prompts=[...]
@@ -237,7 +237,7 @@ prompts = [
 Build complex multi-chain workflows programmatically:
 
 ```python
-from chain_composer import ChainComposer, ChainStep
+from lib.core.chain_composer import ChainComposer, ChainStep
 
 composer = ChainComposer()
 
@@ -245,21 +245,20 @@ composer = ChainComposer()
 steps = [
     ChainStep(
         name="Analyze concept",
-        prompts=["Break down {{topic}} into components"],
-        creates_artifact="components"
+        step_type="chain",
+        topic="neural_networks",
+        context={"topic": "Neural Networks"},
+        prompts=["Break down {{topic}} into components"]
     ),
     ChainStep(
         name="Create curriculum",
-        prompts=["Design a learning path for {{artifact:components}}"],
-        depends_on=["components"]
+        step_type="chain",
+        topic="curriculum",
+        prompts=["Design a learning path using {{artifact:neural_networks:step_1}}"]
     )
 ]
 
-result = composer.compose(
-    steps=steps,
-    context={"topic": "Neural Networks"},
-    model=model
-)
+result = composer.compose(steps=steps)
 ```
 
 ### 5. Meta-Chain Generator (Self-Improving)
@@ -267,21 +266,19 @@ result = composer.compose(
 The system can design its own chains:
 
 ```python
-from meta_chain_generator import MetaChainGenerator
+from lib.core.meta_chain_generator import MetaChainGenerator
 
 generator = MetaChainGenerator()
 
-# Describe what you want, get a chain that does it
-chain = generator.design_chain(
-    task="Analyze a business idea for feasibility",
-    cognitive_moves=["decompose", "critique", "synthesize"],
-    depth=4
+# Describe what you want, get a chain design
+design = generator.design_chain(
+    goal="Analyze a business idea for feasibility",
+    context={"idea": "AI-powered meal planning app"},
+    constraints=["max 4 steps"]
 )
 
-# Run the generated chain
-result = chain.execute(
-    context={"idea": "AI-powered meal planning app"}
-)
+# Run the designed chain
+outputs, prompts, usage = generator.execute_chain(design)
 ```
 
 The meta-chain analyzes your task and generates optimal prompt sequences automatically.
@@ -305,7 +302,7 @@ Formalize expert reasoning patterns as reusable chain templates:
 - **Root Cause Analysis (5 Whys)** - Dig beneath symptoms to find systemic causes
 
 ```python
-from natural_reasoning import scientific_method, design_thinking
+from lib.enhancements.natural_reasoning import scientific_method, design_thinking
 
 # Apply scientific method to a hypothesis
 result, metadata = scientific_method(
@@ -335,7 +332,7 @@ Use conflict and opposition to reveal truth (impossible with single prompts!):
 - **Adversarial Socratic** - Aggressive questioning to stress-test claims
 
 ```python
-from adversarial_chains import red_vs_blue, dialectical
+from lib.enhancements.adversarial_chains import red_vs_blue, dialectical
 
 # Run adversarial debate
 debate, metadata = red_vs_blue(
@@ -363,7 +360,7 @@ print(result['synthesis']['synthesis_statement'])  # Transcendent position
 Scientifically prove chains unlock insights impossible from single prompts:
 
 ```python
-from emergence_measurement import measure_emergence, batch_measure
+from lib.enhancements.emergence_measurement import measure_emergence, batch_measure
 
 # Compare chain vs mega-prompt
 comparison, metadata = measure_emergence(
@@ -700,26 +697,20 @@ python demos/meta_chain_demo.py
 ## 🧪 Testing
 
 ```bash
-# Test core framework
-python chain_test.py
+# Test full suite
+python -m pytest -q
 
-# Test chain composer
-python test_chain_composer.py
+# Optional: run focused test files
+python -m pytest -q tests/test_chain.py tests/test_chain_composer.py tests/test_artifacts.py tests/test_meta_chain.py
 
-# Test artifact system
-python test_artifacts.py
-
-# Test meta-chain generator
-python test_meta_chain.py
-
-# Test MS blog tools
+# Script-style MS blog tool checks
 python tools/ms_blog/test_ms_tools.py
 
 # Run all demos
 ./verify_demos.sh
 ```
 
-**Current Status:** ✅ All tests passing (6/6 MS tools, 100% core framework)
+**Current Status:** Core unit tests are deterministic; integration paths require a valid OpenRouter key and available model IDs.
 
 ---
 
@@ -836,7 +827,7 @@ python demos/meta_chain_demo.py
 python demos/curriculum_builder_demo.py
 
 # Test Everything
-python chain_test.py
+python -m pytest -q
 python tools/ms_blog/test_ms_tools.py
 ./verify_demos.sh
 
