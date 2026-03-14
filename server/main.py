@@ -1,3 +1,4 @@
+import ast
 import os
 import sys
 import glob
@@ -26,6 +27,12 @@ from lib.core.llm_client import prompt as core_prompt
 from lib.enhancements.natural_reasoning import REASONING_PATTERNS
 from lib.enhancements.adversarial_chains import ADVERSARIAL_PATTERNS
 from lib.enhancements.emergence_measurement import measure_emergence
+from lib.utils.demo_examples import (
+    get_adversarial_demo_examples,
+    get_meta_demo_examples,
+    get_reasoning_demo_examples,
+    get_tool_demo_examples,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -312,6 +319,24 @@ def _normalize_registry_payload(
     return kwargs
 
 
+def _extract_module_description(source: str) -> str:
+    try:
+        module = ast.parse(source)
+    except SyntaxError:
+        return "No description available."
+
+    docstring = ast.get_docstring(module, clean=True)
+    if not docstring:
+        return "No description available."
+
+    lines = [line.strip() for line in docstring.splitlines() if line.strip()]
+    if len(lines) >= 2:
+        return lines[1]
+    if lines:
+        return lines[0]
+    return "No description available."
+
+
 def _navigation(active_page: str) -> List[Dict[str, Any]]:
     return [
         {
@@ -442,11 +467,7 @@ def _scan_tools() -> tuple[_ToolRecord, ...]:
         description = "No description available."
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                if '"""' in content:
-                    parts = content.split('"""')
-                    if len(parts) >= 3:
-                        description = parts[1].strip().split("\n")[0]
+                description = _extract_module_description(f.read())
         except (IOError, UnicodeDecodeError):
             pass
 
@@ -911,6 +932,9 @@ async def ui_tools_page(request: Request):
             tools=tools,
             tools_by_category=_group_tools_by_category(tools),
             selected_tool_key=f"{tools[0].category}:{tools[0].name}" if tools else "",
+            demo_examples=get_tool_demo_examples(
+                f"{tool.category}:{tool.name}" for tool in tools
+            ),
         ),
     )
 
@@ -935,6 +959,7 @@ async def ui_reasoning_page(request: Request):
             result_title="Reasoning output appears here",
             result_body="Pick a pattern, fill its fields, and the run will render below with readable sections and metadata.",
             patterns=patterns,
+            demo_examples=get_reasoning_demo_examples(),
         ),
     )
 
@@ -959,6 +984,7 @@ async def ui_adversarial_page(request: Request):
             result_title="Adversarial output appears here",
             result_body="Expect debate rounds, judgments, and verdicts to land in a much wider result stage.",
             patterns=patterns,
+            demo_examples=get_adversarial_demo_examples(),
         ),
     )
 
@@ -971,6 +997,7 @@ async def ui_meta_page(request: Request):
         _page_context(
             "meta",
             "Meta-Chain | Prompt Chaining Studio",
+            demo_examples=get_meta_demo_examples(),
         ),
     )
 

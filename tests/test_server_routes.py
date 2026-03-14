@@ -35,6 +35,43 @@ def test_studio_pages_render():
         assert marker in response.text
 
 
+def test_studio_tools_page_keeps_tool_descriptions():
+    original_tools = server_main._public_tools
+    server_main._public_tools = lambda: [
+        server_main.Tool(
+            name="concept_simplifier",
+            category="learning",
+            description="Clear teaching summary",
+        )
+    ]
+    try:
+        response = client.get("/studio/tools")
+    finally:
+        server_main._public_tools = original_tools
+
+    assert response.status_code == 200
+    assert "Available tools" in response.text
+    assert "Concept Simplifier" in response.text
+    assert "Clear teaching summary" in response.text
+
+
+def test_studio_pages_include_random_demo_autofill():
+    pages = [
+        ("/studio/tools", "Fractions and basketball"),
+        ("/studio/reasoning", "Students forget to bring their water bottles to science lab"),
+        ("/studio/adversarial", "School lunch should include a daily salad bar"),
+        ("/studio/meta", "Explain volcanoes using cooking and pressure-cooker metaphors"),
+    ]
+
+    for path, demo_marker in pages:
+        response = client.get(path)
+
+        assert response.status_code == 200
+        assert "Autofill Demo" in response.text
+        assert "Randomly loads 1 of 5 prime examples." in response.text
+        assert demo_marker in response.text
+
+
 def test_tools_endpoint_hides_internal_path():
     response = client.get("/tools")
 

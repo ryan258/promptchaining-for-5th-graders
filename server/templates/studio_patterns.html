@@ -14,7 +14,7 @@
 </section>
 
 <section class="pattern-shell" data-pattern-shell>
-  <form class="module-form" hx-post="{{ form_action }}" hx-target="#{{ result_id }}" hx-swap="innerHTML" hx-indicator="#{{ loading_id }}">
+  <form class="module-form pattern-form" hx-post="{{ form_action }}" hx-target="#{{ result_id }}" hx-swap="innerHTML" hx-indicator="#{{ loading_id }}">
     <div class="field-grid field-grid-toolbar">
       <div class="field-group">
         <label for="pattern_name">Pattern</label>
@@ -24,11 +24,8 @@
           {% endfor %}
         </select>
       </div>
-      <div class="field-group field-group-note">
-        <label>Why this page works better</label>
-        <p class="field-note">You only see the inputs for the active pattern, and the result canvas gets the entire width below.</p>
-      </div>
     </div>
+    <p class="module-inline-note">Only the active pattern's fields are live, and the response stage below stretches across the page so larger runs are not forced into a sidebar.</p>
 
     <div class="pattern-tabs" role="tablist" aria-label="{{ module_name }}">
       {% for pattern in patterns %}
@@ -39,16 +36,18 @@
     {% for pattern in patterns %}
       <article class="pattern-brief" data-pattern-panel="{{ pattern.name }}"{% if not loop.first %} hidden{% endif %}>
         <div>
-          <p class="eyebrow">Use When</p>
+          <p class="eyebrow">Pattern</p>
           <h2>{{ pattern.display_name }}</h2>
           <p>{{ pattern.description }}</p>
         </div>
         <div class="pattern-brief-grid">
-          <div class="info-card compact">
-            <p class="eyebrow">Best For</p>
-            <p>{{ pattern.use_when }}</p>
-          </div>
-          <div class="info-card compact">
+          <details class="drawer pattern-accordion">
+            <summary>Use when</summary>
+            <div class="drawer-body">
+              <p>{{ pattern.use_when }}</p>
+            </div>
+          </details>
+          <div class="pattern-example">
             <p class="eyebrow">Example</p>
             <pre>{{ pattern.example }}</pre>
           </div>
@@ -100,6 +99,11 @@
     {% endfor %}
 
     <div class="form-footer">
+      <div class="example-row">
+        <script type="application/json" data-demo-examples>{{ demo_examples | tojson }}</script>
+        <button type="button" class="secondary compact-button" data-random-fill-form>Autofill Demo</button>
+        <span class="field-note" data-demo-note>Randomly loads 1 of 5 prime examples.</span>
+      </div>
       <div class="action-row">
         <span id="{{ loading_id }}" class="loading-note htmx-indicator">{{ loading_text }}</span>
         <button type="submit">Run {{ module_name }}</button>
@@ -108,9 +112,14 @@
   </form>
 </section>
 
-<section class="result-stage">
-  <div id="{{ result_id }}" class="result-canvas">
+<section class="pattern-stage">
+  <header class="stage-header pattern-stage-header">
+    <p class="eyebrow">Live Canvas</p>
+    <h2>Response Grid</h2>
+    <p class="result-subtitle">{{ result_body }}</p>
+  </header>
+  <section id="{{ result_id }}" class="result-canvas result-canvas-pattern">
     {{ ui.result_placeholder(result_title, result_body, "accent") }}
-  </div>
+  </section>
 </section>
 {% endblock %}

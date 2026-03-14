@@ -13,56 +13,54 @@
   </div>
 </section>
 
-<section class="module-layout">
-  <form class="module-form" hx-post="/ui/run-tool" hx-target="#tool-result" hx-swap="innerHTML" hx-indicator="#tool-loading">
-    <div class="field-grid">
-      <div class="field-group">
-        <label for="tool_key">Tool</label>
-        <select name="tool_key" id="tool_key" required>
-          {% for category, items in tools_by_category.items() %}
-            <optgroup label="{{ category | humanize }}">
-              {% for tool in items %}
-                <option value="{{ category }}:{{ tool.name }}">{{ tool.name | humanize }}</option>
-              {% endfor %}
-            </optgroup>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field-group">
-        <label for="tool_topic">Topic</label>
-        <input type="text" name="topic" id="tool_topic" placeholder="Photosynthesis" required />
-      </div>
+<form class="module-form" hx-post="/ui/run-tool" hx-target="#tool-result" hx-swap="innerHTML" hx-indicator="#tool-loading">
+  <div class="field-grid">
+    <div class="field-group">
+      <label for="tool_key">Tool</label>
+      <select name="tool_key" id="tool_key" required>
+        {% for category, items in tools_by_category.items() %}
+          <optgroup label="{{ category | humanize }}">
+            {% for tool in items %}
+              <option value="{{ category }}:{{ tool.name }}">{{ tool.name | humanize }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
     </div>
     <div class="field-group">
-      <label for="tool_context">Context</label>
-      <textarea name="context" id="tool_context" placeholder="Audience: 5th graders&#10;Tone: visual and practical"></textarea>
+      <label for="tool_topic">Topic</label>
+      <input type="text" name="topic" id="tool_topic" placeholder="Photosynthesis" required />
     </div>
-    <div class="form-footer">
-      <div class="example-row">
-        <button type="button" class="example-chip" data-fill-target="#tool_topic" data-fill-value="Machine Learning">Machine learning</button>
-        <button type="button" class="example-chip" data-fill-target="#tool_context" data-fill-value="Audience: 5th graders&#10;Tone: practical and vivid">5th-grade context</button>
-      </div>
-      <div class="action-row">
-        <span id="tool-loading" class="loading-note htmx-indicator">Running tool...</span>
-        <button type="submit">Run Tool</button>
-      </div>
-    </div>
-  </form>
-
-  <aside class="info-card-stack">
-    {% for tool in tools %}
-      <article class="info-card">
-        <p class="eyebrow">{{ tool.category | humanize }}</p>
-        <h3>{{ tool.name | humanize }}</h3>
-        <p>{{ tool.description }}</p>
-      </article>
-    {% endfor %}
-  </aside>
-</section>
-
-<section class="result-stage">
-  <div id="tool-result" class="result-canvas">
-    {{ ui.result_placeholder("Tool results appear here", "Run a tool and its output will land here with summary cards, structure, and raw logs tucked behind drawers.") }}
   </div>
+  <div class="field-group">
+    <label for="tool_context">Context</label>
+    <textarea name="context" id="tool_context" placeholder="Audience: 5th graders&#10;Tone: visual and practical"></textarea>
+  </div>
+  <details class="drawer tool-directory">
+    <summary>Available tools</summary>
+    <div class="drawer-body tool-directory-list">
+      {% for tool in tools %}
+        <div class="tool-directory-item">
+          <strong>{{ tool.name | humanize }}</strong>
+          <p>{{ tool.description }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </details>
+  <div class="form-footer">
+    <div class="example-row">
+      <script type="application/json" data-demo-examples>{{ demo_examples | tojson }}</script>
+      <button type="button" class="secondary compact-button" data-random-fill-form>Autofill Demo</button>
+      <span class="field-note" data-demo-note>Randomly loads 1 of 5 prime examples.</span>
+    </div>
+    <div class="action-row">
+      <span id="tool-loading" class="loading-note htmx-indicator">Running tool...</span>
+      <button type="submit">Run Tool</button>
+    </div>
+  </div>
+</form>
+
+<section id="tool-result" class="result-canvas">
+  {{ ui.result_placeholder("Tool results appear here", "Run a tool and its output will land here with summary cards, structure, and raw logs tucked behind drawers.") }}
 </section>
 {% endblock %}

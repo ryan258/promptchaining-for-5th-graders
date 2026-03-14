@@ -2,7 +2,7 @@
 {% set meta = result.metadata or {} %}
 {% set highlight = meta.verdict or meta.ruling or meta.assessment or meta.root_cause or meta.winner or meta.survived or meta.belief_changed or meta.credibility_impact or "Structured output ready for review." %}
 
-<article class="result-shell swap-rise" data-copy-scope>
+<article class="result-shell result-shell-pattern swap-rise" data-copy-scope>
   <header class="result-banner">
     <div>
       <p class="eyebrow">Structured Run</p>
@@ -24,9 +24,15 @@
     {% if meta.depth %}{{ ui.stat("Depth", meta.depth) }}{% endif %}
   </div>
 
-  <div class="section-stack">
+  <div class="section-stack section-stack-pattern">
     {% for section_name, section_value in result.result.items() %}
-      <section class="result-section">
+      {% set section_kind = "text" %}
+      {% if section_value is mapping %}
+        {% set section_kind = "map" %}
+      {% elif section_value is sequence and section_value is not string %}
+        {% set section_kind = "list" %}
+      {% endif %}
+      <section class="result-section result-section-{{ section_kind }}{% if loop.first %} result-section-featured{% endif %}">
         <header class="section-title">
           <h4>{{ section_name | humanize }}</h4>
         </header>
@@ -35,17 +41,19 @@
     {% endfor %}
   </div>
 
-  <details class="drawer">
-    <summary>Run metadata</summary>
-    <div class="drawer-body">
-      {{ ui.render_value(meta, none) }}
-    </div>
-  </details>
+  <div class="result-drawer-grid">
+    <details class="drawer">
+      <summary>Run metadata</summary>
+      <div class="drawer-body">
+        {{ ui.render_value(meta, none) }}
+      </div>
+    </details>
 
-  <details class="drawer">
-    <summary>Raw output</summary>
-    <div class="drawer-body">
-      <pre class="raw-json">{{ result | pretty_json }}</pre>
-    </div>
-  </details>
+    <details class="drawer">
+      <summary>Raw output</summary>
+      <div class="drawer-body">
+        <pre class="raw-json">{{ result | pretty_json }}</pre>
+      </div>
+    </details>
+  </div>
 </article>

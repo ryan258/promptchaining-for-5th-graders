@@ -9,6 +9,12 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from lib.utils import demo_utils
+from lib.utils.demo_examples import (
+    get_adversarial_demo_examples,
+    get_meta_demo_examples,
+    get_reasoning_demo_examples,
+    get_tool_demo_examples,
+)
 
 class TestDemoUtils(unittest.TestCase):
     
@@ -47,6 +53,25 @@ class TestDemoUtils(unittest.TestCase):
         
         # Verify
         self.assertFalse(result)
+
+    def test_tool_demo_examples_fall_back_to_available_tool(self):
+        examples = get_tool_demo_examples(["learning:concept_simplifier"])
+
+        self.assertEqual(len(examples), 5)
+        self.assertTrue(
+            all(example["fields"]["tool_key"] == "learning:concept_simplifier" for example in examples)
+        )
+
+    def test_reasoning_demo_examples_cover_all_patterns(self):
+        pattern_names = {example["fields"]["pattern_name"] for example in get_reasoning_demo_examples()}
+
+        self.assertEqual(len(pattern_names), 5)
+        self.assertIn("scientific_method", pattern_names)
+        self.assertIn("five_whys", pattern_names)
+
+    def test_adversarial_and_meta_demo_examples_have_five_entries(self):
+        self.assertEqual(len(get_adversarial_demo_examples()), 5)
+        self.assertEqual(len(get_meta_demo_examples()), 5)
 
 if __name__ == '__main__':
     unittest.main()

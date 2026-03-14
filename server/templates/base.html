@@ -56,9 +56,114 @@
         });
       }
 
+      function normalizeFillValue(value) {
+        if (Array.isArray(value)) {
+          return value.join("\n");
+        }
+        if (typeof value === "boolean") {
+          return value ? "true" : "false";
+        }
+        if (value === null || value === undefined) {
+          return "";
+        }
+        return String(value);
+      }
+
+      function readDemoExamples(form) {
+        if (!form) {
+          return [];
+        }
+
+        const source = form.querySelector("[data-demo-examples]");
+        if (!source) {
+          return [];
+        }
+
+        try {
+          const parsed = JSON.parse(source.textContent || "[]");
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_error) {
+          return [];
+        }
+      }
+
+      function findFillTarget(form, fieldName) {
+        if (!form || !fieldName) {
+          return null;
+        }
+
+        const escapedName = window.CSS && window.CSS.escape ? window.CSS.escape(fieldName) : fieldName;
+        return (
+          form.querySelector('[name="' + escapedName + '"]:not([disabled])') ||
+          form.querySelector('[name="' + escapedName + '"]')
+        );
+      }
+
+      function updateDemoNote(form, example) {
+        const note = form ? form.querySelector("[data-demo-note]") : null;
+        if (!note) {
+          return;
+        }
+
+        if (!note.dataset.defaultText) {
+          note.dataset.defaultText = note.textContent || "";
+        }
+
+        if (example && example.label) {
+          note.textContent = "Loaded demo: " + example.label;
+          return;
+        }
+
+        note.textContent = note.dataset.defaultText;
+      }
+
+      function applyDemoExample(form, example) {
+        if (!form || !example || !example.fields) {
+          return;
+        }
+
+        const fields = example.fields;
+        const shell = form.closest("[data-pattern-shell]");
+        const patternName = normalizeFillValue(fields.pattern_name || "");
+
+        if (patternName) {
+          const picker = findFillTarget(form, "pattern_name");
+          if (picker) {
+            picker.value = patternName;
+            syncPatternShell(shell);
+            picker.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+
+        Object.entries(fields).forEach(function ([fieldName, rawValue]) {
+          const target = findFillTarget(form, fieldName);
+          if (!target) {
+            return;
+          }
+
+          target.value = normalizeFillValue(rawValue);
+          target.dispatchEvent(new Event("input", { bubbles: true }));
+          target.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+
+        updateDemoNote(form, example);
+      }
+
       document.querySelectorAll("[data-pattern-shell]").forEach(syncPatternShell);
 
       document.addEventListener("click", function (event) {
+        const randomFillTrigger = event.target.closest("[data-random-fill-form]");
+        if (randomFillTrigger) {
+          const form = randomFillTrigger.closest("form");
+          const examples = readDemoExamples(form);
+          if (examples.length) {
+            const selected = examples[Math.floor(Math.random() * examples.length)];
+            applyDemoExample(form, selected);
+          } else {
+            updateDemoNote(form, null);
+          }
+        }
+
         const fillTrigger = event.target.closest("[data-fill-target]");
         if (fillTrigger) {
           const target = document.querySelector(fillTrigger.dataset.fillTarget);
