@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "partials/_ui_macros.html" as ui %}
+
+{% block content %}
+<section class="module-hero">
+  <div>
+    <p class="eyebrow">Module 01</p>
+    <h1>Run a Tool</h1>
+    <p class="hero-text">Start with a direct topic and optional context, then read the output in a result stage that is no longer squeezed next to unrelated modules.</p>
+  </div>
+  <div class="module-hero-note">
+    <p>Use tools when you want a focused transformation. The right panel is gone; the result now gets its own full-width stage below the form.</p>
+  </div>
+</section>
+
+<section class="module-layout">
+  <form class="module-form" hx-post="/ui/run-tool" hx-target="#tool-result" hx-swap="innerHTML" hx-indicator="#tool-loading">
+    <div class="field-grid">
+      <div class="field-group">
+        <label for="tool_key">Tool</label>
+        <select name="tool_key" id="tool_key" required>
+          {% for category, items in tools_by_category.items() %}
+            <optgroup label="{{ category | humanize }}">
+              {% for tool in items %}
+                <option value="{{ category }}:{{ tool.name }}">{{ tool.name | humanize }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="tool_topic">Topic</label>
+        <input type="text" name="topic" id="tool_topic" placeholder="Photosynthesis" required />
+      </div>
+    </div>
+    <div class="field-group">
+      <label for="tool_context">Context</label>
+      <textarea name="context" id="tool_context" placeholder="Audience: 5th graders&#10;Tone: visual and practical"></textarea>
+    </div>
+    <div class="form-footer">
+      <div class="example-row">
+        <button type="button" class="example-chip" data-fill-target="#tool_topic" data-fill-value="Machine Learning">Machine learning</button>
+        <button type="button" class="example-chip" data-fill-target="#tool_context" data-fill-value="Audience: 5th graders&#10;Tone: practical and vivid">5th-grade context</button>
+      </div>
+      <div class="action-row">
+        <span id="tool-loading" class="loading-note htmx-indicator">Running tool...</span>
+        <button type="submit">Run Tool</button>
+      </div>
+    </div>
+  </form>
+
+  <aside class="info-card-stack">
+    {% for tool in tools %}
+      <article class="info-card">
+        <p class="eyebrow">{{ tool.category | humanize }}</p>
+        <h3>{{ tool.name | humanize }}</h3>
+        <p>{{ tool.description }}</p>
+      </article>
+    {% endfor %}
+  </aside>
+</section>
+
+<section class="result-stage">
+  <div id="tool-result" class="result-canvas">
+    {{ ui.result_placeholder("Tool results appear here", "Run a tool and its output will land here with summary cards, structure, and raw logs tucked behind drawers.") }}
+  </div>
+</section>
+{% endblock %}

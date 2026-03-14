@@ -1,7 +1,8 @@
 # llm_client.py - Shared LLM client helpers
 # Keep LLM wiring separate from demos and app entrypoints.
 
-from typing import Any, List, Tuple
+from functools import lru_cache
+from typing import Any, Dict, List, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -32,7 +33,8 @@ def calculate_total_tokens(usage_list: List[Any]) -> int:
     return total
 
 
-def build_models():
+@lru_cache(maxsize=1)
+def build_models() -> Tuple[OpenAI, Tuple[str, ...]]:
     """
     Set up AI models for OpenRouter.
     """
@@ -61,14 +63,17 @@ def build_models():
     )
 
     env_models = os.getenv("OPENROUTER_MODELS")
+    default_model = os.getenv("DEFAULT_MODEL")
     if env_models:
-        model_names = [m.strip() for m in env_models.split(",") if m.strip()]
+        model_names = tuple(m.strip() for m in env_models.split(",") if m.strip())
+    elif default_model:
+        model_names = (default_model.strip(),)
     else:
-        model_names = [
+        model_names = (
             "openai/gpt-3.5-turbo",
             "google/gemini-flash-1.5",
             "google/gemini-pro-1.5",
-        ]
+        )
 
     if not model_names:
         raise ValueError("No models configured. Please check your model list.")
@@ -76,11 +81,33 @@ def build_models():
     return client, model_names
 
 
+@lru_cache(maxsize=1)
+def get_prompt_settings() -> Dict[str, Any]:
+    """Load prompt configuration once so repeated calls don't reparse the environment."""
+    load_dotenv()
+    return {
+        "max_tokens": int(os.getenv("MAX_TOKENS", "4096")),
+        "temperature": float(os.getenv("DEFAULT_TEMPERATURE", "0.7")),
+        "timeout": float(os.getenv("REQUEST_TIMEOUT_SECONDS", "30.0")),
+        "headers": {
+            "HTTP-Referer": os.getenv(
+                "OPENROUTER_SITE_URL",
+                "https://github.com/ryanjohnson/promptchaining-for-5th-graders",
+            ),
+            "X-Title": os.getenv(
+                "OPENROUTER_APP_NAME",
+                "Prompt Chaining for 5th Graders",
+            ),
+        },
+    }
+
+
 def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
     """
     Send a prompt to an AI model and return (content, usage).
     """
     client, model_name = model_info
+    settings = get_prompt_settings()
 
     max_retries = 3
     base_delay = 1
@@ -91,20 +118,10 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "user", "content": prompt_text}],
-                # Avoid default token limit
-                max_tokens=4096,
-                temperature=0.7,
-                timeout=30.0,
-                extra_headers={
-                    "HTTP-Referer": os.getenv(
-                        "OPENROUTER_SITE_URL",
-                        "https://github.com/ryanjohnson/promptchaining-for-5th-graders",
-                    ),
-                    "X-Title": os.getenv(
-                        "OPENROUTER_APP_NAME",
-                        "Prompt Chaining for 5th Graders",
-                    ),
-                },
+                max_tokens=settings["max_tokens"],
+                temperature=settings["temperature"],
+                timeout=settings["timeout"],
+                extra_headers=settings["headers"],
             )
 
             content = response.choices[0].message.content
@@ -119,7 +136,7 @@ def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
             print(f"⚠️ Attempt {attempt + 1}/{max_retries} failed: {e}")
 
             if attempt == max_retries - 1:
-                raise e
+                raise
 
             delay = min(max_delay, base_delay * (2 ** attempt))
             jitter = random.uniform(0, 0.1 * delay)

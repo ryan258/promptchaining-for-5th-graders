@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% import "partials/_ui_macros.html" as ui %}
+
+{% block content %}
+<section class="module-hero">
+  <div>
+    <p class="eyebrow">Module 04</p>
+    <h1>Meta-Chain Designer</h1>
+    <p class="hero-text">Describe the goal in plain language, add context as normal notes, and let the app design a chain you can execute directly from the result card.</p>
+  </div>
+  <div class="module-hero-note">
+    <p>Use simple notes like <code>audience: 5th graders</code> or <code>tone: playful</code>. If a line does not look like <code>key: value</code>, it is stored as general notes.</p>
+  </div>
+</section>
+
+<section class="module-layout">
+  <form class="module-form" hx-post="/ui/meta-design" hx-target="#meta-design-result" hx-swap="innerHTML" hx-indicator="#meta-design-loading">
+    <div class="field-group">
+      <label for="meta_goal">Goal</label>
+      <textarea name="goal" id="meta_goal" rows="4" placeholder="Teach fractions using sports analogies" required></textarea>
+    </div>
+    <div class="field-grid">
+      <div class="field-group">
+        <label for="meta_context_text">Context Notes</label>
+        <textarea name="context_text" id="meta_context_text" placeholder="audience: 5th graders&#10;tone: playful&#10;Use sports examples"></textarea>
+        <p class="field-help">Plain text is enough. Use one note per line.</p>
+      </div>
+      <div class="field-group">
+        <label for="meta_constraints">Constraints</label>
+        <textarea name="constraints" id="meta_constraints" placeholder="Keep it under 3 prompts&#10;Use easy vocabulary"></textarea>
+        <p class="field-help">Optional. Enter one constraint per line.</p>
+      </div>
+    </div>
+    <div class="form-footer">
+      <div class="example-row">
+        <button type="button" class="example-chip" data-fill-target="#meta_goal" data-fill-value="Explain volcanoes using cooking metaphors">Volcanoes + cooking</button>
+        <button type="button" class="example-chip" data-fill-target="#meta_context_text" data-fill-value="audience: 5th graders&#10;tone: playful&#10;Use classroom-friendly examples">Classroom context</button>
+      </div>
+      <div class="action-row">
+        <span id="meta-design-loading" class="loading-note htmx-indicator">Designing the chain...</span>
+        <button type="submit">Design Chain</button>
+      </div>
+    </div>
+  </form>
+
+  <aside class="info-card-stack">
+    <article class="info-card">
+      <p class="eyebrow">Flow</p>
+      <h3>Design first, execute second</h3>
+      <p>The design card will include a direct execute button. You do not need to hand-edit or paste JSON to continue.</p>
+    </article>
+    <article class="info-card">
+      <p class="eyebrow">Context Tips</p>
+      <p>Good notes include audience, tone, desired analogy style, and any limits on length or number of steps.</p>
+    </article>
+  </aside>
+</section>
+
+<section class="result-stage result-stage-split">
+  <div class="result-stage-column">
+    <div class="stage-header">
+      <p class="eyebrow">Stage One</p>
+      <h2>Designed Chain</h2>
+    </div>
+    <div id="meta-design-result" class="result-canvas">
+      {{ ui.result_placeholder("Chain design appears here", "Your chain design will show reasoning, prompt sequence, and a direct execute action.") }}
+    </div>
+  </div>
+  <div class="result-stage-column">
+    <div class="stage-header">
+      <p class="eyebrow">Stage Two</p>
+      <h2>Execution Trace</h2>
+    </div>
+    <div id="meta-execute-result" class="result-canvas">
+      {{ ui.result_placeholder("Execution trace appears here", "After you design a chain, run it directly from the design card and the full trace will appear here.", "accent") }}
+    </div>
+  </div>
+</section>
+{% endblock %}

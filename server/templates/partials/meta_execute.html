@@ -1,4 +1,78 @@
-<div class="success">Meta-chain executed.</div>
-<div class="details">
-  <pre>{{ result | pretty_json }}</pre>
-</div>
+{% import "partials/_ui_macros.html" as ui %}
+{% set trace = result.execution_trace or {} %}
+
+<article class="result-shell swap-rise" data-copy-scope>
+  <header class="result-banner">
+    <div>
+      <p class="eyebrow">Meta-chain Execution</p>
+      <h3>Chain executed across {{ trace.steps | length }} steps</h3>
+      <p class="result-subtitle">The final result is featured first, with the full execution rail below.</p>
+    </div>
+    <div class="banner-actions">
+      {% if trace.total_tokens %}
+        {{ ui.chip(trace.total_tokens ~ " total tokens", "accent") }}
+      {% endif %}
+      <button type="button" class="secondary compact-button" data-copy-nearest=".raw-json">Copy raw</button>
+    </div>
+  </header>
+
+  <div class="stat-row">
+    {{ ui.stat("Steps", trace.steps | length) }}
+    {% if trace.total_tokens %}{{ ui.stat("Tokens", trace.total_tokens) }}{% endif %}
+    {{ ui.stat("Outputs", result.outputs | length) }}
+  </div>
+
+  <section class="result-section">
+    <header class="section-title">
+      <h4>Final Result</h4>
+    </header>
+    {{ ui.render_value(trace.final_result, none) }}
+  </section>
+
+  <section class="result-section">
+    <header class="section-title">
+      <h4>Execution Rail</h4>
+    </header>
+    <div class="timeline">
+      {% for step in trace.steps %}
+        <article class="timeline-step timeline-step-wide">
+          <span class="timeline-index">{{ "%02d"|format(step.step_number) }}</span>
+          <div class="timeline-body">
+            <div class="timeline-head">
+              <h5>{{ step.role }}</h5>
+              {% if step.tokens %}
+                {{ ui.chip(step.tokens ~ " tokens") }}
+              {% endif %}
+            </div>
+            <div class="prompt-card compact">
+              <div class="prompt-card-head">
+                <span class="prompt-step">Prompt</span>
+              </div>
+              <pre>{{ step.prompt }}</pre>
+            </div>
+            <div class="data-card response-card">
+              <header class="data-card-header">Response</header>
+              <div class="data-card-body">
+                {{ ui.render_value(step.response, none) }}
+              </div>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <details class="drawer">
+    <summary>Outputs and usage</summary>
+    <div class="drawer-body">
+      {{ ui.render_value({"outputs": result.outputs, "usage": result.usage}, none) }}
+    </div>
+  </details>
+
+  <details class="drawer">
+    <summary>Raw execution JSON</summary>
+    <div class="drawer-body">
+      <pre class="raw-json">{{ result | pretty_json }}</pre>
+    </div>
+  </details>
+</article>

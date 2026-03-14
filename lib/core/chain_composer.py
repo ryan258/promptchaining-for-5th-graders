@@ -23,10 +23,30 @@ from typing import List, Dict, Any, Optional, Callable, Union
 from dataclasses import dataclass, field
 from datetime import datetime
 import importlib.util
+import inspect
+from functools import lru_cache
+from pathlib import Path
 
 from .chain import MinimalChainable
 from .llm_client import build_models, prompt
 from .artifact_store import ArtifactStore
+
+
+@lru_cache(maxsize=1)
+def _discover_tool_registry() -> Dict[str, str]:
+    """Discover tool modules under the project tool roots. Clear this cache after adding tools at runtime."""
+    project_root = Path(__file__).resolve().parents[2]
+    roots = [project_root / "tools" / "learning"]
+    discovered: Dict[str, str] = {}
+
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.glob("*.py"):
+            if path.stem != "__init__":
+                discovered[path.stem] = str(path.resolve())
+
+    return discovered
 
 
 @dataclass
@@ -217,6 +237,8 @@ class ChainComposer:
 
         # Load the tool module
         spec = importlib.util.spec_from_file_location(tool_name, tool_path)
+        if spec is None or spec.loader is None:
+            raise ValueError(f"Unable to load tool module: {tool_name}")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
@@ -226,16 +248,21 @@ class ChainComposer:
         # Execute tool and track new artifacts
         before_keys = set(self.artifact_store.artifacts.keys())
 
-        if tool_name == "concept_simplifier":
-            topic = tool_args.get("topic")
-            context = tool_args.get("additional_context", "")
-            tool_func(topic, context, artifact_store=self.artifact_store)
-        elif tool_name == "subject_connector":
-            subject_a = tool_args.get("subject_a")
-            subject_b = tool_args.get("subject_b")
-            tool_func(subject_a, subject_b, artifact_store=self.artifact_store)
-        else:
-            tool_func(**tool_args)
+        signature = inspect.signature(tool_func)
+        call_kwargs = {
+            name: value
+            for name, value in tool_args.items()
+            if name in signature.parameters
+        }
+        if "artifact_store" in signature.parameters:
+            call_kwargs["artifact_store"] = self.artifact_store
+
+        try:
+            signature.bind_partial(**call_kwargs)
+        except TypeError as exc:
+            raise ValueError(f"Invalid arguments for tool '{tool_name}': {exc}") from exc
+
+        tool_func(**call_kwargs)
 
         after_keys = set(self.artifact_store.artifacts.keys())
         artifacts_created = sorted(after_keys - before_keys)
@@ -358,21 +385,14 @@ Respond in JSON:
             "result": result[0] if result else None
         }
 
+    @classmethod
+    def refresh_tool_registry(cls) -> None:
+        """Clear the cached tool registry after adding or renaming tool files in a live process."""
+        _discover_tool_registry.cache_clear()
+
     def _find_tool_path(self, tool_name: str) -> Optional[str]:
-        """Find the file path for a tool, using paths anchored to the project root."""
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-        # Look in tools/learning/
-        learning_path = os.path.join(project_root, "tools", "learning", f"{tool_name}.py")
-        if os.path.exists(learning_path):
-            return learning_path
-
-        # Look in tools/
-        tools_path = os.path.join(project_root, "tools", f"{tool_name}.py")
-        if os.path.exists(tools_path):
-            return tools_path
-
-        return None
+        """Find the file path for an approved tool."""
+        return _discover_tool_registry().get(tool_name)
 
 
 # ============================================================================

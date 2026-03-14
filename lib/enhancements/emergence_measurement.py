@@ -16,11 +16,12 @@ This answers the fundamental question: "Do chains really work better?"
 
 import os
 import json
+import inspect
 from typing import Dict, List, Optional, Any, Tuple, Callable
 from datetime import datetime
 
-from lib.core.chain import MinimalChainable
-from lib.core.llm_client import get_model, calculate_total_tokens, prompt
+from ..core.chain import MinimalChainable
+from ..core.llm_client import get_model, calculate_total_tokens, prompt
 
 # ============================================================================
 # CORE COMPARISON FRAMEWORK
@@ -30,6 +31,9 @@ def measure_emergence(
     topic: str,
     chain_function: Callable,
     baseline_prompt: Optional[str] = None,
+    chain_name: Optional[str] = None,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
     **chain_kwargs
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
@@ -47,7 +51,8 @@ def measure_emergence(
     Returns:
         Tuple of (comparison dict, metadata dict)
     """
-    model_info = get_model()
+    active_model = model_info or get_model()
+    pattern_name = chain_name or getattr(chain_function, "__name__", "default")
 
     print(f"\n{'='*70}")
     print(f"MEASURING EMERGENCE: {topic}")
@@ -58,7 +63,13 @@ def measure_emergence(
     chain_start = datetime.now()
 
     try:
-        chain_result, chain_meta = chain_function(topic, **chain_kwargs)
+        chain_result, chain_meta = _invoke_chain_function(
+            chain_function,
+            topic,
+            active_model,
+            llm_callable,
+            chain_kwargs,
+        )
         chain_output = json.dumps(chain_result, indent=2) if isinstance(chain_result, dict) else str(chain_result)
     except Exception as e:
         print(f"Error running chain: {e}")
@@ -72,15 +83,15 @@ def measure_emergence(
 
     # Step 2: Generate baseline mega-prompt
     if baseline_prompt is None:
-        baseline_prompt = _generate_baseline_prompt(topic, chain_function.__name__)
+        baseline_prompt = _generate_baseline_prompt(topic, pattern_name)
 
     print(f"\n📄 Running baseline mega-prompt...")
     baseline_start = datetime.now()
 
     baseline_result, _, baseline_usage, _ = MinimalChainable.run(
         context={},
-        model=model_info,
-        llm_callable=prompt,
+        model=active_model,
+        llm_callable=llm_callable,
         return_trace=True,
         prompts=[baseline_prompt]
     )
@@ -98,13 +109,14 @@ def measure_emergence(
         topic=topic,
         chain_output=chain_output,
         baseline_output=baseline_output,
-        model_info=model_info
+        model_info=active_model,
+        llm_callable=llm_callable,
     )
 
     # Step 4: Compile results
     comparison = {
         "topic": topic,
-        "chain_approach": chain_function.__name__,
+        "chain_approach": pattern_name,
         "outputs": {
             "chain": chain_output,
             "baseline": baseline_output
@@ -128,7 +140,7 @@ def measure_emergence(
 
     metadata = {
         "topic": topic,
-        "chain_function": chain_function.__name__,
+        "chain_function": pattern_name,
         "timestamp": datetime.now().isoformat(),
         "chain_tokens": chain_tokens,
         "baseline_tokens": baseline_tokens,
@@ -136,6 +148,33 @@ def measure_emergence(
     }
 
     return comparison, metadata
+
+
+def _invoke_chain_function(
+    chain_function: Callable,
+    topic: str,
+    model_info: Tuple[Any, str],
+    llm_callable: Callable,
+    chain_kwargs: Dict[str, Any],
+):
+    """Call chain functions consistently, supporting injectable model dependencies."""
+    signature = inspect.signature(chain_function)
+    parameters = list(signature.parameters.values())
+    call_kwargs = dict(chain_kwargs)
+
+    if "model_info" in signature.parameters and "model_info" not in call_kwargs:
+        call_kwargs["model_info"] = model_info
+    if "llm_callable" in signature.parameters and "llm_callable" not in call_kwargs:
+        call_kwargs["llm_callable"] = llm_callable
+
+    if parameters:
+        for param in parameters:
+            if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                if param.name not in {"model_info", "llm_callable"} and param.name not in call_kwargs:
+                    call_kwargs[param.name] = topic
+                break
+
+    return chain_function(**call_kwargs)
 
 
 def _generate_baseline_prompt(topic: str, chain_name: str) -> str:
@@ -199,7 +238,8 @@ def _measure_outputs(
     topic: str,
     chain_output: str,
     baseline_output: str,
-    model_info: Tuple
+    model_info: Tuple,
+    llm_callable: Callable = prompt,
 ) -> Dict[str, Any]:
     """
     Use AI to measure outputs across multiple dimensions.
@@ -277,7 +317,7 @@ Return as JSON:
     result, _ = MinimalChainable.run(
         context={},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=llm_callable,
         return_trace=False,
         prompts=[measurement_prompt]
     )
@@ -339,6 +379,9 @@ def _analyze_results(scores: Dict[str, Any]) -> str:
 def batch_measure(
     topics: List[str],
     chain_function: Callable,
+    chain_name: Optional[str] = None,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
     **chain_kwargs
 ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     """
@@ -357,7 +400,7 @@ def batch_measure(
     """
     print(f"\n{'='*70}")
     print(f"BATCH EMERGENCE MEASUREMENT")
-    print(f"Testing {chain_function.__name__} across {len(topics)} topics")
+    print(f"Testing {chain_name or chain_function.__name__} across {len(topics)} topics")
     print(f"{'='*70}")
 
     individual_results = []
@@ -367,7 +410,14 @@ def batch_measure(
 
     for i, topic in enumerate(topics, 1):
         print(f"\n[{i}/{len(topics)}] Testing: {topic}")
-        comparison, metadata = measure_emergence(topic, chain_function, **chain_kwargs)
+        comparison, metadata = measure_emergence(
+            topic,
+            chain_function,
+            chain_name=chain_name,
+            model_info=model_info,
+            llm_callable=llm_callable,
+            **chain_kwargs,
+        )
 
         individual_results.append({
             "topic": topic,
@@ -389,7 +439,7 @@ def batch_measure(
     chain_win_rate = (chain_wins / total) * 100 if total > 0 else 0
 
     aggregate = {
-        "chain_function": chain_function.__name__,
+        "chain_function": chain_name or chain_function.__name__,
         "topics_tested": total,
         "results": {
             "chain_wins": chain_wins,

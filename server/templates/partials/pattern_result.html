@@ -1,4 +1,51 @@
-<div class="success">Pattern completed.</div>
-<div class="details">
-  <pre>{{ result | pretty_json }}</pre>
-</div>
+{% import "partials/_ui_macros.html" as ui %}
+{% set meta = result.metadata or {} %}
+{% set highlight = meta.verdict or meta.ruling or meta.assessment or meta.root_cause or meta.winner or meta.survived or meta.belief_changed or meta.credibility_impact or "Structured output ready for review." %}
+
+<article class="result-shell swap-rise" data-copy-scope>
+  <header class="result-banner">
+    <div>
+      <p class="eyebrow">Structured Run</p>
+      <h3>{{ result.pattern | humanize }}</h3>
+      <p class="result-subtitle">{{ highlight }}</p>
+    </div>
+    <div class="banner-actions">
+      {% if meta.total_tokens %}
+        {{ ui.chip(meta.total_tokens ~ " tokens", "accent") }}
+      {% endif %}
+      <button type="button" class="secondary compact-button" data-copy-nearest=".raw-json">Copy raw</button>
+    </div>
+  </header>
+
+  <div class="stat-row">
+    {{ ui.stat("Pattern", result.pattern | humanize) }}
+    {% if meta.total_tokens %}{{ ui.stat("Tokens", meta.total_tokens) }}{% endif %}
+    {% if meta.rounds %}{{ ui.stat("Rounds", meta.rounds) }}{% endif %}
+    {% if meta.depth %}{{ ui.stat("Depth", meta.depth) }}{% endif %}
+  </div>
+
+  <div class="section-stack">
+    {% for section_name, section_value in result.result.items() %}
+      <section class="result-section">
+        <header class="section-title">
+          <h4>{{ section_name | humanize }}</h4>
+        </header>
+        {{ ui.render_value(section_value, none) }}
+      </section>
+    {% endfor %}
+  </div>
+
+  <details class="drawer">
+    <summary>Run metadata</summary>
+    <div class="drawer-body">
+      {{ ui.render_value(meta, none) }}
+    </div>
+  </details>
+
+  <details class="drawer">
+    <summary>Raw output</summary>
+    <div class="drawer-body">
+      <pre class="raw-json">{{ result | pretty_json }}</pre>
+    </div>
+  </details>
+</article>

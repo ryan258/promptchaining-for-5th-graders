@@ -4,7 +4,11 @@ import glob
 import subprocess
 import json
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
+from collections.abc import Mapping
 from fastapi import FastAPI, HTTPException, Body, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -42,11 +46,46 @@ def _pretty_json(data: Any) -> str:
     except TypeError:
         return str(data)
 
+def _humanize_key(value: Any) -> str:
+    text = str(value or "").replace("_", " ").replace("-", " ").strip()
+    return text.title() if text else ""
+
+def _format_timestamp(value: Any) -> str:
+    try:
+        return datetime.fromtimestamp(float(value)).strftime("%b %d, %Y at %I:%M %p")
+    except (TypeError, ValueError, OSError):
+        return str(value)
+
+def _format_bytes(value: Any) -> str:
+    try:
+        size = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    units = ["B", "KB", "MB", "GB"]
+    for unit in units:
+        if size < 1024 or unit == units[-1]:
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
+
+def _preview_text(value: Any, limit: int = 180) -> str:
+    if isinstance(value, (dict, list)):
+        text = _pretty_json(value)
+    else:
+        text = str(value or "")
+    condensed = " ".join(text.split())
+    return condensed if len(condensed) <= limit else condensed[: limit - 1].rstrip() + "..."
+
 templates.env.filters["pretty_json"] = _pretty_json
+templates.env.filters["humanize"] = _humanize_key
+templates.env.filters["format_timestamp"] = _format_timestamp
+templates.env.filters["format_bytes"] = _format_bytes
+templates.env.filters["preview_text"] = _preview_text
 
 TOOLS_DIR = os.path.join(PROJECT_ROOT, 'tools')
 ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, 'artifacts')
 ARTIFACTS_ROOT = Path(ARTIFACTS_DIR).resolve()
+INTERNAL_ARTIFACT_TOPICS = {"_chroma"}
 
 # Only expose tools that match the expected CLI contract:
 #   python3 <tool_path> <topic> [--context <text>]
@@ -58,8 +97,23 @@ ALLOWED_TOOLS = {
 class Tool(BaseModel):
     name: str
     category: str
+    description: str
+
+
+class ArtifactSummary(BaseModel):
+    topic: str
+    filename: str
+    size: int
+    modified: float
+
+
+@dataclass(frozen=True)
+class _ToolRecord:
+    name: str
+    category: str
     path: str
     description: str
+
 
 class RunRequest(BaseModel):
     tool_name: str
@@ -70,8 +124,8 @@ class RunRequest(BaseModel):
 
 class MetaDesignRequest(BaseModel):
     goal: str = Field(..., min_length=1, max_length=500)
-    context: Dict[str, Any] = Field(default_factory=dict, max_items=20)
-    constraints: List[str] = Field(default_factory=list, max_items=30)
+    context: Dict[str, Any] = Field(default_factory=dict, max_length=20)
+    constraints: List[str] = Field(default_factory=list, max_length=30)
 
 
 class MetaExecuteRequest(BaseModel):
@@ -83,129 +137,296 @@ OUTPUT_LOG_MARKERS = [
     "✅ Timeline saved to:",
 ]
 
-def _build_pattern_kwargs(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize incoming payloads to the expected pattern function args."""
-    if pattern_name == "scientific_method":
-        hypothesis = payload.get("hypothesis") or payload.get("topic")
-        if not hypothesis:
-            raise HTTPException(status_code=400, detail="hypothesis is required for scientific_method")
-        return {
-            "hypothesis": hypothesis,
-            "context": payload.get("context", ""),
-            "evidence_sources": payload.get("evidence_sources")
-        }
+STUDIO_NAV = (
+    ("home", "Home", "/"),
+    ("tools", "Tools", "/studio/tools"),
+    ("reasoning", "Reasoning", "/studio/reasoning"),
+    ("adversarial", "Adversarial", "/studio/adversarial"),
+    ("meta", "Meta", "/studio/meta"),
+    ("artifacts", "Artifacts", "/studio/artifacts"),
+)
 
-    if pattern_name == "socratic_dialogue":
-        belief = payload.get("belief") or payload.get("topic")
-        if not belief:
-            raise HTTPException(status_code=400, detail="belief is required for socratic_dialogue")
-        return {
-            "belief": belief,
-            "teacher_persona": payload.get("teacher_persona", "Philosopher"),
-            "depth": int(payload.get("depth", 5))
-        }
-
-    if pattern_name == "design_thinking":
-        problem = payload.get("problem") or payload.get("topic")
-        if not problem:
-            raise HTTPException(status_code=400, detail="problem is required for design_thinking")
-        return {
-            "problem": problem,
-            "target_user": payload.get("target_user", "End user"),
-            "constraints": payload.get("constraints")
-        }
-
-    if pattern_name == "judicial_reasoning":
-        case = payload.get("case") or payload.get("topic")
-        if not case:
-            raise HTTPException(status_code=400, detail="case is required for judicial_reasoning")
-        return {
-            "case": case,
-            "relevant_principles": payload.get("relevant_principles"),
-            "precedents": payload.get("precedents")
-        }
-
-    if pattern_name == "five_whys":
-        problem = payload.get("problem") or payload.get("topic")
-        if not problem:
-            raise HTTPException(status_code=400, detail="problem is required for five_whys")
-        return {
-            "problem": problem,
-            "depth": int(payload.get("depth", 5)),
-            "context": payload.get("context", "")
-        }
-
-    raise HTTPException(status_code=404, detail=f"Pattern '{pattern_name}' not supported")
-
-
-def _build_adversarial_kwargs(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Normalize adversarial pattern inputs."""
-    if pattern_name == "red_vs_blue":
-        topic = payload.get("topic")
-        position = payload.get("position_to_defend") or payload.get("position")
-        if not topic or not position:
-            raise HTTPException(status_code=400, detail="topic and position_to_defend are required for red_vs_blue")
-        return {
-            "topic": topic,
-            "position_to_defend": position,
-            "rounds": payload.get("rounds", 3),
-            "judge_criteria": payload.get("judge_criteria")
-        }
-
-    if pattern_name == "dialectical":
-        thesis = payload.get("thesis") or payload.get("topic")
-        if not thesis:
-            raise HTTPException(status_code=400, detail="thesis is required for dialectical")
-        return {
-            "thesis": thesis,
-            "context": payload.get("context", ""),
-            "domain": payload.get("domain", "")
-        }
-
-    if pattern_name == "adversarial_socratic":
-        claim = payload.get("claim") or payload.get("topic")
-        if not claim:
-            raise HTTPException(status_code=400, detail="claim is required for adversarial_socratic")
-        return {
-            "claim": claim,
-            "depth": payload.get("depth", 4),
-            "aggressive": payload.get("aggressive", True)
-        }
-
-    raise HTTPException(status_code=404, detail=f"Adversarial pattern '{pattern_name}' not supported")
-
-
-EMERGENCE_CHAIN_FUNCTIONS = {
-    "scientific_method": lambda topic, **kwargs: REASONING_PATTERNS["scientific_method"]["function"](
-        hypothesis=topic,
-        context=kwargs.get("context", ""),
-        evidence_sources=kwargs.get("evidence_sources")
-    ),
-    "design_thinking": lambda topic, **kwargs: REASONING_PATTERNS["design_thinking"]["function"](
-        problem=topic,
-        target_user=kwargs.get("target_user", "End user"),
-        constraints=kwargs.get("constraints")
-    ),
-    "five_whys": lambda topic, **kwargs: REASONING_PATTERNS["five_whys"]["function"](
-        problem=topic,
-        depth=int(kwargs.get("depth", 5)),
-        context=kwargs.get("context", "")
-    ),
-    "socratic_dialogue": lambda topic, **kwargs: REASONING_PATTERNS["socratic_dialogue"]["function"](
-        belief=topic,
-        teacher_persona=kwargs.get("teacher_persona", "Philosopher"),
-        depth=int(kwargs.get("depth", 5))
-    ),
-    "judicial_reasoning": lambda topic, **kwargs: REASONING_PATTERNS["judicial_reasoning"]["function"](
-        case=topic,
-        relevant_principles=kwargs.get("relevant_principles"),
-        precedents=kwargs.get("precedents")
-    )
+TEXTAREA_FIELDS = {
+    "topic",
+    "context",
+    "hypothesis",
+    "belief",
+    "problem",
+    "case",
+    "thesis",
+    "claim",
+    "position_to_defend",
 }
 
-def _scan_tools() -> List[Tool]:
+FIELD_HELP_TEXT = {
+    "hypothesis": "State the idea you want to test.",
+    "belief": "Write the belief or assumption you want examined.",
+    "problem": "Describe the problem in plain language.",
+    "case": "Describe the dilemma, case, or decision to weigh.",
+    "topic": "Name the topic or domain for the run.",
+    "context": "Optional background, audience notes, or constraints.",
+    "evidence_sources": "Optional. Enter one source per line.",
+    "teacher_persona": "Who should guide the questioning?",
+    "depth": "How many rounds of questioning to run.",
+    "target_user": "Who are you designing for?",
+    "constraints": "Optional. Enter one constraint per line.",
+    "relevant_principles": "Optional. Enter one principle per line.",
+    "precedents": "Optional. Enter one precedent per line.",
+    "position_to_defend": "Write the exact claim Blue Team should defend.",
+    "rounds": "How many attack and defense rounds to run.",
+    "judge_criteria": "Optional. Enter one judging criterion per line.",
+    "thesis": "State the thesis or claim to challenge.",
+    "domain": "Optional area or context for the debate.",
+    "claim": "Write the claim you want stress-tested.",
+    "aggressive": "Choose how confrontational the questioning should be.",
+}
+
+FIELD_PLACEHOLDERS = {
+    "hypothesis": "Students learn fractions faster with sports analogies",
+    "belief": "Homework should be optional",
+    "problem": "Students forget to bring their reading logs",
+    "case": "Should recess be longer for elementary students?",
+    "topic": "Photosynthesis",
+    "context": "Audience: 5th graders\nTone: concrete and vivid",
+    "evidence_sources": "Science textbook\nClassroom observation\nLab notes",
+    "teacher_persona": "Curious science teacher",
+    "target_user": "5th grade student",
+    "constraints": "Keep it visual\nUse familiar examples",
+    "relevant_principles": "Fairness\nStudent safety\nLong-term learning",
+    "precedents": "Other districts increased recess time",
+    "position_to_defend": "School lunch should be free for all students",
+    "judge_criteria": "Logic\nEvidence\nPractical trade-offs",
+    "thesis": "Students should use calculators earlier in math class",
+    "domain": "Elementary math education",
+    "claim": "AI tutors can improve reading comprehension",
+}
+
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off"}:
+            return False
+    raise ValueError(f"Invalid boolean value: {value}")
+
+
+def _coerce_string_list(value: Any) -> Optional[List[str]]:
+    if value in (None, ""):
+        return None
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    return [str(value)]
+
+
+def _split_text_lines(value: Any) -> Optional[List[str]]:
+    if value in (None, ""):
+        return None
+    if isinstance(value, list):
+        items = [str(item).strip() for item in value if str(item).strip()]
+        return items or None
+
+    items = []
+    for raw_line in str(value).replace(",", "\n").splitlines():
+        item = raw_line.strip()
+        if item:
+            items.append(item)
+    return items or None
+
+
+def _parse_context_text(raw_text: str) -> Dict[str, Any]:
+    text = (raw_text or "").strip()
+    if not text:
+        return {}
+
+    context: Dict[str, Any] = {}
+    loose_notes: List[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if ":" in line:
+            key, value = line.split(":", 1)
+            normalized_key = key.strip().lower().replace(" ", "_")
+            normalized_value = value.strip()
+            if normalized_key and normalized_value:
+                context[normalized_key] = normalized_value
+                continue
+        loose_notes.append(line)
+
+    if loose_notes:
+        context["notes"] = "\n".join(loose_notes) if context else text
+
+    return context or {"notes": text}
+
+
+def _lookup_payload_value(payload: Dict[str, Any], field_name: str, aliases: List[str]) -> Any:
+    for key in [field_name, *aliases]:
+        if key in payload and payload[key] not in (None, ""):
+            return payload[key]
+    return None
+
+
+def _normalize_registry_payload(
+    registry: Dict[str, Dict[str, Any]],
+    pattern_name: str,
+    payload: Dict[str, Any],
+) -> Dict[str, Any]:
+    entry = registry.get(pattern_name)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"Pattern '{pattern_name}' not found")
+
+    schema = entry.get("input_schema") or {}
+    if not schema:
+        return payload
+
+    kwargs: Dict[str, Any] = {}
+    for field_name, spec in schema.items():
+        aliases = list(spec.get("aliases", []))
+        value = _lookup_payload_value(payload, field_name, aliases)
+
+        if value is None:
+            if spec.get("required"):
+                raise HTTPException(status_code=400, detail=f"{field_name} is required for {pattern_name}")
+            value = spec.get("default")
+
+        coerce = spec.get("coerce")
+        if value is not None and coerce is not None:
+            try:
+                if coerce == "string_list":
+                    value = _coerce_string_list(value)
+                elif coerce is bool:
+                    value = _coerce_bool(value)
+                else:
+                    value = coerce(value)
+            except (TypeError, ValueError) as exc:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid value for {field_name} in {pattern_name}: {value}",
+                ) from exc
+
+        kwargs[field_name] = value
+
+    return kwargs
+
+
+def _navigation(active_page: str) -> List[Dict[str, Any]]:
+    return [
+        {
+            "slug": slug,
+            "label": label,
+            "href": href,
+            "active": slug == active_page,
+        }
+        for slug, label, href in STUDIO_NAV
+    ]
+
+
+def _page_context(active_page: str, title: str, **extra: Any) -> Dict[str, Any]:
+    context = {
+        "title": title,
+        "nav_items": _navigation(active_page),
+        "active_page": active_page,
+    }
+    context.update(extra)
+    return context
+
+
+def _field_input_kind(field_name: str, spec: Dict[str, Any]) -> str:
+    coerce = spec.get("coerce")
+    if coerce == "string_list":
+        return "textarea"
+    if coerce is int:
+        return "number"
+    if coerce is bool:
+        return "select"
+    if field_name in TEXTAREA_FIELDS:
+        return "textarea"
+    return "text"
+
+
+def _field_default_value(spec: Dict[str, Any]) -> str:
+    default = spec.get("default")
+    if default is None:
+        return ""
+    if isinstance(default, bool):
+        return "true" if default else "false"
+    return str(default)
+
+
+def _build_field_view(field_name: str, spec: Dict[str, Any]) -> Dict[str, Any]:
+    kind = _field_input_kind(field_name, spec)
+    return {
+        "name": field_name,
+        "label": _humanize_key(field_name),
+        "kind": kind,
+        "required": bool(spec.get("required")),
+        "help_text": FIELD_HELP_TEXT.get(field_name, "Optional input for this pattern."),
+        "placeholder": FIELD_PLACEHOLDERS.get(field_name, f"Enter {_humanize_key(field_name).lower()}"),
+        "default_value": _field_default_value(spec),
+        "full_width": kind == "textarea",
+        "rows": 6 if kind == "textarea" else None,
+        "options": [
+            {"label": "Yes", "value": "true"},
+            {"label": "No", "value": "false"},
+        ] if kind == "select" else [],
+    }
+
+
+def _build_pattern_view(registry: Mapping[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+    patterns: List[Dict[str, Any]] = []
+    for name, info in registry.items():
+        schema = info.get("input_schema") or {}
+        patterns.append(
+            {
+                "name": name,
+                "display_name": _humanize_key(name),
+                "description": info.get("description", ""),
+                "use_when": info.get("use_when", ""),
+                "example": info.get("example", ""),
+                "fields": [
+                    _build_field_view(field_name, spec)
+                    for field_name, spec in schema.items()
+                ],
+            }
+        )
+    return patterns
+
+
+def _collect_form_payload(
+    form_data: Mapping[str, Any],
+    registry: Dict[str, Dict[str, Any]],
+    pattern_name: str,
+) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {}
+    schema = (registry.get(pattern_name) or {}).get("input_schema") or {}
+
+    payload_json = str(form_data.get("payload_json", "") or "").strip()
+    if payload_json:
+        payload.update(_parse_json_payload(payload_json))
+
+    for field_name, spec in schema.items():
+        raw_value = form_data.get(field_name)
+        if raw_value in (None, ""):
+            continue
+        if spec.get("coerce") == "string_list":
+            payload[field_name] = _split_text_lines(raw_value)
+        else:
+            payload[field_name] = raw_value
+
+    topic = form_data.get("topic")
+    if topic not in (None, "") and "topic" not in payload:
+        payload["topic"] = topic
+
+    return payload
+
+
+@lru_cache(maxsize=1)
+def _scan_tools() -> tuple[_ToolRecord, ...]:
     """Scan the tools directory and return available tools."""
-    tools = []
+    tools: List[_ToolRecord] = []
     pattern = os.path.join(TOOLS_DIR, "*", "*.py")
     for file_path in glob.glob(pattern):
         if "__init__" in file_path:
@@ -229,7 +450,7 @@ def _scan_tools() -> List[Tool]:
         except (IOError, UnicodeDecodeError):
             pass
 
-        tools.append(Tool(
+        tools.append(_ToolRecord(
             name=name,
             category=category,
             path=file_path,
@@ -237,7 +458,14 @@ def _scan_tools() -> List[Tool]:
         ))
 
     tools.sort(key=lambda x: (x.category, x.name))
-    return tools
+    return tuple(tools)
+
+
+def _public_tools() -> List[Tool]:
+    return [
+        Tool(name=tool.name, category=tool.category, description=tool.description)
+        for tool in _scan_tools()
+    ]
 
 
 def _resolve_tool_path(category: str, tool_name: str) -> Optional[str]:
@@ -248,8 +476,18 @@ def _resolve_tool_path(category: str, tool_name: str) -> Optional[str]:
     return None
 
 
+def _is_public_artifact_topic(topic: str) -> bool:
+    return bool(topic) and not topic.startswith(".") and topic not in INTERNAL_ARTIFACT_TOPICS
+
+
+def _is_public_artifact_filename(filename: str) -> bool:
+    return bool(filename) and not filename.startswith(".") and not filename.endswith(".meta.json")
+
+
 def _safe_artifact_path(topic: str, filename: str) -> Path:
     """Resolve artifact path and enforce containment within artifacts root."""
+    if not _is_public_artifact_topic(topic) or not _is_public_artifact_filename(filename):
+        raise HTTPException(status_code=400, detail="Invalid artifact path")
     candidate = (ARTIFACTS_ROOT / topic / filename).resolve()
     try:
         candidate.relative_to(ARTIFACTS_ROOT)
@@ -260,7 +498,7 @@ def _safe_artifact_path(topic: str, filename: str) -> Path:
 @app.get("/tools", response_model=List[Tool])
 async def list_tools():
     """Scan the tools directory and return available tools."""
-    return _scan_tools()
+    return _public_tools()
 
 def _execute_tool(category: str, tool_name: str, topic: str, context: Optional[str] = "") -> Dict[str, Any]:
     tool_path = _resolve_tool_path(category, tool_name)
@@ -284,6 +522,8 @@ def _execute_tool(category: str, tool_name: str, topic: str, context: Optional[s
     if result.returncode != 0:
         return {
             "status": "error",
+            "tool_name": tool_name,
+            "category": category,
             "stdout": result.stdout,
             "stderr": result.stderr,
         }
@@ -319,6 +559,8 @@ def _execute_tool(category: str, tool_name: str, topic: str, context: Optional[s
 
     return {
         "status": "success",
+        "tool_name": tool_name,
+        "category": category,
         "output": output_content,
         "type": output_type,
         "logs": result.stdout,
@@ -355,7 +597,7 @@ def _execute_pattern(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, An
     if not pattern:
         raise HTTPException(status_code=404, detail=f"Pattern '{pattern_name}' not found")
 
-    kwargs = _build_pattern_kwargs(pattern_name, payload or {})
+    kwargs = _normalize_registry_payload(REASONING_PATTERNS, pattern_name, payload or {})
     result, metadata = pattern["function"](**kwargs)
 
     return {
@@ -395,7 +637,7 @@ def _execute_adversarial(pattern_name: str, payload: Dict[str, Any]) -> Dict[str
     if not pattern:
         raise HTTPException(status_code=404, detail=f"Adversarial pattern '{pattern_name}' not found")
 
-    kwargs = _build_adversarial_kwargs(pattern_name, payload or {})
+    kwargs = _normalize_registry_payload(ADVERSARIAL_PATTERNS, pattern_name, payload or {})
     result, metadata = pattern["function"](**kwargs)
 
     return {
@@ -417,6 +659,32 @@ async def run_adversarial(pattern_name: str, payload: Dict[str, Any] = Body(...)
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _execute_meta_chain_design(design_data: Dict[str, Any]) -> Dict[str, Any]:
+    prompts = design_data.get("prompts") or []
+    if not prompts:
+        raise HTTPException(status_code=400, detail="Design must include prompts to execute")
+
+    generator = MetaChainGenerator()
+    outputs, filled_prompts, usage, trace = MinimalChainable.run(
+        context=design_data.get("context") or {},
+        model=generator.model_info,
+        llm_callable=core_prompt,
+        prompts=prompts,
+        return_trace=True,
+        artifact_store=generator.artifact_store,
+        topic=design_data.get("goal", "meta_chain_run").lower().replace(" ", "_")[:50],
+    )
+    trace["final_result"] = outputs[-1] if outputs else None
+
+    return {
+        "status": "success",
+        "execution_trace": trace,
+        "outputs": outputs,
+        "prompts": filled_prompts,
+        "usage": usage,
+    }
+
+
 @app.post("/meta-chain/design")
 async def design_meta_chain(request: MetaDesignRequest):
     """Generate a chain design using the meta-chain generator."""
@@ -436,35 +704,13 @@ async def design_meta_chain(request: MetaDesignRequest):
 @app.post("/meta-chain/execute")
 async def execute_meta_chain(request: MetaExecuteRequest):
     """Execute a previously designed chain and return the execution trace."""
-    design_data = request.design or {}
-    prompts = design_data.get("prompts") or []
-    if not prompts:
-        raise HTTPException(status_code=400, detail="Design must include prompts to execute")
-
-    generator = MetaChainGenerator()
     try:
-        outputs, filled_prompts, usage, trace = MinimalChainable.run(
-            context=design_data.get("context") or {},
-            model=generator.model_info,
-            llm_callable=core_prompt,
-            prompts=prompts,
-            return_trace=True,
-            artifact_store=generator.artifact_store,
-            topic=design_data.get("goal", "meta_chain_run").lower().replace(" ", "_")[:50]
-        )
+        return _execute_meta_chain_design(request.design or {})
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error executing meta-chain: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-    trace["final_result"] = outputs[-1] if outputs else None
-
-    return {
-        "status": "success",
-        "execution_trace": trace,
-        "outputs": outputs,
-        "prompts": filled_prompts,
-        "usage": usage
-    }
 
 
 @app.post("/emergence/compare")
@@ -476,21 +722,27 @@ async def compare_emergence(payload: Dict[str, Any] = Body(...)):
 
     chain_name = payload.get("chain_name", "scientific_method")
     chain_kwargs = payload.get("chain_kwargs") or {}
-    chain_func = EMERGENCE_CHAIN_FUNCTIONS.get(chain_name)
-    if not chain_func:
+    pattern = REASONING_PATTERNS.get(chain_name)
+    if not pattern or not pattern.get("supports_emergence"):
         raise HTTPException(
             status_code=404,
-            detail=f"Chain '{chain_name}' not supported for emergence. Available: {', '.join(EMERGENCE_CHAIN_FUNCTIONS.keys())}"
+            detail=f"Chain '{chain_name}' not supported for emergence. Available: {', '.join(name for name, info in REASONING_PATTERNS.items() if info.get('supports_emergence'))}"
         )
 
     baseline_prompt = payload.get("baseline_prompt")
+    normalized_kwargs = _normalize_registry_payload(
+        REASONING_PATTERNS,
+        chain_name,
+        {"topic": topic, **chain_kwargs},
+    )
 
     try:
         comparison, metadata = measure_emergence(
             topic=topic,
-            chain_function=chain_func,
+            chain_function=pattern["function"],
             baseline_prompt=baseline_prompt,
-            **chain_kwargs
+            chain_name=chain_name,
+            **normalized_kwargs,
         )
     except Exception as e:
         logger.error(f"Error measuring emergence for {chain_name}: {e}")
@@ -502,39 +754,39 @@ async def compare_emergence(payload: Dict[str, Any] = Body(...)):
         "metadata": metadata
     }
 
-@app.get("/artifacts")
+@app.get("/artifacts", response_model=List[ArtifactSummary])
 async def list_artifacts():
     """List all artifacts in the artifacts directory."""
     if not os.path.exists(ARTIFACTS_DIR):
         return []
 
-    artifacts = []
+    artifacts: List[ArtifactSummary] = []
     try:
         for topic in os.listdir(ARTIFACTS_DIR):
             topic_path = os.path.join(ARTIFACTS_DIR, topic)
-            if not os.path.isdir(topic_path) or topic.startswith('.'):
+            if not os.path.isdir(topic_path) or not _is_public_artifact_topic(topic):
                 continue
 
-            # Get artifact files in this topic
             for filename in os.listdir(topic_path):
-                if filename.startswith('.'):
+                if not _is_public_artifact_filename(filename):
                     continue
 
                 file_path = os.path.join(topic_path, filename)
                 if os.path.isfile(file_path):
                     stat = os.stat(file_path)
-                    artifacts.append({
-                        "topic": topic,
-                        "filename": filename,
-                        "path": file_path,
-                        "size": stat.st_size,
-                        "modified": stat.st_mtime
-                    })
+                    artifacts.append(
+                        ArtifactSummary(
+                            topic=topic,
+                            filename=filename,
+                            size=stat.st_size,
+                            modified=stat.st_mtime,
+                        )
+                    )
     except Exception as e:
         logger.error(f"Error listing artifacts: {e}")
+        raise HTTPException(status_code=500, detail="Unable to list artifacts") from e
 
-    # Sort by modified time (newest first)
-    artifacts.sort(key=lambda x: x["modified"], reverse=True)
+    artifacts.sort(key=lambda x: x.modified, reverse=True)
     return artifacts
 
 @app.get("/artifacts/{topic}/{filename}")
@@ -588,34 +840,156 @@ def _group_tools_by_category(tools: List[Tool]) -> Dict[str, List[Tool]]:
 
 @app.get("/", response_class=HTMLResponse)
 async def ui_index(request: Request):
-    tools = _scan_tools()
-    reasoning = [
+    tools = _public_tools()
+    artifacts_total = 0
+    try:
+        artifacts_total = len(await list_artifacts())
+    except HTTPException:
+        artifacts_total = 0
+
+    modules = [
         {
-            "name": name,
-            "description": info.get("description", ""),
-            "use_when": info.get("use_when", ""),
-            "example": info.get("example", ""),
-        }
-        for name, info in REASONING_PATTERNS.items()
-    ]
-    adversarial = [
+            "eyebrow": "Module 01",
+            "name": "Tools",
+            "href": "/studio/tools",
+            "count": f"{len(tools)} tools",
+            "description": "Run a focused tool with plain topic and context inputs, then inspect a full-width result stage.",
+        },
         {
-            "name": name,
-            "description": info.get("description", ""),
-            "use_when": info.get("use_when", ""),
-            "example": info.get("example", ""),
-        }
-        for name, info in ADVERSARIAL_PATTERNS.items()
+            "eyebrow": "Module 02",
+            "name": "Reasoning",
+            "href": "/studio/reasoning",
+            "count": f"{len(REASONING_PATTERNS)} patterns",
+            "description": "Choose a reasoning pattern and get only the fields that pattern actually needs.",
+        },
+        {
+            "eyebrow": "Module 03",
+            "name": "Adversarial",
+            "href": "/studio/adversarial",
+            "count": f"{len(ADVERSARIAL_PATTERNS)} patterns",
+            "description": "Pressure-test claims through debate and dialectic without cramming unrelated controls onto the page.",
+        },
+        {
+            "eyebrow": "Module 04",
+            "name": "Meta",
+            "href": "/studio/meta",
+            "count": "Design and run",
+            "description": "Design a multi-step chain in plain text, then execute it directly from the resulting design card.",
+        },
+        {
+            "eyebrow": "Module 05",
+            "name": "Artifacts",
+            "href": "/studio/artifacts",
+            "count": f"{artifacts_total} saved",
+            "description": "Browse saved outputs in a dedicated library instead of mixing them into every workflow page.",
+        },
     ]
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        _page_context(
+            "home",
+            "Prompt Chaining Studio",
+            modules=modules,
+            tools_total=len(tools),
+            reasoning_total=len(REASONING_PATTERNS),
+            adversarial_total=len(ADVERSARIAL_PATTERNS),
+            artifacts_total=artifacts_total,
+        ),
+    )
+
+
+@app.get("/studio/tools", response_class=HTMLResponse)
+async def ui_tools_page(request: Request):
+    tools = _public_tools()
+    return templates.TemplateResponse(
+        request,
+        "studio_tools.html",
+        _page_context(
+            "tools",
+            "Tools | Prompt Chaining Studio",
+            tools=tools,
+            tools_by_category=_group_tools_by_category(tools),
+            selected_tool_key=f"{tools[0].category}:{tools[0].name}" if tools else "",
+        ),
+    )
+
+
+@app.get("/studio/reasoning", response_class=HTMLResponse)
+async def ui_reasoning_page(request: Request):
+    patterns = _build_pattern_view(REASONING_PATTERNS)
+    return templates.TemplateResponse(
+        request,
+        "studio_patterns.html",
+        _page_context(
+            "reasoning",
+            "Reasoning | Prompt Chaining Studio",
+            module_name="Reasoning Patterns",
+            module_eyebrow="Reasoning Studio",
+            module_intro="Choose a reasoning pattern, fill in plain-language prompts, and read the output in a full-width canvas built for the selected chain.",
+            module_note="These patterns teach structured thinking. The form adapts to the selected method instead of dumping every possible field on screen.",
+            form_action="/ui/run-pattern",
+            result_id="pattern-result",
+            loading_id="pattern-loading",
+            loading_text="Running reasoning chain...",
+            result_title="Reasoning output appears here",
+            result_body="Pick a pattern, fill its fields, and the run will render below with readable sections and metadata.",
+            patterns=patterns,
+        ),
+    )
+
+
+@app.get("/studio/adversarial", response_class=HTMLResponse)
+async def ui_adversarial_page(request: Request):
+    patterns = _build_pattern_view(ADVERSARIAL_PATTERNS)
+    return templates.TemplateResponse(
+        request,
+        "studio_patterns.html",
+        _page_context(
+            "adversarial",
+            "Adversarial | Prompt Chaining Studio",
+            module_name="Adversarial Patterns",
+            module_eyebrow="Debate Studio",
+            module_intro="Pressure-test claims with debate, dialectic, and aggressive questioning in a workspace dedicated to adversarial reasoning.",
+            module_note="The page only shows the inputs for the active adversarial pattern, then gives the result room to breathe.",
+            form_action="/ui/run-adversarial",
+            result_id="adversarial-result",
+            loading_id="adversarial-loading",
+            loading_text="Running adversarial chain...",
+            result_title="Adversarial output appears here",
+            result_body="Expect debate rounds, judgments, and verdicts to land in a much wider result stage.",
+            patterns=patterns,
+        ),
+    )
+
+
+@app.get("/studio/meta", response_class=HTMLResponse)
+async def ui_meta_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "studio_meta.html",
+        _page_context(
+            "meta",
+            "Meta-Chain | Prompt Chaining Studio",
+        ),
+    )
+
+
+@app.get("/studio/artifacts", response_class=HTMLResponse)
+async def ui_artifacts_page(request: Request):
+    try:
+        artifacts = await list_artifacts()
+    except HTTPException:
+        artifacts = []
 
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "tools_by_category": _group_tools_by_category(tools),
-            "reasoning_patterns": reasoning,
-            "adversarial_patterns": adversarial,
-        },
+        request,
+        "studio_artifacts.html",
+        _page_context(
+            "artifacts",
+            "Artifacts | Prompt Chaining Studio",
+            artifacts=artifacts,
+        ),
     )
 
 
@@ -628,8 +1002,9 @@ async def ui_run_tool(
 ):
     if ":" not in tool_key:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": "Invalid tool selection."},
+            {"message": "Invalid tool selection."},
         )
 
     category, tool_name = tool_key.split(":", 1)
@@ -638,13 +1013,15 @@ async def ui_run_tool(
         result = _execute_tool(category, tool_name, topic, context)
     except Exception as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Tool run failed: {e}"},
+            {"message": f"Tool run failed: {e}"},
         )
 
     return templates.TemplateResponse(
+        request,
         "partials/tool_result.html",
-        {"request": request, "result": result},
+        {"result": result},
     )
 
 
@@ -658,64 +1035,76 @@ def _parse_json_payload(payload_json: str) -> Dict[str, Any]:
 @app.post("/ui/run-pattern", response_class=HTMLResponse)
 async def ui_run_pattern(
     request: Request,
-    pattern_name: str = Form(...),
-    topic: str = Form(""),
-    payload_json: str = Form(""),
 ):
-    try:
-        payload = _parse_json_payload(payload_json)
-    except json.JSONDecodeError as e:
+    form = await request.form()
+    pattern_name = str(form.get("pattern_name") or "").strip()
+    if not pattern_name:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Invalid JSON payload: {e}"},
+            {"message": "Select a reasoning pattern before running it."},
         )
 
-    if not payload and topic:
-        payload = {"topic": topic}
+    try:
+        payload = _collect_form_payload(form, REASONING_PATTERNS, pattern_name)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            request,
+            "partials/error.html",
+            {"message": f"Invalid JSON payload: {e}"},
+        )
 
     try:
         result = _execute_pattern(pattern_name, payload)
     except Exception as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Pattern failed: {e}"},
+            {"message": f"Pattern failed: {e}"},
         )
 
     return templates.TemplateResponse(
+        request,
         "partials/pattern_result.html",
-        {"request": request, "result": result},
+        {"result": result},
     )
 
 
 @app.post("/ui/run-adversarial", response_class=HTMLResponse)
 async def ui_run_adversarial(
     request: Request,
-    pattern_name: str = Form(...),
-    topic: str = Form(""),
-    payload_json: str = Form(""),
 ):
-    try:
-        payload = _parse_json_payload(payload_json)
-    except json.JSONDecodeError as e:
+    form = await request.form()
+    pattern_name = str(form.get("pattern_name") or "").strip()
+    if not pattern_name:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Invalid JSON payload: {e}"},
+            {"message": "Select an adversarial pattern before running it."},
         )
 
-    if not payload and topic:
-        payload = {"topic": topic}
+    try:
+        payload = _collect_form_payload(form, ADVERSARIAL_PATTERNS, pattern_name)
+    except json.JSONDecodeError as e:
+        return templates.TemplateResponse(
+            request,
+            "partials/error.html",
+            {"message": f"Invalid JSON payload: {e}"},
+        )
 
     try:
         result = _execute_adversarial(pattern_name, payload)
     except Exception as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Adversarial run failed: {e}"},
+            {"message": f"Adversarial run failed: {e}"},
         )
 
     return templates.TemplateResponse(
+        request,
         "partials/pattern_result.html",
-        {"request": request, "result": result},
+        {"result": result},
     )
 
 
@@ -723,16 +1112,21 @@ async def ui_run_adversarial(
 async def ui_meta_design(
     request: Request,
     goal: str = Form(...),
+    context_text: str = Form(""),
     context_json: str = Form(""),
     constraints: str = Form(""),
 ):
-    try:
-        context = _parse_json_payload(context_json)
-    except json.JSONDecodeError as e:
-        return templates.TemplateResponse(
-            "partials/error.html",
-            {"request": request, "message": f"Invalid context JSON: {e}"},
-        )
+    if context_json.strip():
+        try:
+            context = _parse_json_payload(context_json)
+        except json.JSONDecodeError as e:
+            return templates.TemplateResponse(
+                request,
+                "partials/error.html",
+                {"message": f"Invalid context JSON: {e}"},
+            )
+    else:
+        context = _parse_context_text(context_text)
 
     constraint_list = []
     if constraints:
@@ -746,13 +1140,15 @@ async def ui_meta_design(
         design = generator.design_chain(goal, context, constraint_list)
     except Exception as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Meta-chain design failed: {e}"},
+            {"message": f"Meta-chain design failed: {e}"},
         )
 
     return templates.TemplateResponse(
+        request,
         "partials/meta_design.html",
-        {"request": request, "design": design.to_dict()},
+        {"design": design.to_dict()},
     )
 
 
@@ -765,56 +1161,47 @@ async def ui_meta_execute(
         design_data = _parse_json_payload(design_json)
     except json.JSONDecodeError as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Invalid design JSON: {e}"},
+            {"message": f"Invalid design JSON: {e}"},
         )
 
-    prompts = design_data.get("prompts") or []
-    if not prompts:
-        return templates.TemplateResponse(
-            "partials/error.html",
-            {"request": request, "message": "Design must include prompts to execute."},
-        )
-
-    generator = MetaChainGenerator()
     try:
-        outputs, filled_prompts, usage, trace = MinimalChainable.run(
-            context=design_data.get("context") or {},
-            model=generator.model_info,
-            llm_callable=core_prompt,
-            prompts=prompts,
-            return_trace=True,
-            artifact_store=generator.artifact_store,
-            topic=design_data.get("goal", "meta_chain_run").lower().replace(" ", "_")[:50],
+        result = _execute_meta_chain_design(design_data)
+    except HTTPException as e:
+        return templates.TemplateResponse(
+            request,
+            "partials/error.html",
+            {"message": e.detail},
         )
     except Exception as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": f"Meta-chain execute failed: {e}"},
+            {"message": f"Meta-chain execute failed: {e}"},
         )
 
-    trace["final_result"] = outputs[-1] if outputs else None
-
-    result = {
-        "status": "success",
-        "execution_trace": trace,
-        "outputs": outputs,
-        "prompts": filled_prompts,
-        "usage": usage,
-    }
-
     return templates.TemplateResponse(
+        request,
         "partials/meta_execute.html",
-        {"request": request, "result": result},
+        {"result": result},
     )
 
 
 @app.get("/ui/artifacts", response_class=HTMLResponse)
 async def ui_artifacts(request: Request):
-    data = await list_artifacts()
+    try:
+        data = await list_artifacts()
+    except HTTPException as e:
+        return templates.TemplateResponse(
+            request,
+            "partials/error.html",
+            {"message": e.detail},
+        )
     return templates.TemplateResponse(
+        request,
         "partials/artifacts.html",
-        {"request": request, "artifacts": data},
+        {"artifacts": data},
     )
 
 
@@ -824,13 +1211,15 @@ async def ui_artifact_detail(request: Request, topic: str, filename: str):
         data = await get_artifact(topic, filename)
     except HTTPException as e:
         return templates.TemplateResponse(
+            request,
             "partials/error.html",
-            {"request": request, "message": e.detail},
+            {"message": e.detail},
         )
 
     return templates.TemplateResponse(
+        request,
         "partials/artifact_detail.html",
-        {"request": request, "artifact": data, "topic": topic, "filename": filename},
+        {"artifact": data, "topic": topic, "filename": filename},
     )
 
 if __name__ == "__main__":

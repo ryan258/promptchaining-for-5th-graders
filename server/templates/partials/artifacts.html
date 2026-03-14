@@ -1,16 +1,31 @@
+{% import "partials/_ui_macros.html" as ui %}
+
 {% if artifacts %}
-  <div class="artifact-list">
+  <div class="artifact-grid swap-rise">
     {% for artifact in artifacts %}
-      <div class="artifact-card">
-        <div><strong>{{ artifact.topic }}</strong> / {{ artifact.filename }}</div>
-        <div class="artifact-meta">{{ artifact.size }} bytes · {{ artifact.modified }}</div>
-        <div class="inline-actions">
-          <button class="secondary" hx-get="/ui/artifacts/{{ artifact.topic }}/{{ artifact.filename }}" hx-target="#artifact-detail-{{ loop.index }}" hx-swap="innerHTML">View</button>
+      <article class="artifact-card" data-copy-scope>
+        <div class="artifact-card-head">
+          <div>
+            <p class="eyebrow">Artifact {{ "%02d"|format(loop.index) }}</p>
+            <h3>{{ artifact.filename | humanize }}</h3>
+          </div>
+          <div class="artifact-meta-stack">
+            {{ ui.chip(artifact.topic | humanize, "accent") }}
+            {{ ui.chip(artifact.size | format_bytes) }}
+          </div>
         </div>
-        <div id="artifact-detail-{{ loop.index }}" class="details"></div>
-      </div>
+        <p class="artifact-meta">{{ artifact.modified | format_timestamp }}</p>
+        <div class="action-row">
+          <button class="secondary compact-button" hx-get="/ui/artifacts/{{ artifact.topic }}/{{ artifact.filename }}" hx-target="#artifact-detail-{{ loop.index }}" hx-swap="innerHTML">Open artifact</button>
+        </div>
+        <div id="artifact-detail-{{ loop.index }}" class="artifact-detail-slot"></div>
+      </article>
     {% endfor %}
   </div>
 {% else %}
-  <div class="note">No artifacts yet.</div>
+  <div class="result-placeholder result-placeholder-accent swap-rise">
+    <p class="eyebrow">Artifact Shelf</p>
+    <h3>No artifacts yet</h3>
+    <p>Run a tool, reasoning pattern, or meta-chain and the saved outputs will collect here for later reuse.</p>
+  </div>
 {% endif %}

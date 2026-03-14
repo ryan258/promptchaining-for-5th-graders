@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "partials/_ui_macros.html" as ui %}
+
+{% block content %}
+<section class="home-hero">
+  <div class="home-hero-copy">
+    <p class="eyebrow">Prompt Chaining Studio</p>
+    <h1>Separate workspaces for tools, reasoning, debate, meta-chains, and artifacts.</h1>
+    <p class="hero-text">The all-in-one dashboard is gone. Each module now has its own page, wider result area, and inputs that stay in plain language instead of forcing you to write payload JSON.</p>
+    <div class="badge-row">
+      {{ ui.chip("Plain-text forms", "accent") }}
+      {{ ui.chip("Module-specific pages") }}
+      {{ ui.chip("Full-width result stages") }}
+      {{ ui.chip("Candlelight UI") }}
+    </div>
+  </div>
+  <aside class="home-hero-side">
+    <div class="info-card">
+      <p class="eyebrow">What Changed</p>
+      <ul class="info-list">
+        <li>Each module now lives on its own route.</li>
+        <li>Pattern pages only show the fields for the selected pattern.</li>
+        <li>Results get the width they need instead of sharing a cramped column.</li>
+      </ul>
+    </div>
+    <div class="stat-strip">
+      {{ ui.stat("Tools", tools_total) }}
+      {{ ui.stat("Reasoning", reasoning_total) }}
+      {{ ui.stat("Adversarial", adversarial_total) }}
+      {{ ui.stat("Artifacts", artifacts_total) }}
+    </div>
+  </aside>
+</section>
+
+<section class="module-grid">
+  {% for module in modules %}
+    <a href="{{ module.href }}" class="module-card">
+      <p class="eyebrow">{{ module.eyebrow }}</p>
+      <div class="module-card-head">
+        <h2>{{ module.name }}</h2>
+        <span class="module-count">{{ module.count }}</span>
+      </div>
+      <p>{{ module.description }}</p>
+      <span class="module-link">Open workspace</span>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -14,10 +14,10 @@ These patterns are unique to prompt chaining - impossible with single prompts.
 They unlock deep philosophical reasoning, ethics, and nuanced understanding.
 """
 
-from typing import Dict, List, Optional, Any, Tuple, Callable
+from typing import Callable, Dict, List, Optional, Any, Tuple
 
-from lib.core.chain import MinimalChainable
-from lib.core.llm_client import get_model, calculate_total_tokens, prompt
+from ..core.llm_client import calculate_total_tokens, prompt
+from ._runner import execute_pattern
 
 # ============================================================================
 # PATTERN 1: RED TEAM vs BLUE TEAM
@@ -27,7 +27,9 @@ def red_vs_blue(
     topic: str,
     position_to_defend: str,
     rounds: int = 3,
-    judge_criteria: Optional[List[str]] = None
+    judge_criteria: Optional[List[str]] = None,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Run a Red Team vs Blue Team adversarial debate.
@@ -55,7 +57,6 @@ def red_vs_blue(
             rounds=3
         )
     """
-    model_info = get_model()
     criteria_str = ", ".join(judge_criteria) if judge_criteria else "logical strength, evidence quality, practical considerations"
 
     prompts = []
@@ -188,20 +189,11 @@ Return as JSON:
   "reasoning": "Why you scored it this way"
 }}""")
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the debate
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "red_vs_blue_debate",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     # Structure the debate
@@ -242,7 +234,9 @@ Return as JSON:
 def dialectical(
     thesis: str,
     context: str = "",
-    domain: str = ""
+    domain: str = "",
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Apply dialectical reasoning: Thesis → Antithesis → Synthesis.
@@ -270,8 +264,6 @@ def dialectical(
             domain="Medical ethics"
         )
     """
-    model_info = get_model()
-
     prompts = [
         # Step 1: Elaborate the thesis
         f"""You are a philosopher applying dialectical reasoning.
@@ -388,20 +380,11 @@ Return as JSON:
 }}"""
     ]
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the dialectic
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "dialectical_synthesis",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     metadata = {
@@ -426,7 +409,9 @@ Return as JSON:
 def adversarial_socratic(
     claim: str,
     depth: int = 4,
-    aggressive: bool = True
+    aggressive: bool = True,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Adversarial Socratic dialogue - aggressive questioning to stress-test claims.
@@ -451,7 +436,6 @@ def adversarial_socratic(
             aggressive=True
         )
     """
-    model_info = get_model()
     style = "aggressively challenge and find every flaw" if aggressive else "probe gently"
 
     prompts = []
@@ -552,20 +536,11 @@ Return as JSON:
   "remaining_vulnerabilities": ["vulnerability 1", ...]
 }}""")
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the adversarial dialogue
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "adversarial_socratic",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     # Structure the dialogue
@@ -605,19 +580,35 @@ ADVERSARIAL_PATTERNS = {
         "function": red_vs_blue,
         "description": "Red Team attacks position, Blue Team defends, Judge evaluates",
         "use_when": "Testing ideas through adversarial pressure, finding weaknesses",
-        "example": 'red_vs_blue("MS treatment", "Aggressive DMTs should be prioritized", rounds=3)'
+        "example": 'red_vs_blue("MS treatment", "Aggressive DMTs should be prioritized", rounds=3)',
+        "input_schema": {
+            "topic": {"required": True},
+            "position_to_defend": {"aliases": ["position"], "required": True},
+            "rounds": {"default": 3, "coerce": int},
+            "judge_criteria": {"default": None, "coerce": "string_list"},
+        },
     },
     "dialectical": {
         "function": dialectical,
         "description": "Thesis → Antithesis → Synthesis (Hegelian dialectic)",
         "use_when": "Resolving contradictions, transcending binary thinking, finding nuance",
-        "example": 'dialectical("Prioritize symptom management", domain="MS treatment")'
+        "example": 'dialectical("Prioritize symptom management", domain="MS treatment")',
+        "input_schema": {
+            "thesis": {"aliases": ["topic"], "required": True},
+            "context": {"default": ""},
+            "domain": {"default": ""},
+        },
     },
     "adversarial_socratic": {
         "function": adversarial_socratic,
         "description": "Aggressive Socratic questioning to stress-test claims",
         "use_when": "Rigorously testing beliefs, finding vulnerabilities, intellectual honesty",
-        "example": 'adversarial_socratic("AI will solve medication adherence", depth=4)'
+        "example": 'adversarial_socratic("AI will solve medication adherence", depth=4)',
+        "input_schema": {
+            "claim": {"aliases": ["topic"], "required": True},
+            "depth": {"default": 4, "coerce": int},
+            "aggressive": {"default": True, "coerce": bool},
+        },
     }
 }
 

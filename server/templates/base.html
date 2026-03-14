@@ -4,12 +4,104 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{{ title or "Prompt Chaining" }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;700&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/candlelight.css" />
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
   </head>
-  <body>
+  <body class="page-{{ active_page or 'home' }}">
+    <div class="page-noise" aria-hidden="true"></div>
     <div class="shell">
+      <header class="site-header">
+        <a href="/" class="brand-lockup">
+          <span class="brand-kicker">Bare Metal Prompt Chaining</span>
+          <strong>Prompt Chaining Studio</strong>
+        </a>
+        {% if nav_items %}
+          <nav class="site-nav" aria-label="Primary navigation">
+            {% for item in nav_items %}
+              <a href="{{ item.href }}" class="site-nav-link{% if item.active %} is-active{% endif %}">{{ item.label }}</a>
+            {% endfor %}
+          </nav>
+        {% endif %}
+      </header>
       {% block content %}{% endblock %}
     </div>
+    <script>
+      function syncPatternShell(shell) {
+        if (!shell) {
+          return;
+        }
+
+        const picker = shell.querySelector("[data-pattern-picker]");
+        if (!picker) {
+          return;
+        }
+
+        const selected = picker.value;
+
+        shell.querySelectorAll("[data-select-pattern]").forEach(function (button) {
+          button.classList.toggle("is-active", button.dataset.selectPattern === selected);
+        });
+
+        shell.querySelectorAll("[data-pattern-panel]").forEach(function (panel) {
+          panel.hidden = panel.dataset.patternPanel !== selected;
+        });
+
+        shell.querySelectorAll("[data-pattern-fields]").forEach(function (fieldset) {
+          const isActive = fieldset.dataset.patternFields === selected;
+          fieldset.hidden = !isActive;
+          fieldset.disabled = !isActive;
+        });
+      }
+
+      document.querySelectorAll("[data-pattern-shell]").forEach(syncPatternShell);
+
+      document.addEventListener("click", function (event) {
+        const fillTrigger = event.target.closest("[data-fill-target]");
+        if (fillTrigger) {
+          const target = document.querySelector(fillTrigger.dataset.fillTarget);
+          if (target) {
+            target.value = fillTrigger.dataset.fillValue || "";
+            target.dispatchEvent(new Event("input", { bubbles: true }));
+            target.focus();
+          }
+        }
+
+        const copyTrigger = event.target.closest("[data-copy-nearest]");
+        if (copyTrigger) {
+          const scope = copyTrigger.closest("[data-copy-scope]") || document;
+          const source = scope.querySelector(copyTrigger.dataset.copyNearest);
+          if (source && navigator.clipboard) {
+            navigator.clipboard.writeText(source.innerText.trim()).then(function () {
+              const original = copyTrigger.dataset.originalLabel || copyTrigger.textContent;
+              copyTrigger.dataset.originalLabel = original;
+              copyTrigger.textContent = "Copied";
+              window.setTimeout(function () {
+                copyTrigger.textContent = original;
+              }, 1400);
+            });
+          }
+        }
+
+        const patternTrigger = event.target.closest("[data-select-pattern]");
+        if (patternTrigger) {
+          const shell = patternTrigger.closest("[data-pattern-shell]");
+          const picker = shell ? shell.querySelector("[data-pattern-picker]") : null;
+          if (picker) {
+            picker.value = patternTrigger.dataset.selectPattern || "";
+            syncPatternShell(shell);
+          }
+        }
+      });
+
+      document.addEventListener("change", function (event) {
+        const picker = event.target.closest("[data-pattern-picker]");
+        if (picker) {
+          syncPatternShell(picker.closest("[data-pattern-shell]"));
+        }
+      });
+    </script>
   </body>
 </html>

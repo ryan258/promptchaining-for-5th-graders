@@ -10,7 +10,7 @@ import hashlib
 
 try:
     import chromadb
-except Exception:
+except ImportError:
     chromadb = None
 
 

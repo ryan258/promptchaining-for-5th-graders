@@ -1,17 +1,57 @@
+{% import "partials/_ui_macros.html" as ui %}
+
 {% if result.status == "success" %}
-  <div class="success">Tool completed.</div>
-  <div class="details">
-    <pre>{{ result.output | pretty_json }}</pre>
-  </div>
-  {% if result.logs %}
-  <details class="details">
-    <summary>Logs</summary>
-    <pre>{{ result.logs }}</pre>
-  </details>
-  {% endif %}
+  <article class="result-shell swap-rise" data-copy-scope>
+    <header class="result-banner">
+      <div>
+        <p class="eyebrow">Tool Run</p>
+        <h3>{{ result.tool_name | humanize }}</h3>
+        <p class="result-subtitle">{{ result.type | upper }} output is ready to inspect.</p>
+      </div>
+      <div class="banner-actions">
+        {{ ui.chip(result.category | humanize) }}
+        {{ ui.chip(result.type | upper, "accent") }}
+        <button type="button" class="secondary compact-button" data-copy-nearest=".raw-json">Copy raw</button>
+      </div>
+    </header>
+
+    <section class="result-section">
+      <header class="section-title">
+        <h4>Output</h4>
+      </header>
+      {{ ui.render_value(result.output, none) }}
+    </section>
+
+    {% if result.logs %}
+      <details class="drawer">
+        <summary>Execution logs</summary>
+        <div class="drawer-body">
+          <pre>{{ result.logs }}</pre>
+        </div>
+      </details>
+    {% endif %}
+
+    <details class="drawer">
+      <summary>Raw output</summary>
+      <div class="drawer-body">
+        <pre class="raw-json">{{ result.output | pretty_json }}</pre>
+      </div>
+    </details>
+  </article>
 {% else %}
-  <div class="error">Tool failed.</div>
-  <div class="details">
-    <pre>{{ result.stderr or result.stdout }}</pre>
-  </div>
+  <article class="result-shell result-shell-error swap-rise" data-copy-scope>
+    <header class="result-banner">
+      <div>
+        <p class="eyebrow">Tool Run</p>
+        <h3>{{ result.tool_name | default("Tool", true) | humanize }}</h3>
+        <p class="result-subtitle">The tool returned an error. Review stderr or stdout below.</p>
+      </div>
+      <div class="banner-actions">
+        {{ ui.chip("Failed", "error") }}
+      </div>
+    </header>
+    <div class="error-panel">
+      <pre class="raw-json">{{ result.stderr or result.stdout }}</pre>
+    </div>
+  </article>
 {% endif %}

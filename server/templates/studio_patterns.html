@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% import "partials/_ui_macros.html" as ui %}
+
+{% block content %}
+<section class="module-hero">
+  <div>
+    <p class="eyebrow">{{ module_eyebrow }}</p>
+    <h1>{{ module_name }}</h1>
+    <p class="hero-text">{{ module_intro }}</p>
+  </div>
+  <div class="module-hero-note">
+    <p>{{ module_note }}</p>
+  </div>
+</section>
+
+<section class="pattern-shell" data-pattern-shell>
+  <form class="module-form" hx-post="{{ form_action }}" hx-target="#{{ result_id }}" hx-swap="innerHTML" hx-indicator="#{{ loading_id }}">
+    <div class="field-grid field-grid-toolbar">
+      <div class="field-group">
+        <label for="pattern_name">Pattern</label>
+        <select name="pattern_name" id="pattern_name" data-pattern-picker required>
+          {% for pattern in patterns %}
+            <option value="{{ pattern.name }}">{{ pattern.display_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field-group field-group-note">
+        <label>Why this page works better</label>
+        <p class="field-note">You only see the inputs for the active pattern, and the result canvas gets the entire width below.</p>
+      </div>
+    </div>
+
+    <div class="pattern-tabs" role="tablist" aria-label="{{ module_name }}">
+      {% for pattern in patterns %}
+        <button type="button" class="pattern-tab{% if loop.first %} is-active{% endif %}" data-select-pattern="{{ pattern.name }}">{{ pattern.display_name }}</button>
+      {% endfor %}
+    </div>
+
+    {% for pattern in patterns %}
+      <article class="pattern-brief" data-pattern-panel="{{ pattern.name }}"{% if not loop.first %} hidden{% endif %}>
+        <div>
+          <p class="eyebrow">Use When</p>
+          <h2>{{ pattern.display_name }}</h2>
+          <p>{{ pattern.description }}</p>
+        </div>
+        <div class="pattern-brief-grid">
+          <div class="info-card compact">
+            <p class="eyebrow">Best For</p>
+            <p>{{ pattern.use_when }}</p>
+          </div>
+          <div class="info-card compact">
+            <p class="eyebrow">Example</p>
+            <pre>{{ pattern.example }}</pre>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+
+    {% for pattern in patterns %}
+      <fieldset class="pattern-fieldset" data-pattern-fields="{{ pattern.name }}"{% if not loop.first %} hidden disabled{% endif %}>
+        <div class="field-grid">
+          {% for field in pattern.fields %}
+            <div class="field-group{% if field.full_width %} field-group-full{% endif %}">
+              <label for="{{ pattern.name }}_{{ field.name }}">{{ field.label }}{% if field.required %} *{% endif %}</label>
+              {% if field.kind == "textarea" %}
+                <textarea
+                  name="{{ field.name }}"
+                  id="{{ pattern.name }}_{{ field.name }}"
+                  placeholder="{{ field.placeholder }}"
+                  rows="{{ field.rows }}"
+                >{{ field.default_value }}</textarea>
+              {% elif field.kind == "number" %}
+                <input
+                  type="number"
+                  name="{{ field.name }}"
+                  id="{{ pattern.name }}_{{ field.name }}"
+                  value="{{ field.default_value }}"
+                  placeholder="{{ field.placeholder }}"
+                />
+              {% elif field.kind == "select" %}
+                <select name="{{ field.name }}" id="{{ pattern.name }}_{{ field.name }}">
+                  {% for option in field.options %}
+                    <option value="{{ option.value }}"{% if option.value == field.default_value %} selected{% endif %}>{{ option.label }}</option>
+                  {% endfor %}
+                </select>
+              {% else %}
+                <input
+                  type="text"
+                  name="{{ field.name }}"
+                  id="{{ pattern.name }}_{{ field.name }}"
+                  value="{{ field.default_value }}"
+                  placeholder="{{ field.placeholder }}"
+                />
+              {% endif %}
+              <p class="field-help">{{ field.help_text }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+    {% endfor %}
+
+    <div class="form-footer">
+      <div class="action-row">
+        <span id="{{ loading_id }}" class="loading-note htmx-indicator">{{ loading_text }}</span>
+        <button type="submit">Run {{ module_name }}</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="result-stage">
+  <div id="{{ result_id }}" class="result-canvas">
+    {{ ui.result_placeholder(result_title, result_body, "accent") }}
+  </div>
+</section>
+{% endblock %}

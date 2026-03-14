@@ -1,0 +1,62 @@
+{% macro chip(text, tone="default") -%}
+  <span class="chip chip-{{ tone }}">{{ text }}</span>
+{%- endmacro %}
+
+{% macro stat(label, value, tone="default") -%}
+  <div class="stat-card stat-card-{{ tone }}">
+    <span class="stat-label">{{ label }}</span>
+    <strong class="stat-value">{{ value }}</strong>
+  </div>
+{%- endmacro %}
+
+{% macro result_placeholder(title, body, tone="default") -%}
+  <div class="result-placeholder result-placeholder-{{ tone }}">
+    <p class="eyebrow">Live Canvas</p>
+    <h3>{{ title }}</h3>
+    <p>{{ body }}</p>
+  </div>
+{%- endmacro %}
+
+{% macro render_value(value, label=None, depth=0) -%}
+  {% if value is mapping %}
+    <div class="data-block data-block-map depth-{{ depth }}">
+      {% if label %}
+        <div class="data-heading">{{ label | humanize }}</div>
+      {% endif %}
+      <div class="data-grid">
+        {% for key, item in value.items() %}
+          <section class="data-card">
+            <header class="data-card-header">{{ key | humanize }}</header>
+            <div class="data-card-body">
+              {{ render_value(item, none, depth + 1) }}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+    </div>
+  {% elif value is sequence and value is not string %}
+    <div class="data-block data-block-list depth-{{ depth }}">
+      {% if label %}
+        <div class="data-heading">{{ label | humanize }}</div>
+      {% endif %}
+      <div class="list-stack">
+        {% for item in value %}
+          <article class="list-row">
+            <span class="list-index">{{ "%02d"|format(loop.index) }}</span>
+            <div class="list-content">
+              {{ render_value(item, none, depth + 1) }}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  {% elif value is boolean %}
+    <span class="boolean-pill boolean-pill-{{ 'true' if value else 'false' }}">{{ "Yes" if value else "No" }}</span>
+  {% elif value is number %}
+    <span class="value-inline">{{ value }}</span>
+  {% elif value is none %}
+    <span class="value-muted">Not provided</span>
+  {% else %}
+    <div class="value-text">{{ value }}</div>
+  {% endif %}
+{%- endmacro %}

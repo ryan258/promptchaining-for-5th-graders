@@ -1,4 +1,79 @@
-<div class="success">Meta-chain design ready.</div>
-<div class="details">
-  <pre>{{ design | pretty_json }}</pre>
-</div>
+{% import "partials/_ui_macros.html" as ui %}
+
+<article class="result-shell swap-rise" data-copy-scope>
+  <header class="result-banner">
+    <div>
+      <p class="eyebrow">Meta-chain Design</p>
+      <h3>{{ design.goal }}</h3>
+      <p class="result-subtitle">{{ design.reasoning }}</p>
+    </div>
+    <div class="banner-actions">
+      {{ ui.chip(design.cognitive_moves | length ~ " moves", "accent") }}
+      {{ ui.chip(design.prompts | length ~ " prompts") }}
+      <button type="button" class="secondary compact-button" data-copy-nearest=".raw-json">Copy design</button>
+    </div>
+  </header>
+
+  <div class="stat-row">
+    {{ ui.stat("Goal", design.goal | preview_text(44)) }}
+    {{ ui.stat("Moves", design.cognitive_moves | length) }}
+    {{ ui.stat("Prompts", design.prompts | length) }}
+  </div>
+
+  <form class="inline-action-form" hx-post="/ui/meta-execute" hx-target="#meta-execute-result" hx-swap="innerHTML" hx-indicator="#meta-execute-loading-inline">
+    <textarea name="design_json" class="visually-hidden" aria-hidden="true">{{ design | pretty_json }}</textarea>
+    <div class="action-row action-row-tight">
+      <span id="meta-execute-loading-inline" class="loading-note htmx-indicator">Executing this chain...</span>
+      <button type="submit">Execute This Chain</button>
+    </div>
+  </form>
+
+  <section class="result-section">
+    <header class="section-title">
+      <h4>Cognitive Moves</h4>
+    </header>
+    <div class="timeline">
+      {% for move in design.cognitive_moves %}
+        <article class="timeline-step">
+          <span class="timeline-index">{{ "%02d"|format(loop.index) }}</span>
+          <div class="timeline-body">
+            <h5>{{ move | humanize }}</h5>
+            <p>Step {{ loop.index }} in the designed chain.</p>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="result-section">
+    <header class="section-title">
+      <h4>Generated Prompts</h4>
+    </header>
+    <div class="prompt-stack">
+      {% for prompt in design.prompts %}
+        <article class="prompt-card">
+          <div class="prompt-card-head">
+            <span class="prompt-step">Prompt {{ loop.index }}</span>
+          </div>
+          <pre>{{ prompt }}</pre>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if design.context %}
+    <details class="drawer">
+      <summary>Context and metadata</summary>
+      <div class="drawer-body">
+        {{ ui.render_value({"context": design.context, "metadata": design.metadata}, none) }}
+      </div>
+    </details>
+  {% endif %}
+
+  <details class="drawer">
+    <summary>Execution-ready JSON</summary>
+    <div class="drawer-body">
+      <pre class="raw-json">{{ design | pretty_json }}</pre>
+    </div>
+  </details>
+</article>

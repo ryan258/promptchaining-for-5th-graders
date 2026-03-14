@@ -1,4 +1,19 @@
-<div class="details">
-  <div class="note">{{ topic }} / {{ filename }} ({{ artifact.type }})</div>
-  <pre>{{ artifact.content | pretty_json }}</pre>
-</div>
+{% import "partials/_ui_macros.html" as ui %}
+
+<article class="artifact-detail swap-rise" data-copy-scope>
+  <header class="artifact-detail-head">
+    <div>
+      <p class="eyebrow">Artifact Detail</p>
+      <h4>{{ topic | humanize }} / {{ filename | humanize }}</h4>
+      <p class="artifact-meta">{{ artifact.type | upper }} payload</p>
+    </div>
+    <button type="button" class="secondary compact-button" data-copy-nearest=".raw-json">Copy raw</button>
+  </header>
+  {{ ui.render_value(artifact.content, none) }}
+  <details class="drawer">
+    <summary>Raw artifact data</summary>
+    <div class="drawer-body">
+      <pre class="raw-json">{{ artifact.content | pretty_json }}</pre>
+    </div>
+  </details>
+</article>

@@ -16,10 +16,10 @@ These patterns can be applied to any domain, making the framework a pedagogical
 tool that teaches how experts think about complex problems.
 """
 
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Callable, Dict, List, Optional, Any, Tuple
 
-from lib.core.chain import MinimalChainable
-from lib.core.llm_client import get_model, calculate_total_tokens, prompt
+from ..core.llm_client import calculate_total_tokens, prompt
+from ._runner import execute_pattern
 
 
 # ============================================================================
@@ -29,7 +29,9 @@ from lib.core.llm_client import get_model, calculate_total_tokens, prompt
 def scientific_method(
     hypothesis: str,
     context: str = "",
-    evidence_sources: Optional[List[str]] = None
+    evidence_sources: Optional[List[str]] = None,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Apply the scientific method to evaluate a hypothesis.
@@ -51,7 +53,6 @@ def scientific_method(
     Returns:
         Tuple of (results dict, metadata dict)
     """
-    model_info = get_model()
     evidence_str = "\n".join(evidence_sources) if evidence_sources else "No specific evidence provided - use general knowledge"
 
     prompts = [
@@ -178,20 +179,11 @@ Return as JSON:
 }}"""
     ]
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the scientific method process
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "scientific_method",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     metadata = {
@@ -218,7 +210,9 @@ Return as JSON:
 def socratic_dialogue(
     belief: str,
     teacher_persona: str = "Philosopher",
-    depth: int = 5
+    depth: int = 5,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Apply Socratic method to examine and refine a belief.
@@ -235,8 +229,6 @@ def socratic_dialogue(
     Returns:
         Tuple of (dialogue dict, metadata dict)
     """
-    model_info = get_model()
-
     # Build the dialogue chain
     prompts = []
 
@@ -323,20 +315,11 @@ Return as JSON:
   "reasoning_quality": "How much more rigorous is your thinking now?"
 }}""")
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the dialogue
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "socratic_dialogue",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     # Structure the dialogue for easy reading
@@ -373,7 +356,9 @@ Return as JSON:
 def design_thinking(
     problem: str,
     target_user: str = "End user",
-    constraints: Optional[List[str]] = None
+    constraints: Optional[List[str]] = None,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Apply design thinking methodology to solve a problem.
@@ -392,7 +377,6 @@ def design_thinking(
     Returns:
         Tuple of (design dict, metadata dict)
     """
-    model_info = get_model()
     constraints_str = ", ".join(constraints) if constraints else "No specific constraints"
 
     prompts = [
@@ -538,20 +522,11 @@ Return as JSON:
 }}"""
     ]
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the process
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "design_thinking",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     metadata = {
@@ -578,7 +553,9 @@ Return as JSON:
 def judicial_reasoning(
     case: str,
     relevant_principles: Optional[List[str]] = None,
-    precedents: Optional[List[str]] = None
+    precedents: Optional[List[str]] = None,
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Apply judicial reasoning to analyze a case and reach a decision.
@@ -601,7 +578,6 @@ def judicial_reasoning(
     Returns:
         Tuple of (judgment dict, metadata dict)
     """
-    model_info = get_model()
     principles_str = "\n".join(relevant_principles) if relevant_principles else "Identify relevant principles"
     precedents_str = "\n".join(precedents) if precedents else "No specific precedents provided"
 
@@ -755,20 +731,11 @@ Return as JSON:
 }}"""
     ]
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the judgment
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "judicial_reasoning",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     metadata = {
@@ -794,7 +761,9 @@ Return as JSON:
 def five_whys(
     problem: str,
     depth: int = 5,
-    context: str = ""
+    context: str = "",
+    model_info: Optional[Tuple[Any, str]] = None,
+    llm_callable: Callable = prompt,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Apply root cause analysis using the "5 Whys" technique.
@@ -819,8 +788,6 @@ def five_whys(
     Returns:
         Tuple of (analysis dict, metadata dict)
     """
-    model_info = get_model()
-
     prompts = [
         # Initial problem statement
         f"""You are analyzing a problem using the 5 Whys technique.
@@ -884,20 +851,11 @@ Return as JSON:
   "effort_vs_impact": "Assessment of solution difficulty vs impact"
 }}""")
 
-    result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
-        model=model_info,
-        llm_callable=prompt,
-        return_trace=True,
-        prompts=prompts
-    )
-
-    # Log the analysis
-    MinimalChainable.log_to_markdown(
+    result, usage = execute_pattern(
         "five_whys",
-        filled_prompts,
-        result,
-        usage
+        prompts,
+        model_info=model_info,
+        llm_callable=llm_callable,
     )
 
     # Structure the why chain
@@ -927,31 +885,61 @@ REASONING_PATTERNS = {
         "function": scientific_method,
         "description": "Test hypotheses using observation, prediction, experiment, analysis, conclusion",
         "use_when": "Evaluating claims, testing ideas, scientific inquiry",
-        "example": 'scientific_method("MS fatigue is worsened by dehydration")'
+        "example": 'scientific_method("MS fatigue is worsened by dehydration")',
+        "input_schema": {
+            "hypothesis": {"aliases": ["topic"], "required": True},
+            "context": {"default": ""},
+            "evidence_sources": {"default": None, "coerce": "string_list"},
+        },
+        "supports_emergence": True,
     },
     "socratic_dialogue": {
         "function": socratic_dialogue,
         "description": "Question assumptions and refine beliefs through systematic inquiry",
         "use_when": "Examining beliefs, finding contradictions, deepening understanding",
-        "example": 'socratic_dialogue("AI will replace doctors", depth=5)'
+        "example": 'socratic_dialogue("AI will replace doctors", depth=5)',
+        "input_schema": {
+            "belief": {"aliases": ["topic"], "required": True},
+            "teacher_persona": {"default": "Philosopher"},
+            "depth": {"default": 5, "coerce": int},
+        },
+        "supports_emergence": True,
     },
     "design_thinking": {
         "function": design_thinking,
         "description": "Human-centered problem solving: empathize, define, ideate, prototype, test",
         "use_when": "Designing solutions, innovation, user-centered problems",
-        "example": 'design_thinking("MS patients forget medications")'
+        "example": 'design_thinking("MS patients forget medications")',
+        "input_schema": {
+            "problem": {"aliases": ["topic"], "required": True},
+            "target_user": {"default": "End user"},
+            "constraints": {"default": None, "coerce": "string_list"},
+        },
+        "supports_emergence": True,
     },
     "judicial_reasoning": {
         "function": judicial_reasoning,
         "description": "Analyze cases using facts, principles, precedent, and balanced judgment",
         "use_when": "Ethical dilemmas, policy decisions, weighing competing interests",
-        "example": 'judicial_reasoning("Should insurance cover off-label MS treatments?")'
+        "example": 'judicial_reasoning("Should insurance cover off-label MS treatments?")',
+        "input_schema": {
+            "case": {"aliases": ["topic"], "required": True},
+            "relevant_principles": {"default": None, "coerce": "string_list"},
+            "precedents": {"default": None, "coerce": "string_list"},
+        },
+        "supports_emergence": True,
     },
     "five_whys": {
         "function": five_whys,
         "description": "Find root causes by asking 'why' repeatedly",
         "use_when": "Solving recurring problems, finding systemic issues",
-        "example": 'five_whys("I missed my medication dose", depth=5)'
+        "example": 'five_whys("I missed my medication dose", depth=5)',
+        "input_schema": {
+            "problem": {"aliases": ["topic"], "required": True},
+            "depth": {"default": 5, "coerce": int},
+            "context": {"default": ""},
+        },
+        "supports_emergence": True,
     }
 }
 

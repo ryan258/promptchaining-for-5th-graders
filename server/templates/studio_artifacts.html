@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "partials/_ui_macros.html" as ui %}
+
+{% block content %}
+<section class="module-hero">
+  <div>
+    <p class="eyebrow">Module 05</p>
+    <h1>Artifacts Library</h1>
+    <p class="hero-text">Saved outputs live here on their own page, so browsing the library does not compete with whatever you are actively running.</p>
+  </div>
+  <div class="module-hero-note">
+    <button class="secondary" hx-get="/ui/artifacts" hx-target="#artifact-result" hx-swap="innerHTML" hx-indicator="#artifact-loading">Refresh Artifacts</button>
+    <span id="artifact-loading" class="loading-note htmx-indicator">Refreshing library...</span>
+  </div>
+</section>
+
+<section class="result-stage">
+  <div id="artifact-result" class="result-canvas">
+    {% include "partials/artifacts.html" %}
+  </div>
+</section>
+{% endblock %}

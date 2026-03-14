@@ -4,7 +4,7 @@
 
 import json  # Helps us work with data that looks like {"key": "value"}
 import re    # Helps us find patterns in text (like finding JSON in markdown)
-from typing import List, Dict, Callable, Any, Union, Tuple, Optional  # These tell Python what types of data we expect
+from typing import List, Dict, Callable, Any, Union, Tuple, Optional, Literal, overload  # These tell Python what types of data we expect
 from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
 import os
@@ -148,6 +148,51 @@ class MinimalChainable:
                 return role
 
         return None
+
+    @staticmethod
+    @overload
+    def run(
+        context: Dict[str, Any],
+        model: Any,
+        llm_callable: Optional[Callable] = None,
+        prompts: Optional[List[str]] = None,
+        return_usage: Literal[False] = False,
+        return_trace: Literal[False] = False,
+        artifact_store: Optional['ArtifactStore'] = None,
+        topic: Optional[str] = None,
+        callable: Optional[Callable] = None,
+    ) -> Tuple[List[Any], List[str]]:
+        ...
+
+    @staticmethod
+    @overload
+    def run(
+        context: Dict[str, Any],
+        model: Any,
+        llm_callable: Optional[Callable] = None,
+        prompts: Optional[List[str]] = None,
+        return_usage: Literal[True] = True,
+        return_trace: Literal[False] = False,
+        artifact_store: Optional['ArtifactStore'] = None,
+        topic: Optional[str] = None,
+        callable: Optional[Callable] = None,
+    ) -> Tuple[List[Any], List[str], List[Any]]:
+        ...
+
+    @staticmethod
+    @overload
+    def run(
+        context: Dict[str, Any],
+        model: Any,
+        llm_callable: Optional[Callable] = None,
+        prompts: Optional[List[str]] = None,
+        return_usage: bool = False,
+        return_trace: Literal[True] = True,
+        artifact_store: Optional['ArtifactStore'] = None,
+        topic: Optional[str] = None,
+        callable: Optional[Callable] = None,
+    ) -> Tuple[List[Any], List[str], List[Any], Dict[str, Any]]:
+        ...
 
     @staticmethod
     def run(
@@ -487,12 +532,8 @@ class MinimalChainable:
         # Calculate cost if usage stats are available
         total_cost = 0.0
         if usage_stats:
-            # Approximate pricing (e.g. GPT-4o-mini / Gemini Flash levels)
-            # NOTE: This is a hardcoded approximation. Real costs vary by model.
-            # Input: $0.15 / 1M tokens
-            # Output: $0.60 / 1M tokens
-            INPUT_PRICE = 0.15 / 1_000_000
-            OUTPUT_PRICE = 0.60 / 1_000_000
+            input_price = float(os.getenv("LOG_INPUT_TOKEN_PRICE_PER_MILLION", "0.15")) / 1_000_000
+            output_price = float(os.getenv("LOG_OUTPUT_TOKEN_PRICE_PER_MILLION", "0.60")) / 1_000_000
 
             total_input_tokens = 0
             total_output_tokens = 0
@@ -509,7 +550,7 @@ class MinimalChainable:
                 total_input_tokens += prompt_tokens
                 total_output_tokens += completion_tokens
 
-            total_cost = (total_input_tokens * INPUT_PRICE) + (total_output_tokens * OUTPUT_PRICE)
+            total_cost = (total_input_tokens * input_price) + (total_output_tokens * output_price)
 
             markdown_content += f"**Total Cost**: ${total_cost:.6f}\n"
             markdown_content += f"**Tokens**: {total_input_tokens} in / {total_output_tokens} out\n\n"
