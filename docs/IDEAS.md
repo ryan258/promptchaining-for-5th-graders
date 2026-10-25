@@ -1,5 +1,7 @@
 # Project Ideas
 
+> Historical idea inventory. Entries include proposals and older implementation claims; this is not the current feature list. Use the [documentation index](README.md) and [workbench status](WORKBENCH-STATUS.md) for the implemented app.
+
 Potential prompt chain implementations organized by domain.
 
 > **Note**: See [tools/README.md](tools/README.md) for 33 already-implemented tools.

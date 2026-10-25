@@ -1,5 +1,7 @@
 # 🚀 What's New
 
+> Earlier release notes. These describe prior development, not the complete current interface. Use the [documentation index](README.md) for current workflows and [Workbench status](WORKBENCH-STATUS.md) for implementation evidence.
+
 ## DRY Refactoring & Modularization (Clean-up)
 
 We performed a comprehensive DRY (Don't Repeat Yourself) audit and refactored key areas of the codebase to improve maintainability and separate concerns.

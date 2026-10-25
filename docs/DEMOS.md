@@ -1,5 +1,7 @@
 # Prompt Chaining Demos
 
+> Legacy framework reference. Some walkthroughs predate the current workbench, and many scripts make provider calls. Start with the [current documentation index](README.md) for app usage; inspect an actual demo script before running it.
+
 This guide contains scripts and walkthroughs for demonstrating the Prompt Chaining framework. It is divided into two parts:
 1.  **The Full Experience**: A detailed 15-20 minute walkthrough for parents or deep-dives.
 2.  **The "Bar" Demo**: A quick, punchy 2-5 minute showcase for casual settings.

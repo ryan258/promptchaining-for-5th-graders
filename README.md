@@ -1,848 +1,113 @@
-# Prompt Chaining Framework
+# Prompt Chaining Studio
 
-> **Build AI systems that think in steps, not shots.**
+**A personal thinking workbench. Big ideas, small useful steps.**
 
-A Python framework for creating sequential LLM workflows where each step builds on previous discoveries. Turn complex reasoning tasks that would fail as single prompts into reliable, emergent multi-step processes.
+Turn a question, rough thought, or stuck point into a sequence you can follow. Each answer becomes material for the next step. Keep the useful result, inspect how it was made, and come back without starting over.
 
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)]() [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)]() [![License: Private](https://img.shields.io/badge/license-Private-red.svg)]()
+The app runs locally with Python, FastAPI, Jinja2 and HTMX. It keeps the original portable prompt chaining framework, local ChromaDB artifact mirror, and OpenRouter integration. It needs no frontend build system or container.
 
----
+**Use the [documentation suite](docs/README.md)** for recipe selection, stronger inputs, complete walkthroughs, custom chains, accessible daily use, setup, backups and troubleshooting. See [ROADMAP.md](ROADMAP.md) for the phased direction and deferred scope. For one practical starting point, read [Getting the most out of it](docs/GETTING-THE-MOST-OUT-OF-IT.md).
 
-## 🎯 What Is This?
+## Start here
 
-This framework lets you chain multiple LLM prompts together where **each step can reference outputs from previous steps**. This unlocks reasoning patterns impossible with single prompts.
+Use Python 3.11 or newer. From this folder:
 
-**Quick Example:**
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+./pc
+```
+
+Open **http://127.0.0.1:8000**. Choose **Walk through an example** to inspect a complete authored chain about the Moon. It makes no model calls and needs no API key. The interface and its HTMX script are served locally; fonts use the system's installed fallbacks.
+
+If you already have `venv/`, the launcher can use it. The launcher works from another directory and starts one server on loopback. `./start_app.sh` is an alias for the same command. On platforms without Bash, activate the virtual environment and run `python -m tools.studio start`.
+
+## The whole workflow
+
+1. **Choose a recipe.** Make it click, Connect two ideas, Think a decision through, From thought to draft, Untangle a problem, or Build a learning path.
+2. **Give it a direction.** Enter or dictate a topic. Adjust the audience and context. Open any step to edit the prompt, add a step, or reorder the method. Recipes have 1–8 steps.
+3. **Keep the method.** Save your recipe and starting inputs. Each save creates a new copy, preserving the previous one. Browser drafts also recover changes while editing.
+4. **Prepare a chain.** This saves a run and opens its first prompt for review. Preparing sends no requests.
+5. **Run at your pace.** Review each step, or run the chain through. Each answer saves before another request begins. You can edit the latest answer of a paused run; the original answer is retained. Request a pause whenever you need one.
+6. **Take the result with you.** Copy the final answer, export the chain as Markdown or JSON, or explicitly save the final answer to the existing artifacts library.
+7. **Come back.** The workbench offers unfinished work first. Your library finds runs by topic, recipe or status. Back up the workspace and restore it without replacing existing records.
+
+## Live generation
+
+Keep your existing `.env` file. If you do not have one, copy `.env.example` to `.env`, then set:
+
+```dotenv
+OPENROUTER_API_KEY="your-key"
+OPENROUTER_MODELS="your-chosen-model-id"
+MAX_TOKENS=2000
+REQUEST_TIMEOUT_SECONDS=30
+```
+
+Restart the app after changing settings. Comma-separated model IDs become choices in the recipe editor. Provider wiring stays in `lib/core/llm_client.py`; feature modules do not choose hardcoded models.
+
+A live run sends its topic, audience, context and referenced previous answers to OpenRouter and the chosen provider. **Provider charges apply.** The new workbench dispatches each step once, without automatic retry. An explicit retry can incur another charge, especially after an ambiguous timeout or abrupt stop. `MAX_TOKENS` bounds output length per request; it is not an account spending cap. Legacy advanced tools retain their own retry behavior.
+
+The settings indicator means a key is configured; it does not verify provider access, model availability or account credit. A chain can also carry mistakes forward. Review factual claims before using the result. Model-generated critiques and comparisons are not fact-checks.
+
+## Small commands, less setup
+
+| Command | What it does |
+| --- | --- |
+| `./pc` | Start the local app on port 8000 |
+| `./pc start --port 8010` | Use another local port |
+| `./pc doctor` | Check local dependencies and configuration; no API requests |
+| `./pc backup` | Write a timestamped JSON backup under `backups/` |
+| `./pc backup /path/to/copy.json` | Write a new backup at a chosen path; refuses to overwrite |
+| `./pc restore /path/to/copy.json` | Add recipes and runs from a backup; never starts a chain |
+| `Ctrl+C` | Finish and save the current workbench request, pause, then stop |
+
+An optional shell alias, defined once with this repo's absolute path, makes startup shorter:
+
+```bash
+alias pc='/absolute/path/to/promptchaining-for-5th-graders/pc'
+```
+
+The UI supports system dictation, visible keyboard focus, a skip link, reduced motion and labelled controls. `Alt+N` opens recipes; `Alt+L` opens the library. In the editor, `Ctrl/Cmd+S` saves the recipe and `Ctrl/Cmd+Enter` prepares a run. On a ready or paused run, `Ctrl/Cmd+Enter` dispatches its next action. Browser or operating-system shortcuts may take precedence.
+
+## Saves, interruptions and backup
+
+- Runs and recipes live in `workspace/studio.sqlite3` by default. Set `PROMPT_STUDIO_DATA` to choose another directory. SQLite transactions protect checkpoints. One server owns the workspace runtime lock, so another process cannot recover an active run or dispatch overlapping work.
+- A run is a snapshot of its recipe. Editing a recipe later does not change old runs. A stale tab cannot dispatch the same step twice.
+- Leaving a page keeps the server working. A normal shutdown lets the current request finish and pauses. An abrupt stop marks unfinished work interrupted at the next startup. Completed steps survive; the unfinished request is never retried automatically.
+- Workspace JSON backups contain saved recipes, inputs, prompt traces, answers and run progress. Restore validates the complete file before writing, skips identical records, and gives colliding records new IDs. Imported running work becomes interrupted.
+- JSON restore accepts files up to 10 MB and 2,000 recipes/runs each. Browser drafts, `.env`, old artifacts and log files are outside workspace backups. Keep the separate `artifacts/` and `logs/` folders if you need those records. Workspace text can contain private material you entered; treat backups accordingly.
+- Browser draft recovery belongs to that browser and origin. Save a recipe or prepare a run to include it in computer-level backups. If browser storage is unavailable, the editor says so and keeps explicit save available.
+
+## The portable framework
+
+The original Python API and advanced UI remain available. **Advanced** links to learning tools, reasoning and adversarial patterns, meta-chain design, and the existing artifact library. These legacy flows use their original execution paths, without the new workbench's resume guarantees.
 
 ```python
 from lib.core.chain import MinimalChainable
-from lib.core.llm_client import build_models, prompt
+from lib.core.llm_client import get_model, prompt
 
-client, models = build_models()
-
-result, _, _, _ = MinimalChainable.run(
-    context={"topic": "Neural Networks"},
-    model=(client, models[0]),
+outputs, filled_prompts, usage = MinimalChainable.run(
+    context={"topic": "fractions"},
+    model=get_model(),
     llm_callable=prompt,
-    return_trace=True,
     prompts=[
-        "Break down {{topic}} into 3-5 core components",
-        "For each component in {{output[-1]}}, create a simple analogy",
-        "Using {{output[-2]}} and {{output[-1]}}, write a 5th-grade explanation",
-    ]
-)
-
-print(result[-1])  # Final explanation built from previous insights
-```
-
-**Why This Works:**
-- Step 1 identifies the essential pieces
-- Step 2 creates analogies for those *specific* pieces
-- Step 3 synthesizes insights from both previous steps
-
-This sequential reasoning **cannot work as a single prompt** because later steps depend on discoveries from earlier ones.
-
----
-
-## 📚 Table of Contents
-
-- [Why Prompt Chaining?](#-why-prompt-chaining)
-- [Quick Start](#-quick-start)
-- [Core Capabilities](#-core-capabilities)
-- [Advanced Features](#-advanced-features)
-- [Framework Enhancements](#-framework-enhancements)
-- [Built-In Tools](#-built-in-tools)
-- [Project Structure](#-project-structure)
-- [Examples & Demos](#-examples--demos)
-- [Documentation](#-documentation)
-- [Contributing](#-contributing)
-
----
-
-## 💡 Why Prompt Chaining?
-
-### The Problem with Single Prompts
-
-Single prompts are limited by:
-- **Working memory constraints** - Can't hold complex analysis + synthesis simultaneously
-- **No iteration** - Can't refine based on intermediate results
-- **No emergent insights** - Can't discover connections that require multi-step reasoning
-
-### What Chaining Unlocks
-
-✨ **Emergent Insights** - Later steps reveal connections impossible to specify upfront
-🔄 **Self-Refinement** - Critique and improve intermediate outputs
-🎯 **Progressive Depth** - Start broad, zoom into specifics, then synthesize
-🧬 **Complex Reasoning** - Break down problems that overwhelm single-shot thinking
-🔀 **Multi-Perspective** - Analyze from different angles, then integrate
-💡 **Discovery-Driven** - Each step builds on *what was actually discovered*, not just *what you planned*
-
-### Real Example: The Concept Simplifier
-
-This tool **cannot work as a single prompt**:
-
-```
-1. Decompose → Identify core components
-2. Analogize → Create metaphors for THOSE components
-3. Exemplify → Build examples using THOSE analogies
-4. Synthesize → Combine everything into coherent explanation
-```
-
-Each step depends on *discoveries* from previous steps. You can't write the analogies until you know the components. You can't synthesize until you have both.
-
-**The chain IS the insight.**
-
----
-
-## 🚀 Quick Start
-
-### Installation
-
-```bash
-# Clone and setup
-python3 -m venv venv
-source venv/bin/activate  # or: venv\Scripts\activate on Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure API key
-cp .env.example .env
-# Edit .env and add your OpenRouter API key
-```
-
-### Run Your First Chain
-
-```bash
-# Try the concept simplifier
-python tools/learning/concept_simplifier.py "Quantum Computing"
-
-# Try the subject connector
-python tools/learning/subject_connector.py "Poetry" --context "Machine Learning"
-
-# Generate MS blog content
-python tools/ms_blog/ms_content_tools.py "I forget my medication" --energy low
-```
-
-### Candlelight Web UI
-
-```bash
-# Start the FastAPI app
-python server/main.py
-
-# Open http://localhost:8000
-```
-
-The Candlelight UI runs on FastAPI + Jinja2 + HTMX and lives entirely in this repo.
-
----
-
-## ⚙️ Core Capabilities
-
-### 1. Sequential Chaining (MinimalChainable)
-
-Run prompts in sequence, each building on previous outputs:
-
-```python
-from lib.core.chain import MinimalChainable
-from lib.core.llm_client import build_models, prompt
-
-client, models = build_models()
-model = (client, models[0])
-
-result, prompts, usage, trace = MinimalChainable.run(
-    context={"topic": "Recursion"},
-    model=model,
-    llm_callable=prompt,
-    return_trace=True,
-    prompts=[
-        "Define {{topic}} in one sentence",
-        "Give 2 examples of {{output[-1]}}",
-        "Explain why {{output[-2]}} is powerful in programming"
-    ]
-)
-
-# result is a list of outputs from each step
-# result[-1] is the final output
-```
-
-**Features:**
-- `{{variable}}` - Context substitution
-- `{{output[-1]}}` - Reference previous output
-- `{{output[-1].field}}` - Extract JSON fields
-- Automatic logging to `logs/`
-- Full execution traces
-
-### 2. Parallel Comparison (FusionChain)
-
-Run the same chain across multiple models and compare results:
-
-```python
-from lib.core.chain import FusionChain
-
-def evaluator(responses):
-    # Your custom scoring logic
-    scores = [len(r) for r in responses]
-    max_score = max(scores)
-    normalized = [s/max_score for s in scores]
-    best = responses[scores.index(max_score)]
-    return best, normalized
-
-result = FusionChain.run(
-    context={"topic": "AI Safety"},
-    models=[(client, name) for name in model_names],
-    llm_callable=prompt,
-    evaluator=evaluator,
-    get_model_name=lambda m: m[1],
-    prompts=[...]
-)
-
-print(f"Best response: {result.top_response}")
-print(f"Model scores: {result.performance_scores}")
-```
-
-### 3. Artifact System (Persistent Knowledge)
-
-Save and reuse outputs across chains:
-
-```python
-from lib.core.artifact_store import ArtifactStore
-
-store = ArtifactStore()
-
-# Chains automatically store outputs
-result, _, _, _ = MinimalChainable.run(
-    context={"topic": "Machine Learning"},
-    model=model,
-    llm_callable=prompt,
-    artifact_store=store,
-    topic="machine_learning",
-    prompts=[...]
-)
-
-# Later, reference those artifacts in new chains
-prompts = [
-    "Using {{artifact:machine_learning:components}}, explain supervised learning"
-]
-```
-
-**Artifacts enable:**
-- Cross-chain knowledge sharing
-- Building on previous work
-- Avoiding redundant analysis
-- Progressive knowledge accumulation
-
-### 4. Chain Composition (ChainComposer)
-
-Build complex multi-chain workflows programmatically:
-
-```python
-from lib.core.chain_composer import ChainComposer, ChainStep
-
-composer = ChainComposer()
-
-# Define a multi-chain workflow
-steps = [
-    ChainStep(
-        name="Analyze concept",
-        step_type="chain",
-        topic="neural_networks",
-        context={"topic": "Neural Networks"},
-        prompts=["Break down {{topic}} into components"]
-    ),
-    ChainStep(
-        name="Create curriculum",
-        step_type="chain",
-        topic="curriculum",
-        prompts=["Design a learning path using {{artifact:neural_networks:step_1}}"]
-    )
-]
-
-result = composer.compose(steps=steps)
-```
-
-### 5. Meta-Chain Generator (Self-Improving)
-
-The system can design its own chains:
-
-```python
-from lib.core.meta_chain_generator import MetaChainGenerator
-
-generator = MetaChainGenerator()
-
-# Describe what you want, get a chain design
-design = generator.design_chain(
-    goal="Analyze a business idea for feasibility",
-    context={"idea": "AI-powered meal planning app"},
-    constraints=["max 4 steps"]
-)
-
-# Run the designed chain
-outputs, prompts, usage = generator.execute_chain(design)
-```
-
-The meta-chain analyzes your task and generates optimal prompt sequences automatically.
-
----
-
-## 🧠 Framework Enhancements
-
-Three powerful extensions that unlock new reasoning capabilities:
-
-### 1. Natural Reasoning Patterns ⭐⭐⭐⭐
-
-**Module:** `natural_reasoning.py`
-
-Formalize expert reasoning patterns as reusable chain templates:
-
-- **Scientific Method** - Test hypotheses through observation, prediction, experiment, analysis
-- **Socratic Dialogue** - Examine beliefs through systematic questioning
-- **Design Thinking** - Human-centered problem solving (Empathize → Define → Ideate → Prototype → Test)
-- **Judicial Reasoning** - Analyze cases using facts, principles, precedent, judgment
-- **Root Cause Analysis (5 Whys)** - Dig beneath symptoms to find systemic causes
-
-```python
-from lib.enhancements.natural_reasoning import scientific_method, design_thinking
-
-# Apply scientific method to a hypothesis
-result, metadata = scientific_method(
-    hypothesis="Regular exercise improves MS fatigue management",
-    evidence_sources=["Study 1", "Study 2"]
-)
-print(result['conclusion']['verdict'])  # "Supported" / "Refuted" / "Inconclusive"
-
-# Use design thinking for user-centered problem solving
-solution, metadata = design_thinking(
-    problem="MS patients struggle to track symptoms",
-    constraints=["Low energy", "Brain fog"]
-)
-print(solution['prototype']['how_it_works'])
-```
-
-**Use for:** Teaching how experts think, applying proven patterns to any domain, creating "How experts think about X" blog content.
-
-### 2. Adversarial Chains ⭐⭐⭐⭐⭐
-
-**Module:** `adversarial_chains.py`
-
-Use conflict and opposition to reveal truth (impossible with single prompts!):
-
-- **Red Team vs Blue Team** - Adversarial debate with one side attacking, one defending, judge evaluating
-- **Dialectical Synthesis** - Hegelian dialectic: Thesis → Antithesis → Synthesis
-- **Adversarial Socratic** - Aggressive questioning to stress-test claims
-
-```python
-from lib.enhancements.adversarial_chains import red_vs_blue, dialectical
-
-# Run adversarial debate
-debate, metadata = red_vs_blue(
-    topic="MS treatment strategies",
-    position_to_defend="Aggressive DMTs should be prioritized",
-    rounds=3
-)
-print(f"Winner: {metadata['winner']}")
-print(debate['judgment']['verdict'])
-
-# Find synthesis that transcends opposition
-result, metadata = dialectical(
-    thesis="Prioritize symptom management",
-    domain="MS treatment philosophy"
-)
-print(result['synthesis']['synthesis_statement'])  # Transcendent position
-```
-
-**Use for:** Testing ideas rigorously, exploring controversial topics, red-teaming strategies, transcending binary thinking.
-
-### 3. Emergence Measurement ⭐⭐⭐⭐
-
-**Module:** `emergence_measurement.py`
-
-Scientifically prove chains unlock insights impossible from single prompts:
-
-```python
-from lib.enhancements.emergence_measurement import measure_emergence, batch_measure
-
-# Compare chain vs mega-prompt
-comparison, metadata = measure_emergence(
-    topic="Neural Networks",
-    chain_function=concept_simplifier
-)
-print(f"Winner: {comparison['winner']}")  # "Chain" / "Baseline" / "Tie"
-
-# Batch test for statistical significance
-aggregate, results = batch_measure(
-    topics=["Topic 1", "Topic 2", "Topic 3", "Topic 4", "Topic 5"],
-    chain_function=concept_simplifier
-)
-print(aggregate['results']['chain_win_rate'])  # e.g., "73.3%"
-print(aggregate['statistical_significance'])
-```
-
-**Measures across 5 dimensions:**
-- Novelty (unique insights)
-- Depth (sophistication)
-- Coherence (logical flow)
-- Pedagogical (understandability)
-- Actionability (practical use)
-
-**Use for:** Validating your chains work better, publishing research findings, convincing stakeholders with data.
-
-**📖 Full Documentation:** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for complete guide, examples, and API reference.
-
-**🎬 Demos:**
-```bash
-python demos/natural_reasoning_demo.py
-python demos/adversarial_chains_demo.py
-python demos/emergence_measurement_demo.py
-```
-
----
-
-## 🛠️ Built-In Tools
-
-The framework includes production-ready tools demonstrating best practices:
-
-### Learning Tools
-
-**📚 Concept Simplifier**
-```bash
-python tools/learning/concept_simplifier.py "Blockchain"
-```
-4-step chain: Decompose → Analogize → Exemplify → Synthesize
-
-**🔗 Subject Connector**
-```bash
-python tools/learning/subject_connector.py "Philosophy" --context "Software Engineering"
-```
-4-step chain: Analyze each → Find connections → Evaluate → Design project
-
-### MS Blog Content Generator
-
-**🎯 Low-Energy Content Pipeline**
-```bash
-python tools/ms_blog/ms_content_tools.py "I struggle with daily planning" --energy low
-```
-
-Automatically generates Hugo-compatible markdown for:
-- ✅ Prompt cards (AI prompts solving MS-related problems)
-- ✅ Shortcut spotlights (Accessibility tool tutorials)
-- ✅ Multi-phase guides (Complete system setups)
-- ✅ Content ideas (Brainstorming from seed concepts)
-
-**Features:**
-- Auto-detects best format for your input
-- Generates complete YAML front matter
-- Includes examples, variations, troubleshooting
-- Validates content quality
-- Provides review checklist
-- Saves to Hugo content directory
-
-**Try the interactive demo:**
-```bash
-python demos/ms_blog_demo.py --interactive
-```
-
-See [tools/ms_blog/README.md](tools/ms_blog/README.md) for full documentation.
-
----
-
-## 🔬 Advanced Features
-
-### Execution Traces
-
-Get complete visibility into chain execution:
-
-```python
-result, prompts, usage, trace = MinimalChainable.run(
-    return_trace=True,
-    prompts=[...]
-)
-
-# trace contains:
-{
-    "steps": [
-        {
-            "step_number": 1,
-            "role": "Educator",
-            "prompt": "...",
-            "response": "...",
-            "tokens": {"prompt": 50, "completion": 200}
-        }
+        "Break {{topic}} into its essential pieces.",
+        "Using {{output[-1]}}, give a concrete example.",
     ],
-    "final_result": {...},
-    "total_tokens": 500
-}
+    return_usage=True,
+)
 ```
 
-### Automatic Logging
+`lib/core/` also provides `FusionChain`, `ArtifactStore`, `ChainComposer` and `MetaChainGenerator`. `lib/enhancements/` holds natural reasoning, adversarial reasoning and model-based comparisons. Chroma mirrors framework artifacts locally using deterministic hash vectors; these vectors are not semantic embeddings. JSON files remain the artifact source of truth.
 
-All chains automatically log to `logs/` with:
-- Timestamped filename
-- All prompts and responses
-- Token usage per step
-- Total execution time
-- Markdown formatted for readability
+## Check the work
 
-### Cognitive Move Patterns
-
-The framework recognizes common reasoning patterns:
-
-- **decompose** - Break complex things into parts
-- **analogize** - Create metaphors and comparisons
-- **exemplify** - Generate concrete examples
-- **synthesize** - Combine insights into coherent whole
-- **critique** - Evaluate and find flaws
-- **abstract** - Generalize from specifics
-- **apply** - Take theory to practice
-- **connect** - Find relationships between ideas
-
-These can be composed into powerful chains.
-
-### Recipe System
-
-Save and reuse chain patterns:
-
-```python
-# Create a recipe
-recipe = {
-    "name": "Concept Comparison",
-    "steps": [
-        {"name": "Analyze A", "prompts": [...]},
-        {"name": "Analyze B", "prompts": [...]},
-        {"name": "Compare", "prompts": [...]}
-    ]
-}
-
-# Use the recipe with different inputs
-result = run_recipe(recipe, context={"A": "Python", "B": "JavaScript"})
-```
-
----
-
-## 📁 Project Structure
-
-```
-.
-├── 📄 README.md                          # You are here
-│
-├── 🔧 Source Code
-│   ├── lib/core/                         # Core framework
-│   │   ├── chain.py                      # MinimalChainable, FusionChain
-│   │   ├── llm_client.py                 # Model setup and utilities
-│   │   ├── artifact_store.py             # Persistent knowledge system
-│   │   ├── chain_composer.py             # Multi-chain workflows
-│   │   └── meta_chain_generator.py       # Self-improving chain design
-│   │
-│   ├── lib/enhancements/                 # Framework enhancements
-│   │   ├── natural_reasoning.py          # 5 expert reasoning patterns
-│   │   ├── adversarial_chains.py         # Dialectical reasoning
-│   │   └── emergence_measurement.py      # Scientific validation
-│   │
-│   └── lib/utils/                        # Utility modules
-│       ├── artifact_browser.py           # Artifact inspector
-│       └── demo_utils.py                 # Demo helpers
-│
-├── 🧪 Tests
-│   ├── tests/test_chain.py               # Core chain tests
-│   ├── tests/test_artifacts.py           # Artifact system tests
-│   ├── tests/test_chain_composer.py      # Composer tests
-│   └── tests/test_meta_chain.py          # Meta-chain tests
-│
-├── 📚 Documentation
-│   ├── docs/QUICKSTART.md                # 5-minute getting started
-│   ├── docs/ARCHITECTURE.md              # System design & features
-│   ├── docs/TESTING.md                   # Testing guide
-│   ├── docs/DEMOS.md                     # Demo scripts
-│   └── docs/IDEAS.md                     # Future enhancements
-│
-├── 🛠️ Built-In Tools
-│   ├── tools/learning/
-│   │   ├── concept_simplifier.py         # Educational chain example
-│   │   └── subject_connector.py          # Connection-finding example
-│   │
-│   ├── tools/ms_blog/
-│   │   ├── ms_content_tools.py           # MS blog content generator
-│   │   ├── cli.py                        # Command-line interface
-│   │   └── README.md                     # Full documentation
-│   │
-│   └── tools/tool_utils.py               # Shared utilities
-│
-├── 🎬 Demos
-│   ├── demos/natural_reasoning_demo.py   # Expert reasoning patterns
-│   ├── demos/adversarial_chains_demo.py  # Dialectical reasoning
-│   ├── demos/emergence_measurement_demo.py # Validation framework
-│   ├── demos/meta_chain_demo.py          # Self-improving chains
-│   └── demos/ms_blog_demo.py             # MS blog tool showcase
-│
-├── 🎨 Web Interface
-│   ├── server/main.py                    # FastAPI app + routes
-│   ├── server/templates/                 # Jinja2 views
-│   └── server/static/                    # Candlelight CSS
-│
-├── 📊 Runtime Data
-│   ├── output/                           # Generated content
-│   ├── logs/                             # Execution logs
-│   └── artifacts/                        # Saved artifacts
-│
-├── 🔧 Scripts
-│   └── scripts/                          # Utility scripts
-│
-└── ⚙️ Configuration
-    ├── .env.example                      # API key template
-    ├── context/user_profile.json         # User preferences
-    └── requirements.txt                  # Python dependencies
-```
-
----
-
-## 🎯 Examples & Demos
-
-### Example 1: Educational Chain
-
-Break down complex topics into 5th-grade explanations:
+Use the focused offline acceptance group for this implementation:
 
 ```bash
-python tools/learning/concept_simplifier.py "Neural Networks"
+.venv/bin/python -m pytest -q tests/test_workbench.py tests/test_workbench_routes.py tests/test_llm_client.py tests/test_server_routes.py
 ```
 
-**Output:**
-- Core components identified
-- Analogies for each component
-- Concrete examples
-- Full synthesis
+Tests substitute model responses and temporary storage. They do not spend provider credits. See [docs/TESTING.md](docs/TESTING.md) for the verification boundary and commands for the broader framework suite. Browser and live-provider acceptance are separate from Python tests.
 
-### Example 2: Connection Finding
-
-Discover unexpected links between subjects:
-
-```bash
-python tools/learning/subject_connector.py "Music Theory" --context "Data Science"
-```
-
-**Output:**
-- Analysis of each field
-- Surprising connections
-- Why they matter
-- Project idea leveraging both
-
-### Example 3: Content Generation
-
-Generate blog content on low-energy days:
-
-```bash
-python tools/ms_blog/ms_content_tools.py "I can't focus due to brain fog" --energy low
-```
-
-**Output:**
-- Auto-detects best format (prompt card/shortcut/guide)
-- Generates complete Hugo markdown
-- Includes examples and troubleshooting
-- Ready to publish
-
-### Example 4: Multi-Chain Workflow
-
-Build a complete learning curriculum:
-
-```bash
-python demos/curriculum_builder_demo.py
-```
-
-**Output:**
-- Topic analysis
-- Learning path design
-- Exercises for each step
-- Assessment criteria
-
-### Example 5: Self-Improving System
-
-Let the system design its own chains:
-
-```bash
-python demos/meta_chain_demo.py
-```
-
-**Output:**
-- Analyzes your task
-- Designs optimal chain
-- Generates prompts
-- Executes and refines
-
----
-
-## 📖 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [QUICKSTART.md](docs/QUICKSTART.md) | Get up and running in 5 minutes |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, core features, and technical specs |
-| [TESTING.md](docs/TESTING.md) | Guide to testing frameworks and verification |
-| [DEMOS.md](docs/DEMOS.md) | Demo scripts and walkthroughs (Full & Quick) |
-| [IDEAS.md](docs/IDEAS.md) | Future features and roadmap |
-| [WHATS_NEW.md](docs/WHATS_NEW.md) | Recent updates and changes |
-
-
-### Key Concepts
-
-| Concept | Explanation |
-|---------|-------------|
-| **Context** | Variables passed to prompts: `{{variable}}` |
-| **Output References** | Access previous steps: `{{output[-1]}}` |
-| **Chain** | Sequence of prompts where each builds on previous |
-| **Artifact** | Saved output reusable across chains |
-| **Trace** | Complete execution history with tokens |
-| **Cognitive Move** | Reasoning pattern (decompose, synthesize, etc.) |
-
----
-
-## 🧪 Testing
-
-```bash
-# Test full suite
-python -m pytest -q
-
-# Optional: run focused test files
-python -m pytest -q tests/test_chain.py tests/test_chain_composer.py tests/test_artifacts.py tests/test_meta_chain.py
-
-# Script-style MS blog tool checks
-python tools/ms_blog/test_ms_tools.py
-
-# Run all demos
-./verify_demos.sh
-```
-
-**Current Status:** Core unit tests are deterministic; integration paths require a valid OpenRouter key and available model IDs.
-
----
-
-## 🎨 Use Cases
-
-### ✅ Already Built
-
-- **Education** - Break down complex topics into simple explanations
-- **Content Creation** - Generate blog posts, guides, and tutorials
-- **Concept Exploration** - Find unexpected connections between ideas
-- **Curriculum Design** - Build complete learning paths
-- **Meta-Learning** - System designs its own chains
-
-### 🚧 Coming Soon
-
-- **Code Analysis** - Understand complex codebases through chains
-- **Decision Support** - Multi-perspective analysis of choices
-- **Research Synthesis** - Combine findings from multiple sources
-- **Adversarial Reasoning** - Red team / Blue team debates
-- **Design Thinking** - Structured problem-solving workflows
-
-See [IDEAS.md](IDEAS.md) for the full roadmap.
-
----
-
-## 💰 Cost Management
-
-- OpenRouter provides access to 100+ models
-- Start with free/cheap models (gemini-flash-1.5)
-- Execution traces show token usage per step
-- Set billing alerts in OpenRouter dashboard
-- Typical chain costs: $0.001 - $0.05
-
-**Example costs:**
-- Concept Simplifier: ~500-1000 tokens (~$0.002)
-- MS Blog Generator: ~2000-4000 tokens (~$0.01)
-- Meta-Chain: ~1000-2000 tokens (~$0.005)
-
----
-
-## 🤝 Contributing
-
-This is a personal learning project, but feedback and ideas are welcome!
-
-**Ways to contribute:**
-- 🐛 Report bugs in GitHub Issues
-- 💡 Suggest features in IDEAS.md
-- 📚 Improve documentation
-- 🔧 Build new tools using the framework
-- 🧪 Add test cases
-
----
-
-## ⚠️ Ethical Note
-
-This framework enables powerful analytical tools. Some patterns reveal uncomfortable truths about persuasion, manipulation, and strategic deception.
-
-**Understanding ≠ Endorsing**
-
-These patterns exist whether you acknowledge them or not. This knowledge is for:
-- ✅ **Defense** - See through manipulation
-- ✅ **Awareness** - Make better decisions
-- ✅ **Education** - Understand how systems work
-
-Not for:
-- ❌ **Offense** - Deploy manipulative tactics
-- ❌ **Deception** - Mislead others
-- ❌ **Harm** - Cause damage
-
-Use responsibly.
-
----
-
-## 🔗 Links
-
-- [OpenRouter API](https://openrouter.ai/) - Multi-model LLM access
-- [Anthropic Claude](https://www.anthropic.com/) - Recommended model
-- [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
-- [Jinja2](https://jinja.palletsprojects.com/) - HTML templating
-- [HTMX](https://htmx.org/) - Hypermedia interactions
-
----
-
-## 📜 License
-
-Personal learning project - Private repository
-
----
-
-## 🙏 Acknowledgments
-
-- **OpenRouter** - For making 100+ models accessible
-- **Anthropic** - For Claude, the best reasoning model
-- **The LLM Community** - For advancing the field
-
----
-
-## 🚀 Quick Command Reference
-
-```bash
-# Setup
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # Then add your API key
-
-# Try Built-In Tools
-python tools/learning/concept_simplifier.py "Your Topic"
-python tools/learning/subject_connector.py "Subject A" --context "Subject B"
-python tools/ms_blog/ms_content_tools.py "Your problem" --energy low
-
-# Run Demos
-python demos/ms_blog_demo.py --interactive
-python demos/meta_chain_demo.py
-python demos/curriculum_builder_demo.py
-
-# Test Everything
-python -m pytest -q
-python tools/ms_blog/test_ms_tools.py
-./verify_demos.sh
-
-# Candlelight Web UI
-python server/main.py
-```
-
----
-
-<div align="center">
-
-**[Get Started](#-quick-start)** • **[Documentation](#-documentation)** • **[Examples](#-examples--demos)** • **[Advanced Features](#-advanced-features)**
-
-Built with ❤️ by passionate learners, for passionate learners.
-
-**See what prompt chaining can unlock.**
-
-</div>
+The architecture and recovery details are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Existing demos are documented in [docs/DEMOS.md](docs/DEMOS.md); some demos call providers. Exploratory ideas and historical release notes describe earlier work and are not a current feature inventory.
