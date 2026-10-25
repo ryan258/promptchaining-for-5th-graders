@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="error-page"><p class="eyebrow">A small thing to resolve</p><h1>Let’s keep your work safe.</h1><div class="notice error" role="alert">{{ message }}</div><p>Your saved recipes and completed steps are still in the library. If you were editing, your browser draft stays available on the same recipe page.</p><div class="button-row">{% if run_id %}<a class="button" href="/studio/runs/{{ run_id }}">Return to the run</a>{% else %}<button type="button" class="button" data-go-back>Return to the editor</button>{% endif %}<a class="button secondary" href="/studio/library">Open my library</a><a class="text-link" href="/studio/recipes">Choose a recipe</a></div></section>
+{% endblock %}

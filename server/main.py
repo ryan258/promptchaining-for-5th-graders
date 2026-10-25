@@ -10,10 +10,14 @@ from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from collections.abc import Mapping
+from contextlib import asynccontextmanager
+from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Body, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 
@@ -33,17 +37,54 @@ from lib.utils.demo_examples import (
     get_reasoning_demo_examples,
     get_tool_demo_examples,
 )
+from server import workbench
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Prompt Chaining Tools")
+@asynccontextmanager
+async def lifespan(_app):
+    workbench.get_runner()
+    try:
+        yield
+    finally:
+        await run_in_threadpool(workbench.close_workbench)
+
+
+app = FastAPI(title="Prompt Chaining Studio", lifespan=lifespan)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]", "testserver"])
+
+
+@app.middleware("http")
+async def local_request_boundary(request: Request, call_next):
+    if request.method not in {"GET", "HEAD", "OPTIONS"}:
+        origin = request.headers.get("origin")
+        if origin:
+            try:
+                parsed = urlsplit(origin)
+                same_origin = (parsed.scheme, parsed.netloc.lower()) == (request.url.scheme, request.url.netloc.lower())
+            except ValueError:
+                same_origin = False
+            if not same_origin:
+                return PlainTextResponse("Open this action from your local Studio tab.", status_code=403)
+        if request.headers.get("sec-fetch-site") == "cross-site":
+            return PlainTextResponse("Open this action from your local Studio tab.", status_code=403)
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    if not request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-store"
+    return response
 
 TEMPLATES_DIR = os.path.join(PROJECT_ROOT, "server", "templates")
 STATIC_DIR = os.path.join(PROJECT_ROOT, "server", "static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+app.state.templates = templates
+templates.env.filters["local_date"] = workbench.local_date
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.include_router(workbench.router)
 
 def _pretty_json(data: Any) -> str:
     if isinstance(data, str):
@@ -145,12 +186,11 @@ OUTPUT_LOG_MARKERS = [
 ]
 
 STUDIO_NAV = (
-    ("home", "Home", "/"),
-    ("tools", "Tools", "/studio/tools"),
-    ("reasoning", "Reasoning", "/studio/reasoning"),
-    ("adversarial", "Adversarial", "/studio/adversarial"),
-    ("meta", "Meta", "/studio/meta"),
-    ("artifacts", "Artifacts", "/studio/artifacts"),
+    ("home", "Workbench", "/"),
+    ("recipes", "Recipes", "/studio/recipes"),
+    ("library", "My library", "/studio/library"),
+    ("learn", "How it works", "/studio/learn"),
+    ("advanced", "Advanced", "/studio/advanced"),
 )
 
 TEXTAREA_FIELDS = {
@@ -343,7 +383,7 @@ def _navigation(active_page: str) -> List[Dict[str, Any]]:
             "slug": slug,
             "label": label,
             "href": href,
-            "active": slug == active_page,
+            "active": slug == active_page or (slug == "advanced" and active_page in {"tools", "reasoning", "adversarial", "meta", "artifacts"}),
         }
         for slug, label, href in STUDIO_NAV
     ]
@@ -526,7 +566,7 @@ def _execute_tool(category: str, tool_name: str, topic: str, context: Optional[s
     if not tool_path or not os.path.exists(tool_path):
         raise HTTPException(status_code=404, detail="Tool not found")
 
-    cmd = ["python3", tool_path, topic]
+    cmd = [sys.executable, tool_path, topic]
     if context:
         cmd.extend(["--context", context])
 
@@ -857,67 +897,6 @@ def _group_tools_by_category(tools: List[Tool]) -> Dict[str, List[Tool]]:
     for tool in tools:
         grouped.setdefault(tool.category, []).append(tool)
     return grouped
-
-
-@app.get("/", response_class=HTMLResponse)
-async def ui_index(request: Request):
-    tools = _public_tools()
-    artifacts_total = 0
-    try:
-        artifacts_total = len(await list_artifacts())
-    except HTTPException:
-        artifacts_total = 0
-
-    modules = [
-        {
-            "eyebrow": "Module 01",
-            "name": "Tools",
-            "href": "/studio/tools",
-            "count": f"{len(tools)} tools",
-            "description": "Run a focused tool with plain topic and context inputs, then inspect a full-width result stage.",
-        },
-        {
-            "eyebrow": "Module 02",
-            "name": "Reasoning",
-            "href": "/studio/reasoning",
-            "count": f"{len(REASONING_PATTERNS)} patterns",
-            "description": "Choose a reasoning pattern and get only the fields that pattern actually needs.",
-        },
-        {
-            "eyebrow": "Module 03",
-            "name": "Adversarial",
-            "href": "/studio/adversarial",
-            "count": f"{len(ADVERSARIAL_PATTERNS)} patterns",
-            "description": "Pressure-test claims through debate and dialectic without cramming unrelated controls onto the page.",
-        },
-        {
-            "eyebrow": "Module 04",
-            "name": "Meta",
-            "href": "/studio/meta",
-            "count": "Design and run",
-            "description": "Design a multi-step chain in plain text, then execute it directly from the resulting design card.",
-        },
-        {
-            "eyebrow": "Module 05",
-            "name": "Artifacts",
-            "href": "/studio/artifacts",
-            "count": f"{artifacts_total} saved",
-            "description": "Browse saved outputs in a dedicated library instead of mixing them into every workflow page.",
-        },
-    ]
-    return templates.TemplateResponse(
-        request,
-        "home.html",
-        _page_context(
-            "home",
-            "Prompt Chaining Studio",
-            modules=modules,
-            tools_total=len(tools),
-            reasoning_total=len(REASONING_PATTERNS),
-            adversarial_total=len(ADVERSARIAL_PATTERNS),
-            artifacts_total=artifacts_total,
-        ),
-    )
 
 
 @app.get("/studio/tools", response_class=HTMLResponse)
@@ -1251,4 +1230,4 @@ async def ui_artifact_detail(request: Request, topic: str, filename: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import pytest
 
 from fastapi.testclient import TestClient
 
@@ -11,12 +12,22 @@ from lib.enhancements.natural_reasoning import REASONING_PATTERNS
 client = TestClient(server_main.app)
 
 
+@pytest.fixture(autouse=True)
+def isolated_workspace(tmp_path, monkeypatch):
+    from server import workbench
+    workbench.close_workbench()
+    monkeypatch.setenv("PROMPT_STUDIO_DATA", str(tmp_path / "workspace"))
+    yield
+    workbench.close_workbench()
+
+
 def test_ui_index_renders():
     response = client.get("/")
 
     assert response.status_code == 200
     assert "Prompt Chaining Studio" in response.text
-    assert "/studio/reasoning" in response.text
+    assert "/studio/recipes" in response.text
+    assert "Big ideas." in response.text
 
 
 def test_studio_pages_render():

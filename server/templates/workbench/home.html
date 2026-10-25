@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import "workbench/_macros.html" as wb %}
+{% block content %}
+<section class="workbench-hero">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="small-dot" aria-hidden="true"></span> Your personal thinking workbench</p>
+    <h1>Big ideas.<br>Small, useful steps.</h1>
+    <p class="hero-text">Give a thought somewhere to go. Break it down, build on what you find, and keep something worth coming back to.</p>
+    <div class="button-row"><a class="button" href="/studio/recipes" data-shortcut-new>Start with a recipe <span aria-hidden="true">↗</span></a><form method="post" action="/studio/example"><button class="secondary" type="submit">Walk through an example</button></form></div>
+    <p class="quiet-note">Local saves <span aria-hidden="true">·</span> Your pace <span aria-hidden="true">·</span> No key needed for the example</p>
+  </div>
+  <div class="thought-map" aria-label="A chain turns one question into pieces, an analogy, a worked example, and an explanation.">
+    <div class="map-caption"><span class="eyebrow">How a thought becomes an answer</span><span aria-hidden="true">↙</span></div>
+    <div class="map-question"><span class="map-small">A QUESTION</span><span>“Why does the Moon<br>change shape?”</span></div>
+    <ol class="map-chain">
+      <li><span class="map-node">01</span><div><strong>Find the pieces</strong><span>What do we need to understand?</span></div><span class="map-check" aria-hidden="true">✓</span></li>
+      <li><span class="map-node">02</span><div><strong>Build an analogy</strong><span>Make those pieces feel familiar.</span></div><span class="map-check" aria-hidden="true">✓</span></li>
+      <li><span class="map-node">03</span><div><strong>Try it out</strong><span>Put the analogy to work.</span></div><span class="map-check" aria-hidden="true">✓</span></li>
+      <li class="map-final"><span class="map-node">04</span><div><strong>Make it click</strong><span>An explanation you can take with you.</span></div><span aria-hidden="true">↗</span></li>
+    </ol>
+    <p class="map-foot">Each step carries something forward.</p>
+  </div>
+</section>
+
+{% if resume %}
+<section class="resume-banner" aria-label="Continue your work"><div><p class="eyebrow">Right where you left it</p><h2>{{ resume.topic }}</h2><p>{{ resume.results | length }} of {{ resume.recipe.steps | length }} steps saved. {{ resume.recipe.title }}.</p></div><a class="button" href="/studio/runs/{{ resume.id }}">{% if resume.state == 'running' %}View progress{% else %}Pick it back up{% endif %} <span aria-hidden="true">→</span></a></section>
+{% endif %}
+
+<section class="work-section">
+  <div class="section-heading"><div><p class="eyebrow">A good place to begin</p><h2>What’s on your mind?</h2></div><a class="text-link" href="/studio/recipes">All six recipes <span aria-hidden="true">→</span></a></div>
+  <div class="recipe-grid">{% for key in ['explain', 'write', 'decide'] %}{{ wb.recipe_card(key, recipes[key], loop.index) }}{% endfor %}</div>
+</section>
+
+<section class="work-section">
+  <div class="section-heading"><div><p class="eyebrow">Your work stays with you</p><h2>On the workbench</h2></div><a class="text-link" href="/studio/library">Open library <span aria-hidden="true">→</span></a></div>
+  {% if runs %}<div class="run-list">{% for run in runs %}{{ wb.run_row(run) }}{% endfor %}</div>
+  {% else %}<div class="empty-work"><span class="empty-symbol" aria-hidden="true">↗</span><div><h3>A little room to think.</h3><p>Your saved chains will appear here. Start with a recipe, or open the Moon example to see every step.</p></div><form method="post" action="/studio/example"><button class="secondary" type="submit">Open the example</button></form></div>{% endif %}
+</section>
+
+<aside class="workbench-note"><p><strong>Simple enough to follow. Useful enough to keep.</strong> A chain passes each answer into the next prompt. You can inspect that handoff, change an answer, and decide when to continue.</p><a class="text-link" href="/studio/learn">See how it works →</a></aside>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-intro"><div><p class="eyebrow">The rest of the workshop</p><h1>A few deeper tools.</h1><p class="hero-text">The original framework is here when you need it. These tools use their own execution and artifact flows; resumable runs live in the main workbench.</p></div></section>
+<div class="recipe-grid advanced-grid">
+  <a class="recipe-card" href="/studio/tools"><span class="eyebrow">Focused transformations</span><h2>Learning tools</h2><p>Simplify a concept or connect two subjects using the existing command-line tools.</p><span class="text-link">Run a tool ↗</span></a>
+  <a class="recipe-card" href="/studio/reasoning"><span class="eyebrow">Different ways to think</span><h2>Reasoning patterns</h2><p>Explore scientific, Socratic, design, judicial and root-cause reasoning.</p><span class="text-link">Explore reasoning ↗</span></a>
+  <a class="recipe-card" href="/studio/adversarial"><span class="eyebrow">Pressure and perspective</span><h2>Adversarial patterns</h2><p>Examine claims using debate, dialectic and critical questioning. These are model-generated perspectives.</p><span class="text-link">Test an idea ↗</span></a>
+  <a class="recipe-card" href="/studio/meta"><span class="eyebrow">Let a model propose the method</span><h2>Meta-chain designer</h2><p>Describe a goal and inspect the generated chain design before executing it.</p><span class="text-link">Design a chain ↗</span></a>
+  <a class="recipe-card" href="/studio/artifacts"><span class="eyebrow">Your framework outputs</span><h2>Artifacts library</h2><p>Browse existing JSON artifacts, plus final answers you explicitly save from the workbench.</p><span class="text-link">Open artifacts ↗</span></a>
+</div>
+<aside class="workbench-note"><p>Advanced tools may make multiple model requests and use their existing retries. Preview inputs and review the result; reasoning patterns and model comparisons do not fact-check their own answers.</p></aside>
+{% endblock %}
