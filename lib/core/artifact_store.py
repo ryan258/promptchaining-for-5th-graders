@@ -313,9 +313,12 @@ class ArtifactStore:
         try:
             chroma_dir = os.path.join(self.base_dir, "_chroma")
             os.makedirs(chroma_dir, exist_ok=True)
-            self.chroma_client = chromadb.PersistentClient(path=chroma_dir)
+            self.chroma_client = chromadb.PersistentClient(
+                path=chroma_dir,
+                settings=chromadb.config.Settings(anonymized_telemetry=False),
+            )
             self.chroma_collection = self.chroma_client.get_or_create_collection(
-                name="artifacts"
+                name="artifacts", embedding_function=None,
             )
         except Exception:
             # Chroma is optional; keep JSON artifact flow working even if unavailable.

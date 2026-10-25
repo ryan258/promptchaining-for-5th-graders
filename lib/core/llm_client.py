@@ -8,6 +8,36 @@ from dotenv import load_dotenv
 import os
 import time
 import random
+import math
+
+
+DEFAULT_MODELS = (
+    "openai/gpt-3.5-turbo",
+    "google/gemini-flash-1.5",
+    "google/gemini-pro-1.5",
+)
+
+
+def configured_model_names() -> Tuple[str, ...]:
+    """Read model names without constructing a client or making a request."""
+    load_dotenv()
+    env_models = os.getenv("OPENROUTER_MODELS", "")
+    default_model = os.getenv("DEFAULT_MODEL", "")
+    if env_models.strip():
+        names = tuple(dict.fromkeys(m.strip() for m in env_models.split(",") if m.strip()))
+    elif default_model.strip():
+        names = (default_model.strip(),)
+    else:
+        names = DEFAULT_MODELS
+    if not names or len(names) > 30 or any(len(name) > 200 for name in names):
+        raise ValueError("Configure 1–30 model IDs in OPENROUTER_MODELS.")
+    return names
+
+
+def has_api_key() -> bool:
+    load_dotenv()
+    value = os.getenv("OPENROUTER_API_KEY", "").strip()
+    return bool(value and value not in {"sk-or-your-key-here", "your_key_here"})
 
 
 def get_model() -> Tuple[OpenAI, str]:
@@ -49,7 +79,7 @@ def build_models() -> Tuple[OpenAI, Tuple[str, ...]]:
         "Prompt Chaining for 5th Graders",
     )
 
-    if not openrouter_api_key:
+    if not has_api_key():
         raise ValueError(
             "🔑 Missing API key! Please:\n"
             "   1. Copy .env.example to .env\n"
@@ -60,23 +90,10 @@ def build_models() -> Tuple[OpenAI, Tuple[str, ...]]:
     client = OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=openrouter_api_key,
+        max_retries=0,
     )
 
-    env_models = os.getenv("OPENROUTER_MODELS")
-    default_model = os.getenv("DEFAULT_MODEL")
-    if env_models:
-        model_names = tuple(m.strip() for m in env_models.split(",") if m.strip())
-    elif default_model:
-        model_names = (default_model.strip(),)
-    else:
-        model_names = (
-            "openai/gpt-3.5-turbo",
-            "google/gemini-flash-1.5",
-            "google/gemini-pro-1.5",
-        )
-
-    if not model_names:
-        raise ValueError("No models configured. Please check your model list.")
+    model_names = configured_model_names()
 
     return client, model_names
 
@@ -85,10 +102,19 @@ def build_models() -> Tuple[OpenAI, Tuple[str, ...]]:
 def get_prompt_settings() -> Dict[str, Any]:
     """Load prompt configuration once so repeated calls don't reparse the environment."""
     load_dotenv()
+    max_tokens = int(os.getenv("MAX_TOKENS", "4096"))
+    temperature = float(os.getenv("DEFAULT_TEMPERATURE", "0.7"))
+    timeout = float(os.getenv("REQUEST_TIMEOUT_SECONDS", "30.0"))
+    if not 64 <= max_tokens <= 12000:
+        raise ValueError("MAX_TOKENS must be between 64 and 12000.")
+    if not math.isfinite(temperature) or not 0 <= temperature <= 2:
+        raise ValueError("DEFAULT_TEMPERATURE must be between 0 and 2.")
+    if not math.isfinite(timeout) or not 1 <= timeout <= 120:
+        raise ValueError("REQUEST_TIMEOUT_SECONDS must be between 1 and 120.")
     return {
-        "max_tokens": int(os.getenv("MAX_TOKENS", "4096")),
-        "temperature": float(os.getenv("DEFAULT_TEMPERATURE", "0.7")),
-        "timeout": float(os.getenv("REQUEST_TIMEOUT_SECONDS", "30.0")),
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "timeout": timeout,
         "headers": {
             "HTTP-Referer": os.getenv(
                 "OPENROUTER_SITE_URL",
@@ -100,6 +126,27 @@ def get_prompt_settings() -> Dict[str, Any]:
             ),
         },
     }
+
+
+def prompt_once(model_info: Tuple[OpenAI, str], prompt_text: str):
+    """One explicit request. Resumable runs never silently retry billable work."""
+    client, model_name = model_info
+    settings = get_prompt_settings()
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=[{"role": "user", "content": prompt_text}],
+        max_tokens=settings["max_tokens"],
+        temperature=settings["temperature"],
+        timeout=settings["timeout"],
+        extra_headers=settings["headers"],
+    )
+    content = response.choices[0].message.content
+    if not content:
+        raise ValueError("The provider returned no text. Try a model that supports text responses.")
+    if getattr(response.choices[0], "finish_reason", None) == "length":
+        # Preserve a useful partial answer instead of charging for a second call.
+        content += "\n\n[Stopped at the configured token limit. Review this answer before continuing.]"
+    return content, response.usage
 
 
 def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):

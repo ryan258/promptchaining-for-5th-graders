@@ -60,3 +60,18 @@ def test_prompt_uses_environment_settings(monkeypatch):
     assert kwargs["timeout"] == 9.5
     assert kwargs["extra_headers"]["HTTP-Referer"] == "https://example.com"
     assert kwargs["extra_headers"]["X-Title"] == "Prompt Tests"
+
+
+def test_workbench_prompt_dispatches_once_and_preserves_truncation(monkeypatch):
+    monkeypatch.setattr(llm_client, "load_dotenv", lambda: None)
+    create = MagicMock(return_value=SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="A partial answer"), finish_reason="length")], usage=None))
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    content, _ = llm_client.prompt_once((client, "test-model"), "hello")
+    assert "configured token limit" in content
+    assert create.call_count == 1
+    create.side_effect = RuntimeError("provider failure")
+    import pytest
+    with pytest.raises(RuntimeError):
+        llm_client.prompt_once((client, "test-model"), "hello")
+    assert create.call_count == 2  # One additional call, no hidden retry.

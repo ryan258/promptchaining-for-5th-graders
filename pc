@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Short local entry point; works from any directory and preserves the interpreter.
+set -euo pipefail
+studio_root="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+cd "$studio_root"
+if [[ -x "$studio_root/.venv/bin/python" ]]; then
+  studio_python="$studio_root/.venv/bin/python"
+elif [[ -x "$studio_root/venv/bin/python" ]]; then
+  studio_python="$studio_root/venv/bin/python"
+elif [[ -n "${VIRTUAL_ENV:-}" && -x "$VIRTUAL_ENV/bin/python" ]]; then
+  studio_python="$VIRTUAL_ENV/bin/python"
+else
+  printf '%s\n' 'Create a local environment first:' '  python3 -m venv .venv' '  .venv/bin/python -m pip install -r requirements.txt'
+  exit 1
+fi
+exec "$studio_python" -m tools.studio "$@"

@@ -1,6 +1,8 @@
 # .gitignore - The Art of Selective Attention
 # Every exclusion is a decision about what deserves permanence
 review.md
+workspace/
+backups/
 logs/
 output/guides
 output/research

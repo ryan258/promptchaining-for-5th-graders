@@ -11,6 +11,17 @@
 - **Stack**: Python + FastAPI + Jinja2 + HTMX + ChromaDB + OpenRouter.
 - **Runtime**: Bare metal execution (no container dependency required).
 
+## Personal workbench intent
+
+- This is a production-quality, local, single-user thinking and learning tool for Ryan. Keep dictation, short commands, keyboard access, reliable saves and easy resumption central.
+- The main workflow is recipe → intention → saved run → reviewed steps → reusable output. Advanced framework tools remain accessible separately.
+- Reusable workbench logic lives in `lib/workbench/`; `server/workbench.py` contains thin HTML routes. Preserve the portable framework in `lib/core/`.
+- `./pc` starts one loopback server. `./pc doctor`, `./pc backup`, and `./pc restore FILE` must never call a provider.
+- Workbench runs checkpoint each answer in SQLite. Never retry live work automatically or resume an interrupted provider call without an explicit action. Keep authored examples visibly labelled.
+- Keep workspace data and `.env` out of Git. Backups add records and never replace local work. Credentials must never appear in backups, logs or HTML.
+- Use targeted tests for changes. Ask before browser verification; leave full suites and long verification commands for Ryan to run unless explicitly requested.
+- Do not stage, commit, push, deploy or publish without explicit delegation of that action.
+
 ## Identity & Role
 
 - **Role**: The Mechanic.
