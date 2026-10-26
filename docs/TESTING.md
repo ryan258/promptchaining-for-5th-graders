@@ -2,15 +2,35 @@
 
 Run focused checks from the repository root, using the environment that runs the app. These checks do not need credentials or spend provider credits.
 
-## Workbench acceptance group
+## Workbench and harmony repair group
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_workbench.py tests/test_workbench_routes.py tests/test_llm_client.py tests/test_server_routes.py
+.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py tests/test_chain.py tests/test_chain_composer.py tests/test_meta_chain.py tests/test_enhancements.py
 ```
 
 This covers prompt handoffs, bad references, one-pass substitution, saved inputs, durable checkpoints, explicit retries, output edits, original answer retention, stale tabs, overlapping starts, runtime lock ownership, abrupt-stop recovery, complete-file restore validation, additive restore, backup round trips, authored example behavior, HTML escaping and local-origin restrictions. Route tests use temporary databases and substitute model callables.
 
 `./pc doctor` checks installed modules and local configuration. It does not test provider credentials or availability. `bash -n pc start_app.sh` checks launcher syntax. JavaScript syntax can be checked using a local JavaScript runtime when available; the app itself has no JavaScript build dependency.
+
+## In-app guides
+
+The guide reader is included in the acceptance command above. For a smaller guide-only change, use:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_guides.py tests/test_workbench_routes.py tests/test_server_routes.py
+```
+
+This checks installed guide pages and downloads, cross-guide links and section anchors, full-text search, source freshness, escaped HTML, blocked unsafe links, catalog-only file access, and guide navigation from existing workflows. Guide tests use local files and substitute provider wiring; they do not make model requests. When checking the interface manually, include the guide search, table-of-contents links, Copy buttons, keyboard shortcut and narrow-screen reading layout.
+
+## Repaired framework paths
+
+For changes to artifact writes, sequential/fusion chains, composition, meta design or reasoning, add the related offline groups:
+
+```bash
+.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_chain.py tests/test_chain_composer.py tests/test_meta_chain.py tests/test_enhancements.py
+```
+
+The repair regressions cover responsive routes, safe errors and setup failures, interrupted artifact replacement, parallel model persistence, bounded direct-library calls, one-attempt requests, actual prompt handoffs, multi-part archives beyond 10 MB/2,000 records, corrupt-archive atomicity, independent composition traces, failed comparisons, invalid scores, cost estimates and energy constraints. Default artifact stores in library tests are redirected into per-test temporary folders. These checks use model stubs and do not run live demos.
 
 ## A focused browser pass, when authorized
 

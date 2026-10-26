@@ -98,7 +98,7 @@ Each recipe save creates a copy. Add a short note about when it helps. Open your
 | A readable record of every completed answer | **Export Markdown** or **Download chain** |
 | The recipe, inputs, exact sent prompts and complete saved trace | **Export JSON** |
 | A separate framework copy of the finished answer | **Save final to artifacts** |
-| Your saved recipes and runs together | **My library → Download workspace backup** |
+| Your saved recipes and runs together | **My library → Download workspace backup** (Studio ZIP) |
 
 Markdown contains the step answers and run information; it does not contain the full prompt trace. JSON keeps the fuller record. The [saving guide](SAVING-EXPORT-AND-RECOVERY.md) explains these differences.
 

@@ -1,35 +1,47 @@
-# Workbench status — October 24, 2026
+# Workbench status — October 25, 2026
 
-The repository now opens as a local personal thinking workbench. Its complete path is recipe → intention → saved run → reviewed steps → reusable output. The original framework remains available through Advanced.
+The implemented local workflow is recipe → intention → saved run → reviewed steps → reusable output. The original framework remains available through Advanced. This status distinguishes implementation and offline checks from owner acceptance.
 
 ## Implemented
 
-- Six editable starter recipes, a blank-chain editor, and a four-step authored Moon walkthrough requiring no model requests.
-- Browser draft recovery, explicit computer-level recipe saves, saved starting topic/context and review pace, 1–8 steps, keyboard shortcuts, dictation-friendly fields and undo for a removed step.
-- Ready runs that preview their first request, explicit live starts, review between steps or continuous execution, pause, saved prompt traces, output edits with original-answer retention, and reported token counts.
-- SQLite checkpoints, stale-tab protection, one active run, one runtime owner, graceful shutdown and abrupt-stop recovery. Failed/interrupted calls require an explicit retry.
-- Searchable run library, reuse, final-answer copy, Markdown/JSON exports, additive JSON backup/restore, stable deduplication of colliding imports, and an explicit handoff into the original JSON/Chroma artifact library.
-- A loopback-only launcher, local assets, system font fallbacks, escaped output, same-origin write checks, reduced motion and visible focus.
-- `./pc`, `./pc doctor`, `./pc backup` and `./pc restore FILE`. Dependencies installed in the ignored project `.venv`. The original `.env` was preserved.
+- Six editable recipes, a blank-chain editor and a four-step authored Moon example requiring no model requests.
+- Saved inputs, browser draft recovery, review pace, 1–8 named steps, keyboard shortcuts and ordinary dictation-compatible fields.
+- SQLite checkpoints, one runtime owner, stale-tab checks, explicit starts/retries, pause after the active step, original-answer retention and interruption recovery.
+- Run search, reuse, Markdown and single-run JSON export, explicit final-artifact handoff, and additive workspace backups.
+- Twenty in-app Guides sourced from the existing Markdown, with local search, section links, copyable blocks, downloads and contextual help.
+- Loopback startup through `./pc`, vendored HTMX, local fonts, escaped text, origin checks, focus and reduced-motion rules.
+
+## Harmony repairs
+
+- Advanced provider/subprocess work is delegated to `lib/advanced.py` through worker threads; setup failures use recoverable errors and raw provider payloads are omitted.
+- Artifact files publish atomically, unreadable records are skipped without changing the source, and FusionChain gives parallel models separate namespaces.
+- Every framework/workbench step makes one attempt. No nested transport or JSON-format retries remain. Depth/rounds accept 1–5; forms show request counts.
+- Five Whys, Red vs Blue and meta fallback handoffs carry the intended prior answer. Framework substitution is one pass, including literal-placeholder quoting for design lessons.
+- Default workspace backups are ZIP archives with importable JSON parts, checksums and complete-file validation before an additive transaction. Legacy JSON remains supported within its size/record limits; export enforces those limits as well.
+- Composer totals and traces are independent per operation; unavailable tool usage is labelled incomplete. Costs are explicit estimates or unknown.
+- Failed comparisons stop before later phases and are excluded from wins/ties. Scores are validated; excerpt limits and the absence of statistical testing are explicit.
+- Legacy prompts separate observed evidence from hypotheses and illustrative scenarios. The prompt-card energy setting changes generation constraints.
 
 ## Local verification
 
-The focused group covering workbench behavior, HTML routes, shared LLM configuration, legacy routes and artifact persistence passed **54 checks**. Final workbench refinements, including workspace configuration load order and saved review pace, also passed all tests. The launcher relocation passed its specific backup writer regression. Next phases and scope boundaries are tracked in [ROADMAP.md](../ROADMAP.md).
+The final repair group passed **129 targeted offline tests** across the repair regressions, workbench, routes, Guides, provider client, chain engine, composer, meta-chain and enhancement modules. `./pc doctor` passed without provider requests; shell and JavaScript syntax, local documentation links and Git whitespace checks passed. See [Testing](TESTING.md) for the exact scoped command.
 
-The real launcher was exercised from another working directory using a temporary workspace: loopback page serving, the local HTMX asset, authored-example creation and graceful shutdown passed. A separate CLI backup/restore round trip preserved the complete saved run, and the backup writer refused to overwrite an existing file. Temporary workspace data was removed.
+Historical pre-repair groups reported 54 workbench/framework checks and 44 Guides/route checks; those counts describe earlier snapshots rather than current whole-project acceptance.
 
-`./pc doctor`, JavaScript syntax, launcher shell syntax and `git diff --check` passed. Verification used Python 3.12.14, FastAPI 0.162.0 and ChromaDB 1.5.9. The Chroma artifact test used a temporary local collection, supplied deterministic vectors and made no embedding downloads. Provider calls in tests were replaced with deterministic callables.
+Regression data is temporary. Library tests redirect default artifact storage so checks do not write to the owner's saved artifact library. Provider responses are substituted. See [Testing](TESTING.md) for scoped commands and [Architecture](ARCHITECTURE.md) for the contracts.
 
 ## Acceptance boundary
 
-Ryan chose local checks only. No browser pass, live model request, full framework suite, screen-reader acceptance or voice-control acceptance was performed. Existing model choices were read from configuration; their availability, quality and account credit were not tested. The interface is ready for Ryan's own review, without claiming that review has happened.
+Ryan reserved full-suite checks, browser testing and commits. No live model requests, browser pass, screen-reader or voice-control acceptance, staging, commits, pushes, deployment or publication are part of this repair. Local setup checks do not establish current model availability, account credit or output quality.
 
-Workspace JSON restore is bounded to 10 MB and 2,000 recipes/runs each. Browser drafts, `.env`, old artifacts and log files are outside workspace backups. Generated answers and model critiques still require human judgment and factual review.
+Archives accept at most 128 JSON parts, 128 MB compressed and 256 MB expanded. Each JSON part accepts 10 MB and 2,000 recipes/runs. Browser drafts, `.env`, legacy artifacts and logs remain outside workspace backups. Per-file atomic artifact replacement is not a transaction across an entire legacy chain. Generated content requires human judgment.
 
-No staging, commits, pushes, deployment or publication were performed. Existing artifacts and owner configuration were preserved.
+## Review and policy evidence
+
+The owner supplied an index at commit `65cfd55`; pre-edit impact analysis identified broad logging, design and content-generator dependencies. Graph gaps in dynamic route and runner calls were checked directly. That index becomes stale as this repair changes source; it does not establish final graph clearance. No new analysis/reindex was run.
+
+Shared human policy remains canonical. Generated GitNexus directives were removed from active agent guidance, and the six supplied skill copies were preserved outside active skills under `.claude/retired-gitnexus/`. The owner index was preserved. This is a local policy alignment, not a change to shared Cyborg policy or global integrations.
 
 ## Resume
 
-Run `./pc` from the repository and open `http://127.0.0.1:8000`. Start with the authored example, or open Recipes and prepare a chain. Preparation saves locally; the next page previews the prompt and provides the explicit live start.
-
-See [README.md](../README.md) for daily use and [TESTING.md](TESTING.md) for the optional broader acceptance commands.
+Run `./pc`, then open `http://127.0.0.1:8000`. Try the authored example, inspect Guides, or return to a saved run. Use `./pc backup` for a new ZIP copy and `./pc restore FILE` for additive import. See [Saving and recovery](SAVING-EXPORT-AND-RECOVERY.md) for limits and fallback folder copies. Optional enhancements remain in [ROADMAP.md](../ROADMAP.md).

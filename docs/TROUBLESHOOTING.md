@@ -88,9 +88,9 @@ JavaScript adds draft recovery, step-list editing, copy behavior, shortcuts and 
 
 | Problem | Next action |
 | --- | --- |
-| Restore rejects a file | Choose a Studio JSON workspace or single-run export, not Markdown, a legacy artifact or a meta-chain design. |
-| A file exceeds the 10 MB restore limit | Preserve it, then use a stopped workspace-folder copy or individual run exports. The app does not split large JSON backups for you. |
-| A backup has too many records | The backup schema permits up to 2,000 recipes and 2,000 runs. Keep a stopped workspace-folder copy for a larger database. |
+| Restore rejects a file | Choose a Studio ZIP archive or JSON workspace/single-run export, not Markdown, a legacy artifact or a meta-chain design. |
+| A file exceeds the 10 MB restore limit | Preserve it. Make a new default ZIP backup from the original workspace; it splits records into importable JSON parts. An existing oversized JSON file remains outside the legacy importer limit. |
+| A backup has too many records | Each JSON part permits up to 2,000 recipes and 2,000 runs. Use the default ZIP backup for larger workspaces. It refuses archives outside its published limits. |
 | CLI backup says the filename exists | Choose a new filename. The command deliberately preserves the existing copy. |
 | Save final to artifacts fails | The answer remains saved in the run. Export it there, then inspect the legacy artifact folder's availability and permissions. |
 | Chroma mirroring is unavailable | JSON remains the artifact source of truth; the workbench database is separate. `doctor` checks installation, not the health of every collection. |

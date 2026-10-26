@@ -12,7 +12,7 @@ Build and maintain a distraction-free, bare-metal thinking environment where com
 
 ## §1 Implemented Foundation
 
-The workbench is fully operational on local bare metal:
+The workbench implementation runs on local Python; acceptance is recorded separately in [Workbench status](docs/WORKBENCH-STATUS.md):
 
 - **Core Workbench Engine (`lib/workbench/`)**:
   - Typed models (`models.py`), curated recipe templates (`recipes.py`), step runner with pause/retry mechanics (`runner.py`), and SQLite WAL transactional persistence with runtime locking (`store.py`).
@@ -28,15 +28,15 @@ The workbench is fully operational on local bare metal:
 
 - **Developer Tooling & CLI (`./pc`)**:
   - Standalone bash entry point `./pc` wrapping `tools/studio.py`.
-  - Commands: `./pc` (start), `./pc doctor` (zero-network diagnostic), `./pc backup` (atomic JSON snapshot), `./pc restore` (lossless, non-destructive import).
+  - Commands: `./pc` (start), `./pc doctor` (zero-network diagnostic), `./pc backup` (atomic ZIP archive with validated JSON parts), `./pc restore` (lossless, non-destructive import).
   - Aliased by `./start_app.sh`.
 
 - **Preserved Core Framework (`lib/core/`, `lib/enhancements/`)**:
-  - Complete backward compatibility for `MinimalChainable`, `FusionChain`, `ArtifactStore`, `ChainComposer`, and `MetaChainGenerator`.
+  - Public entrypoints retained for `MinimalChainable`, `FusionChain`, `ArtifactStore`, `ChainComposer`, and `MetaChainGenerator`.
   - Legacy tools, reasoning patterns, adversarial debates, and artifact viewers remain accessible via the `/studio/advanced` route.
 
 - **Deterministic Quality Gates**:
-  - 54 targeted offline tests passing in `.venv` covering core workbench mechanics, HTTP routes, LLM client limits, and artifact persistence.
+  - Focused offline checks cover the workbench, Guides and repaired framework paths. Current commands and evidence are recorded in [Testing](docs/TESTING.md) and [Workbench status](docs/WORKBENCH-STATUS.md).
 
 ---
 
@@ -64,7 +64,7 @@ Focused, small iterations guided by observed usage rather than speculation:
 ## §3 Return Point & Deferred Ideas
 
 ### Return Point
-The current state is a complete, stable, production-grade local workbench. All features are verified, documented, and recoverable from local SQLite or JSON backups.
+The local workbench and Guides are implemented. The harmony repair addresses the reviewed execution, persistence, request-control, prompt-handoff and reporting defects. Full-suite compatibility, browser behavior, assistive-technology acceptance and real-provider operation remain owner acceptance gates. A passing local group does not establish those outcomes.
 
 ### Deferred Scope (The Anti-Bloat Law)
 Explicitly deferred to keep the system simple, fast, and durable:
@@ -82,14 +82,18 @@ Before any changes are committed or released:
 
 1. **Targeted Tests**:
    ```bash
-   .venv/bin/python -m pytest -q tests/test_workbench.py tests/test_workbench_routes.py tests/test_llm_client.py tests/test_server_routes.py tests/test_artifacts.py tests/test_artifact_browser.py
+   .venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py
    ```
 2. **Setup Diagnostic**:
    ```bash
    ./pc doctor
    ```
 3. **Backup & Restore Validation**:
-   - Verify `./pc backup` writes valid JSON without data loss.
+   - Verify the default ZIP backup restores beyond the old JSON size and record limits.
    - Verify `./pc restore` refuses to overwrite existing runs.
-4. **Submodule Audit**:
-   - Verify no dirty or untracked Git submodules exist (`git submodule status`).
+4. **Owner acceptance**:
+   - Full suite, browser/assistive checks, provider checks and Git publication remain separate owner actions.
+
+## Review backlog after correctness repairs
+
+Optional enhancements remain future work: preserve form values during validation errors; search/favorite saved recipes; dismiss abandoned runs; remember the configured model when reusing a method; retain a short next-step note; warn about another tab replacing an unsaved draft; query lightweight library summaries; provide an authored example for each recipe; and add a tested dependency constraints snapshot. Checkpoint forks, richer Markdown exports, vault integration and per-step models should follow demonstrated use. These are not part of the completed correctness repairs and add no account, hosting or commercial-platform requirement.

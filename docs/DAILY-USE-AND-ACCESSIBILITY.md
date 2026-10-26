@@ -49,6 +49,7 @@ On macOS, **Alt** means **Option**. These shortcuts need JavaScript; operating s
 | **Enter** or **Space** on a step's summary | Open or close that step using the browser's native disclosure control |
 | **Alt+N** | Open Recipes when focus is outside a text field, selector or editable region |
 | **Alt+L** | Open My library when focus is outside a text field, selector or editable region |
+| **Alt+G** | Open the searchable Guides area when focus is outside a text field, selector or editable region |
 | **Ctrl/Cmd+S** in the recipe editor | Save the recipe as a copy |
 | **Ctrl/Cmd+Enter** in the editor | Prepare a chain when live setup is available and the form is valid |
 | **Ctrl/Cmd+Enter** on an unfinished run with a primary action | Activate its displayed Run, Continue or Retry action |
@@ -57,6 +58,8 @@ On macOS, **Alt** means **Option**. These shortcuts need JavaScript; operating s
 The run-page shortcut can activate **Retry this step** when a run failed or was interrupted. Read the displayed state before using it. With run-through mode, continuing or retrying can also run subsequent steps after the next answer succeeds.
 
 ## Browser drafts help you resume editing
+
+Relevant help links beside the editor, runs and library open a guide in another tab, preserving the current screen. The main **Guides** navigation opens the guide library in the same tab. Guides have a section list, working links to other guides, and Copy buttons for command and prompt blocks. Search and reading work without JavaScript; copy buttons and the guide shortcut use JavaScript.
 
 The recipe editor writes a browser draft as fields change. Opening the same recipe in that browser can recover it. Recovery announces that nothing has been sent to a model.
 

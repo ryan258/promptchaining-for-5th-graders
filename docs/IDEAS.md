@@ -4,7 +4,7 @@
 
 Potential prompt chain implementations organized by domain.
 
-> **Note**: See [tools/README.md](tools/README.md) for 33 already-implemented tools.
+> **Note**: See [tools/README.md](../tools/README.md) for 33 already-implemented tools.
 
 ## Analysis & Research
 

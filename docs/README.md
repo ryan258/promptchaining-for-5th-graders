@@ -1,5 +1,7 @@
 # Get more out of Prompt Chaining Studio
 
+**Inside the app:** choose **Guides** in the top navigation, or use **Alt/Option+G** outside text fields. Search titles and full guide text, then jump to a matching section. Recipe, run and library screens also link directly to relevant help in another tab. The app reads these same Markdown files; edits appear when you refresh a guide.
+
 Start with [Getting the most out of it](GETTING-THE-MOST-OUT-OF-IT.md). It explains how to turn a rough intention into useful work without making every session a prompt-writing project.
 
 These guides describe the current local workbench. They use the labels in the app and distinguish saved work, browser drafts, authored examples and live model output.

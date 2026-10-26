@@ -8,6 +8,8 @@ The app runs locally with Python, FastAPI, Jinja2 and HTMX. It keeps the origina
 
 **Use the [documentation suite](docs/README.md)** for recipe selection, stronger inputs, complete walkthroughs, custom chains, accessible daily use, setup, backups and troubleshooting. See [ROADMAP.md](ROADMAP.md) for the phased direction and deferred scope. For one practical starting point, read [Getting the most out of it](docs/GETTING-THE-MOST-OUT-OF-IT.md).
 
+The same documentation is available inside the app under **Guides**, with full-text search, section links and copyable examples. Use **Alt/Option+G** outside text fields to open it. Contextual help beside your work opens a guide in another tab.
+
 ## Start here
 
 Use Python 3.11 or newer. From this folder:
@@ -45,7 +47,7 @@ REQUEST_TIMEOUT_SECONDS=30
 
 Restart the app after changing settings. Comma-separated model IDs become choices in the recipe editor. Provider wiring stays in `lib/core/llm_client.py`; feature modules do not choose hardcoded models.
 
-A live run sends its topic, audience, context and referenced previous answers to OpenRouter and the chosen provider. **Provider charges apply.** The new workbench dispatches each step once, without automatic retry. An explicit retry can incur another charge, especially after an ambiguous timeout or abrupt stop. `MAX_TOKENS` bounds output length per request; it is not an account spending cap. Legacy advanced tools retain their own retry behavior.
+A live run sends its topic, audience, context and referenced previous answers to OpenRouter and the chosen provider. **Provider charges apply.** The new workbench dispatches each step once, without automatic retry. An explicit retry can incur another charge, especially after an ambiguous timeout or abrupt stop. `MAX_TOKENS` bounds output length per request; it is not an account spending cap. Advanced tools also send each step once; errors require another explicit action. Their executions remain separate from resumable workbench runs.
 
 The settings indicator means a key is configured; it does not verify provider access, model availability or account credit. A chain can also carry mistakes forward. Review factual claims before using the result. Model-generated critiques and comparisons are not fact-checks.
 
@@ -56,9 +58,9 @@ The settings indicator means a key is configured; it does not verify provider ac
 | `./pc` | Start the local app on port 8000 |
 | `./pc start --port 8010` | Use another local port |
 | `./pc doctor` | Check local dependencies and configuration; no API requests |
-| `./pc backup` | Write a timestamped JSON backup under `backups/` |
-| `./pc backup /path/to/copy.json` | Write a new backup at a chosen path; refuses to overwrite |
-| `./pc restore /path/to/copy.json` | Add recipes and runs from a backup; never starts a chain |
+| `./pc backup` | Write a timestamped Studio ZIP archive under `backups/` |
+| `./pc backup /path/to/copy.json` | Write a small legacy JSON backup; refuses oversized or existing files |
+| `./pc restore /path/to/copy.json` | Add records from Studio ZIP or JSON; never starts a chain |
 | `Ctrl+C` | Finish and save the current workbench request, pause, then stop |
 
 An optional shell alias, defined once with this repo's absolute path, makes startup shorter:
@@ -74,8 +76,8 @@ The UI supports system dictation, visible keyboard focus, a skip link, reduced m
 - Runs and recipes live in `workspace/studio.sqlite3` by default. Set `PROMPT_STUDIO_DATA` to choose another directory. SQLite transactions protect checkpoints. One server owns the workspace runtime lock, so another process cannot recover an active run or dispatch overlapping work.
 - A run is a snapshot of its recipe. Editing a recipe later does not change old runs. A stale tab cannot dispatch the same step twice.
 - Leaving a page keeps the server working. A normal shutdown lets the current request finish and pauses. An abrupt stop marks unfinished work interrupted at the next startup. Completed steps survive; the unfinished request is never retried automatically.
-- Workspace JSON backups contain saved recipes, inputs, prompt traces, answers and run progress. Restore validates the complete file before writing, skips identical records, and gives colliding records new IDs. Imported running work becomes interrupted.
-- JSON restore accepts files up to 10 MB and 2,000 recipes/runs each. Browser drafts, `.env`, old artifacts and log files are outside workspace backups. Keep the separate `artifacts/` and `logs/` folders if you need those records. Workspace text can contain private material you entered; treat backups accordingly.
+- Workspace ZIP archives and legacy JSON backups contain saved recipes, inputs, prompt traces, answers and run progress. Restore validates the complete file before writing, skips identical records, and gives colliding records new IDs. Imported running work becomes interrupted.
+- JSON parts accept up to 10 MB and 2,000 recipes/runs each. The default ZIP archive splits larger workspaces into validated parts, up to 128 parts, 128 MB compressed and 256 MB expanded. Backup creation refuses files outside these restore limits. Browser drafts, `.env`, old artifacts and log files are outside workspace backups. Keep the separate `artifacts/` and `logs/` folders if you need those records. Workspace text can contain private material you entered; treat backups accordingly.
 - Browser draft recovery belongs to that browser and origin. Save a recipe or prepare a run to include it in computer-level backups. If browser storage is unavailable, the editor says so and keeps explicit save available.
 
 ## The portable framework
@@ -105,7 +107,7 @@ outputs, filled_prompts, usage = MinimalChainable.run(
 Use the focused offline acceptance group for this implementation:
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_workbench.py tests/test_workbench_routes.py tests/test_llm_client.py tests/test_server_routes.py
+.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py
 ```
 
 Tests substitute model responses and temporary storage. They do not spend provider credits. See [docs/TESTING.md](docs/TESTING.md) for the verification boundary and commands for the broader framework suite. Browser and live-provider acceptance are separate from Python tests.

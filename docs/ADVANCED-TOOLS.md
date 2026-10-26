@@ -6,12 +6,12 @@ Use Advanced when a specialised reasoning pattern, an existing learning tool or 
 
 ## Know which execution path you are using
 
-The original tools have their own forms, provider calls, retries, logs and artifact flows. They do not become resumable workbench runs merely because you opened them from the same app.
+Advanced tools have their own forms, provider calls, logs and artifact flows. Each logical step sends once; automatic transport and JSON-format retries have been removed. They do not become resumable workbench runs merely because you opened them from the same app.
 
 | Workbench | Advanced framework flows |
 | --- | --- |
 | Prepare saves a ready run without calling a model. | A Run or Design action can make provider requests immediately. |
-| One explicitly dispatched call per step, no automatic retries. | A function can make several calls and use its own retry loops. |
+| One explicitly dispatched call per step, no automatic retries. | A function can make several explicit steps; each is attempted once. |
 | SQLite checkpoint after every completed answer. | Outputs/logs/artifacts depend on the particular function. |
 | Pause, review and edit the latest answer of an unfinished run. | The workbench's review and pause controls do not govern these executions. |
 | Versioned workspace JSON and single-run exports. | Other JSON shapes are not automatically accepted as workspace backups. |
@@ -54,7 +54,7 @@ These methods produce model-generated reasoning. The Scientific method pattern d
 
 **Adversarial Socratic** applies critical questioning to a claim. Use it when you want assumptions and weak spots to become visible.
 
-Depth and round settings change how much work these functions do. A model judge is another model output, not an independent verdict or factual benchmark. Avoid treating debate length or confidence as evidence that a claim is true.
+Depth and round settings change how much work these functions do. A model judge is another model output, not an independent verdict or factual benchmark. Depth and rounds accept 1–5; the form updates the request count before execution. Avoid treating debate length or confidence as evidence that a claim is true.
 
 ## Let a model propose a chain
 
@@ -82,7 +82,7 @@ Artifacts persist as JSON files. Chroma holds a local mirror using deterministic
 
 ## Use the Python framework when you need code
 
-This example makes live provider requests when you run it. It uses the legacy chain API and its retry behavior, rather than the workbench's checkpoint executor.
+This example makes live provider requests when you run it. It uses the framework API with one attempt per step. It does not use the workbench's checkpoint executor.
 
 ```python
 from lib.core.chain import MinimalChainable
@@ -106,3 +106,13 @@ Core modules live in `lib/core/`: `chain.py`, `artifact_store.py`, `chain_compos
 `FusionChain` supports comparing configured models with a supplied evaluator. The emergence-measurement module can ask a model to compare outputs. Such scores reflect their evaluator; they do not establish truth or prove that every chain outperforms a single prompt.
 
 Inspect the actual script and arguments before running a [legacy demo](DEMOS.md). Many make live calls. Use [Testing](TESTING.md) to distinguish offline checks from demos, provider evaluation and human acceptance.
+
+## Execution limits and comparison records
+
+Each learning tool runs four model steps. Scientific method, design thinking and judicial reasoning use five; Dialectical uses four. Five Whys uses `depth + 2`; Socratic, adversarial Socratic and Red vs Blue use `2 × depth/rounds + 2`. Depth and rounds are limited to 1–5. Meta design makes two calls; its separate execution action accepts 1–8 prompts. Failed calls and malformed JSON are never retried automatically.
+
+Advanced operations run in worker threads so the workbench remains responsive. They still have no workbench checkpoint, pause or resume contract. After an ambiguous failure, check provider usage before another action.
+
+The comparison module evaluates the first 2,000 characters of each output. It reports truncation, validates the score shape and range, and excludes failed comparisons from wins and ties. A failed chain does not trigger baseline or judge requests. Batch comparisons accept 1–20 topics. The retained significance field explicitly says that no statistical test was performed.
+
+Legacy log costs are estimates only. Configure both `LOG_INPUT_TOKEN_PRICE_PER_MILLION` and `LOG_OUTPUT_TOKEN_PRICE_PER_MILLION` if you deliberately want an estimate. Otherwise cost is unknown. The local cost-report tool excludes workbench records and unreported attempts and cannot establish an account spending total.

@@ -83,7 +83,7 @@ In the workbench, each dispatched step makes one request through the shared clie
 
 A four-step run can therefore send four successful requests. Manually retrying a failed or ambiguous request adds another attempt; an interrupted request may already have been processed by the provider. With run-through selected, a successful retry can then continue through the remaining steps.
 
-The app reports usage returned for saved answers. It does not show live prices, enforce a dollar spending cap, or account for every possible failed/unfinished provider request. Check provider-side usage when that distinction matters. Legacy Advanced tools can make multiple calls and retain their own retry loops.
+The app reports usage returned for saved answers. It does not show live prices, enforce a dollar spending cap, or account for every possible failed/unfinished provider request. Check provider-side usage when that distinction matters. Advanced tools can make multiple logical calls, but each step now sends once and never retries automatically. Pattern forms show request counts; depth and rounds are bounded to 1–5.
 
 ## Choose and compare deliberately
 

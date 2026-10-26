@@ -34,7 +34,7 @@ Saved recipe copies are listed under **Recipes**, separate from the run list. An
 | **Copy final answer** | The final answer's text | Paste a result into another tool. |
 | **Export Markdown** / **Download chain** | Run information, context and all completed step answers, including edit labels | A readable document to keep or review outside the app. |
 | **Export JSON** on a run | The run snapshot, recipe, inputs, prompts, answers, retained originals, usage, timing and progress | Preserve or restore a particular run with its trace. |
-| **Download workspace backup** | Saved recipes and runs together | Bring workspace records back into this app. |
+| **Download workspace backup** | Saved recipes and runs together, in a Studio ZIP archive | Bring workspace records back into this app. |
 
 Markdown does not contain the exact sent prompt trace, the retained original versions of edited answers, or the full usage/timing record. Copying the final answer provides an even smaller piece. JSON is the fuller record.
 
@@ -52,39 +52,41 @@ Or use:
 ./pc backup
 ```
 
-The command writes a timestamped file under the repository's `backups/` folder and prints its full path. It does not call a model. A chosen path is also supported:
+The command writes a timestamped `.zip` archive under the repository's `backups/` folder and prints its full path. It does not call a model. A chosen path is also supported:
 
 ```bash
-./pc backup /path/to/a-new-copy.json
+./pc backup /path/to/a-new-copy.zip
 ```
 
 The CLI refuses to overwrite an existing filename. Choose a new filename for a later backup. Keep a copy outside this project if you want it to survive loss of the project folder; a copy on the same disk does not protect against losing that disk.
 
-The JSON workspace backup captures a consistent database snapshot. You can make it while the app is running. A currently running record will be restored as interrupted; the backup does not create a job that resumes on its own.
+The workspace archive captures a consistent database snapshot. Its manifest checksums every JSON part. A chosen `.json` filename still exports the legacy format when it fits the importer limits; an oversized JSON export is refused before a file is published. You can make it while the app is running. A currently running record will be restored as interrupted; the backup does not create a job that resumes on its own.
 
 ## Restore without replacing newer work
 
-In **My library**, choose a Studio JSON backup file under **Bring a workspace back**, then choose **Restore backup**. The CLI equivalent is:
+In **My library**, choose a Studio ZIP or JSON backup file under **Bring a workspace back**, then choose **Restore backup**. The CLI equivalent is:
 
 ```bash
-./pc restore /path/to/prompt-studio-backup.json
+./pc restore /path/to/prompt-studio-backup.zip
 ```
 
 Restore validates the complete document before adding records. Identical records are skipped. If a backup contains an older or different version of an existing record with the same ID, it receives another ID, preserving both. Repeating that same colliding import is deduplicated as well.
 
 Restoring an old backup does not rewind a newer run or replace the workspace. It adds preserved copies where needed. Imported running work becomes interrupted and waits for an explicit action. Restoring never makes a provider request.
 
-Only the Studio backup format is accepted. A legacy artifact JSON file, a meta-chain design, or a Markdown export is not a workspace backup.
+Only Studio ZIP archives and versioned Studio JSON backups are accepted. ZIP restore validates every part before importing any records and never extracts arbitrary files. A legacy artifact JSON file, a meta-chain design, or a Markdown export is not a workspace backup.
 
 ## Understand the JSON limits
 
-JSON restore accepts at most **10,000,000 bytes** and the backup format permits at most **2,000 recipes and 2,000 runs**. An export can be larger than the restore size limit. Check the file size before relying on a large exported file as your only recovery copy.
+A legacy JSON backup or each JSON archive part accepts at most **10,000,000 bytes**, **2,000 recipes** and **2,000 runs**. Single-run JSON exports remain compatible.
 
-For a larger workspace, keep a stopped copy of the entire workspace directory as described below. You can also export individual runs as JSON for selective recovery. The current UI does not split an oversized workspace backup into importable pieces.
+Default backups use a ZIP archive of independent JSON parts plus a checksummed manifest. This supports workspaces beyond the old single-JSON limit without manual splitting. Archives accept up to **128 parts**, **128,000,000 compressed bytes** and **256,000,000 expanded bytes**. The same limits apply during creation, so a successful backup is within the restore format's limits. Every record and prompt reference is checked before a transaction adds anything.
+
+If a workspace exceeds archive limits, backup creation refuses it with a recovery instruction. Keep a stopped copy of the entire workspace directory as described below. Already-created oversized legacy JSON exports are preserved, but remain outside the legacy importer limit; make a new ZIP backup from the original workspace when possible.
 
 ## Keep the separate material you care about
 
-| Location | Workspace JSON includes it? | Notes |
+| Location | Workspace backup includes it? | Notes |
 | --- | --- | --- |
 | Workspace database recipes and runs | Yes | Includes entered context and retained original answers. |
 | Browser drafts | No | Browser/profile/origin-specific; explicitly save important edits. |
