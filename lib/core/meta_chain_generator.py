@@ -499,16 +499,16 @@ For each move in the optimal_sequence:
 - Use {{{{output[-1]}}}} to reference previous steps
 
 Respond in JSON:
-{{
+{
   "prompts": [
-    {{
+    {
       "step": 1,
       "cognitive_move": "move name",
       "prompt": "The full prompt text",
       "uses_previous_output": true/false
-    }}
+    }
   ]
-}}""".replace("{context_vars}", str(list(context.keys())))
+}""".replace("{context_vars}", str(list(context.keys())))
         ]
 
         # Execute the meta-chain
@@ -568,7 +568,7 @@ Respond in JSON:
                 cognitive_moves=["decompose", "synthesize"],
                 prompts=[
                     f"Analyze and explain {context.get('topic', goal)} in detail.",
-                    "Based on the analysis above, create a concise summary."
+                    "Based on this analysis: {{output[-1]}}, create a concise summary."
                 ],
                 context=context,
                 metadata={

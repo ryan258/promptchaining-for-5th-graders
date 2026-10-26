@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 import re
 import hashlib
+import logging
+import tempfile
+from threading import RLock
+
+logger = logging.getLogger(__name__)
 
 try:
     import chromadb
@@ -41,10 +46,11 @@ class ArtifactStore:
         self.metadata: Dict[str, Dict] = {}  # When created, by what tool, etc.
         self.chroma_client = None
         self.chroma_collection = None
+        self._write_lock = RLock()
+        self.load_warnings: List[str] = []
 
         # Create base directory if it doesn't exist
-        if not os.path.exists(base_dir):
-            os.makedirs(base_dir)
+        os.makedirs(base_dir, exist_ok=True)
 
         # Load existing artifacts
         self._load_all()
@@ -69,9 +75,6 @@ class ArtifactStore:
         # Create the full artifact key
         artifact_key = f"{topic_key}:{step_name}"
 
-        # Store in memory
-        self.artifacts[artifact_key] = data
-
         # Build metadata
         artifact_metadata = {
             "created_at": datetime.now().isoformat(),
@@ -79,11 +82,13 @@ class ArtifactStore:
             "step_name": step_name,
             **(metadata or {})
         }
-        self.metadata[artifact_key] = artifact_metadata
-
-        # Persist to disk
-        self._save_to_disk(topic_key, step_name, data, artifact_metadata)
-        self._sync_to_chroma(artifact_key, data, artifact_metadata)
+        # Publish the primary file before changing the cache. A serialization or
+        # disk failure must not advertise an answer that was never saved.
+        with self._write_lock:
+            self._save_to_disk(topic_key, step_name, data, artifact_metadata)
+            self.artifacts[artifact_key] = data
+            self.metadata[artifact_key] = artifact_metadata
+            self._sync_to_chroma(artifact_key, data, artifact_metadata)
 
     def get(self, topic: str, step_name: str) -> Optional[Any]:
         """
@@ -251,20 +256,27 @@ class ArtifactStore:
                 step_name.json
                 step_name.meta.json
         """
-        # Create topic directory
+        if not isinstance(step_name, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,120}", step_name):
+            raise ValueError("Use a short artifact step name containing letters, numbers, underscores or hyphens.")
+        # Serialize both values before touching an existing saved file.
+        data_text = json.dumps(data, indent=2, ensure_ascii=False)
+        metadata = {**metadata, "content_sha256": hashlib.sha256(data_text.encode("utf-8")).hexdigest()}
+        meta_text = json.dumps(metadata, indent=2, ensure_ascii=False)
         topic_dir = os.path.join(self.base_dir, topic_key)
-        if not os.path.exists(topic_dir):
-            os.makedirs(topic_dir)
+        os.makedirs(topic_dir, exist_ok=True)
 
         # Save data
         data_path = os.path.join(topic_dir, f"{step_name}.json")
-        with open(data_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        _atomic_replace(data_path, data_text)
 
         # Save metadata
         meta_path = os.path.join(topic_dir, f"{step_name}.meta.json")
-        with open(meta_path, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
+        try:
+            _atomic_replace(meta_path, meta_text)
+        except OSError:
+            # The answer is already durable. A stale sidecar is ignored on load
+            # using its digest; it must not turn a saved answer into a failed run.
+            logger.warning("Artifact saved; metadata sidecar could not be updated")
 
     def _load_all(self):
         """
@@ -277,7 +289,7 @@ class ArtifactStore:
         for topic_dir_name in os.listdir(self.base_dir):
             topic_path = os.path.join(self.base_dir, topic_dir_name)
 
-            if not os.path.isdir(topic_path):
+            if not os.path.isdir(topic_path) or topic_dir_name.startswith((".", "_")) or os.path.islink(topic_path):
                 continue
 
             # Load all .json files (except .meta.json)
@@ -290,15 +302,28 @@ class ArtifactStore:
 
                     # Load data
                     data_path = os.path.join(topic_path, filename)
-                    with open(data_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
+                    try:
+                        with open(data_path, "r", encoding="utf-8") as f:
+                            raw = f.read()
+                        data = json.loads(raw)
+                    except (OSError, ValueError, UnicodeError):
+                        self.load_warnings.append(f"{topic_dir_name}/{filename}")
+                        logger.warning("Skipped an unreadable artifact; original file preserved")
+                        continue
 
                     # Load metadata if exists
                     meta_path = os.path.join(topic_path, f"{step_name}.meta.json")
                     metadata = {}
                     if os.path.exists(meta_path):
-                        with open(meta_path, "r", encoding="utf-8") as f:
-                            metadata = json.load(f)
+                        try:
+                            with open(meta_path, "r", encoding="utf-8") as f:
+                                metadata = json.load(f)
+                            if (not isinstance(metadata, dict)
+                                    or (metadata.get("content_sha256") and metadata["content_sha256"] != hashlib.sha256(raw.encode("utf-8")).hexdigest())
+                                    or (not metadata.get("content_sha256") and os.stat(meta_path).st_mtime_ns < os.stat(data_path).st_mtime_ns)):
+                                metadata = {}
+                        except (OSError, ValueError, UnicodeError):
+                            metadata = {}
 
                     # Store in memory
                     artifact_key = f"{topic_dir_name}:{step_name}"
@@ -360,6 +385,19 @@ class ArtifactStore:
         except Exception:
             # Never let Chroma mirroring break primary artifact persistence.
             return
+
+
+def _atomic_replace(path: str, text: str) -> None:
+    descriptor, temporary = tempfile.mkstemp(prefix=".artifact-", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
 
 
 def resolve_artifact_references(prompt: str, artifact_store: ArtifactStore) -> Tuple[str, List[str]]:

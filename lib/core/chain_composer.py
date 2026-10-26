@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import importlib.util
 import inspect
+from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 
@@ -93,8 +94,9 @@ class CompositionResult:
     steps_executed: List[Dict[str, Any]]  # What happened at each step
     final_artifacts: Dict[str, Any]  # All artifacts created
     execution_trace: List[Dict[str, Any]]  # Detailed trace
-    total_cost: float = 0.0
+    total_cost: Optional[float] = None
     total_tokens: int = 0
+    usage_complete: bool = True
 
     def visualize(self) -> str:
         """Create a text visualization of the composition."""
@@ -110,7 +112,8 @@ class CompositionResult:
             output += "\n"
 
         output += f"Total Steps: {len(self.steps_executed)}\n"
-        output += f"Total Tokens: {self.total_tokens}\n"
+        label = "Total reported tokens" if self.usage_complete else "Known token subtotal (some tool usage unavailable)"
+        output += f"{label}: {self.total_tokens}\n"
         output += f"Artifacts Created: {len(self.final_artifacts)}\n"
 
         return output
@@ -177,6 +180,8 @@ class ChainComposer:
         print()
 
         global_context = global_context or {}
+        self.execution_trace = []
+        self.total_tokens = 0
         steps_executed = []
 
         for i, step in enumerate(steps, 1):
@@ -195,6 +200,7 @@ class ChainComposer:
                 raise ValueError(f"Unknown step type: {step.step_type}")
 
             steps_executed.append(step_result)
+            self.execution_trace.append(deepcopy(step_result))
             print(f"   ✅ Complete")
             print()
 
@@ -206,8 +212,9 @@ class ChainComposer:
         result = CompositionResult(
             steps_executed=steps_executed,
             final_artifacts=all_artifacts,
-            execution_trace=self.execution_trace,
-            total_tokens=self.total_tokens
+            execution_trace=deepcopy(self.execution_trace),
+            total_tokens=self.total_tokens,
+            usage_complete=all(step.get("usage_complete", True) for step in steps_executed)
         )
 
         print("🎉 Composition Complete!")
@@ -228,7 +235,7 @@ class ChainComposer:
         tool_args = {**global_context, **step.tool_args}
 
         print(f"   Running tool: {tool_name}")
-        print(f"   Args: {tool_args}")
+
 
         # Import the tool dynamically
         tool_path = self._find_tool_path(tool_name)
@@ -271,7 +278,9 @@ class ChainComposer:
             "name": step.name,
             "type": "tool",
             "tool_name": tool_name,
-            "artifacts_created": artifacts_created
+            "artifacts_created": artifacts_created,
+            "usage_complete": False,
+            "usage_note": "This tool does not return usage to the composer; token total is a known subtotal."
         }
 
     def _execute_chain_step(
@@ -286,12 +295,12 @@ class ChainComposer:
 
         print(f"   Running {len(step.prompts)} prompts")
 
-        result, prompts, usage = MinimalChainable.run(
+        result, prompts, usage, trace = MinimalChainable.run(
             context=context,
             model=self.model_info,
             llm_callable=self.llm_callable,
             prompts=step.prompts,
-            return_usage=True,
+            return_trace=True,
             artifact_store=self.artifact_store,
             topic=step.topic or step.name
         )
@@ -316,6 +325,8 @@ class ChainComposer:
             "type": "chain",
             "prompts_count": len(step.prompts),
             "tokens": total_step_tokens,
+            "trace": trace,
+            "usage_complete": all(bool(u) for u in usage),
             "artifacts_created": artifacts_created
         }
 
@@ -359,12 +370,12 @@ Respond in JSON:
 
         context = {**global_context, **step.context}
 
-        result, prompts, usage = MinimalChainable.run(
+        result, prompts, usage, trace = MinimalChainable.run(
             context=context,
             model=self.model_info,
             llm_callable=self.llm_callable,
             prompts=[synthesis_prompt],
-            return_usage=True,
+            return_trace=True,
             artifact_store=self.artifact_store,
             topic=step.topic or "synthesis"
         )
@@ -382,6 +393,8 @@ Respond in JSON:
             "type": "synthesize",
             "artifacts_analyzed": list(matching_artifacts.keys()),
             "tokens": total_step_tokens,
+            "trace": trace,
+            "usage_complete": all(bool(u) for u in usage),
             "result": result[0] if result else None
         }
 

@@ -37,7 +37,9 @@ from lib.utils.demo_examples import (
     get_reasoning_demo_examples,
     get_tool_demo_examples,
 )
-from server import workbench
+from server import workbench, guides
+from lib import advanced
+from lib.core.errors import InputError, user_error
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -85,6 +87,7 @@ app.state.templates = templates
 templates.env.filters["local_date"] = workbench.local_date
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(workbench.router)
+app.include_router(guides.router)
 
 def _pretty_json(data: Any) -> str:
     if isinstance(data, str):
@@ -179,17 +182,11 @@ class MetaDesignRequest(BaseModel):
 class MetaExecuteRequest(BaseModel):
     design: Dict[str, Any]
 
-OUTPUT_JSON_MARKER = "✅ Saved JSON to:"
-OUTPUT_LOG_MARKERS = [
-    "✅ Log saved to:",
-    "✅ Timeline saved to:",
-]
-
 STUDIO_NAV = (
     ("home", "Workbench", "/"),
     ("recipes", "Recipes", "/studio/recipes"),
     ("library", "My library", "/studio/library"),
-    ("learn", "How it works", "/studio/learn"),
+    ("learn", "Guides", "/studio/guides"),
     ("advanced", "Advanced", "/studio/advanced"),
 )
 
@@ -248,24 +245,8 @@ FIELD_PLACEHOLDERS = {
     "claim": "AI tutors can improve reading comprehension",
 }
 
-def _coerce_bool(value: Any) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"true", "1", "yes", "on"}:
-            return True
-        if normalized in {"false", "0", "no", "off"}:
-            return False
-    raise ValueError(f"Invalid boolean value: {value}")
 
 
-def _coerce_string_list(value: Any) -> Optional[List[str]]:
-    if value in (None, ""):
-        return None
-    if isinstance(value, list):
-        return [str(item) for item in value]
-    return [str(value)]
 
 
 def _split_text_lines(value: Any) -> Optional[List[str]]:
@@ -309,11 +290,6 @@ def _parse_context_text(raw_text: str) -> Dict[str, Any]:
     return context or {"notes": text}
 
 
-def _lookup_payload_value(payload: Dict[str, Any], field_name: str, aliases: List[str]) -> Any:
-    for key in [field_name, *aliases]:
-        if key in payload and payload[key] not in (None, ""):
-            return payload[key]
-    return None
 
 
 def _normalize_registry_payload(
@@ -321,42 +297,10 @@ def _normalize_registry_payload(
     pattern_name: str,
     payload: Dict[str, Any],
 ) -> Dict[str, Any]:
-    entry = registry.get(pattern_name)
-    if not entry:
-        raise HTTPException(status_code=404, detail=f"Pattern '{pattern_name}' not found")
-
-    schema = entry.get("input_schema") or {}
-    if not schema:
-        return payload
-
-    kwargs: Dict[str, Any] = {}
-    for field_name, spec in schema.items():
-        aliases = list(spec.get("aliases", []))
-        value = _lookup_payload_value(payload, field_name, aliases)
-
-        if value is None:
-            if spec.get("required"):
-                raise HTTPException(status_code=400, detail=f"{field_name} is required for {pattern_name}")
-            value = spec.get("default")
-
-        coerce = spec.get("coerce")
-        if value is not None and coerce is not None:
-            try:
-                if coerce == "string_list":
-                    value = _coerce_string_list(value)
-                elif coerce is bool:
-                    value = _coerce_bool(value)
-                else:
-                    value = coerce(value)
-            except (TypeError, ValueError) as exc:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid value for {field_name} in {pattern_name}: {value}",
-                ) from exc
-
-        kwargs[field_name] = value
-
-    return kwargs
+    try:
+        return advanced.normalize_payload(registry, pattern_name, payload)
+    except InputError as exc:
+        raise HTTPException(status_code=exc.status, detail=str(exc)) from None
 
 
 def _extract_module_description(source: str) -> str:
@@ -431,6 +375,8 @@ def _build_field_view(field_name: str, spec: Dict[str, Any]) -> Dict[str, Any]:
         "help_text": FIELD_HELP_TEXT.get(field_name, "Optional input for this pattern."),
         "placeholder": FIELD_PLACEHOLDERS.get(field_name, f"Enter {_humanize_key(field_name).lower()}"),
         "default_value": _field_default_value(spec),
+        "minimum": 1 if field_name in {"depth", "rounds"} else None,
+        "maximum": 5 if field_name in {"depth", "rounds"} else None,
         "full_width": kind == "textarea",
         "rows": 6 if kind == "textarea" else None,
         "options": [
@@ -451,6 +397,10 @@ def _build_pattern_view(registry: Mapping[str, Dict[str, Any]]) -> List[Dict[str
                 "description": info.get("description", ""),
                 "use_when": info.get("use_when", ""),
                 "example": info.get("example", ""),
+                "request_field": "rounds" if name == "red_vs_blue" else "depth" if "depth" in schema else "",
+                "request_factor": 1 if name == "five_whys" else 2,
+                "request_base": 2,
+                "request_count": advanced.planned_requests(name, {key: spec.get("default") for key, spec in schema.items()}),
                 "fields": [
                     _build_field_view(field_name, spec)
                     for field_name, spec in schema.items()
@@ -556,6 +506,23 @@ def _safe_artifact_path(topic: str, filename: str) -> Path:
         raise HTTPException(status_code=400, detail="Invalid artifact path") from e
     return candidate
 
+
+def _safe_message(exc: Exception) -> str:
+    logger.warning("Advanced operation stopped (%s)", type(exc).__name__)
+    if isinstance(exc, HTTPException):
+        return str(exc.detail)
+    if isinstance(exc, subprocess.TimeoutExpired):
+        return "The tool timed out and may have sent requests. Check provider usage before trying again."
+    return user_error(exc)
+
+
+def _api_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, HTTPException):
+        return exc
+    status = exc.status if isinstance(exc, InputError) else 504 if isinstance(exc, subprocess.TimeoutExpired) else 500
+    return HTTPException(status_code=status, detail=_safe_message(exc))
+
+
 @app.get("/tools", response_model=List[Tool])
 async def list_tools():
     """Scan the tools directory and return available tools."""
@@ -563,81 +530,16 @@ async def list_tools():
 
 def _execute_tool(category: str, tool_name: str, topic: str, context: Optional[str] = "") -> Dict[str, Any]:
     tool_path = _resolve_tool_path(category, tool_name)
-    if not tool_path or not os.path.exists(tool_path):
+    if tool_path is None:
         raise HTTPException(status_code=404, detail="Tool not found")
-
-    cmd = [sys.executable, tool_path, topic]
-    if context:
-        cmd.extend(["--context", context])
-
-    logger.info("Running command: %s", " ".join(cmd))
-
-    result = subprocess.run(
-        cmd,
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        timeout=300,
-    )
-
-    if result.returncode != 0:
-        return {
-            "status": "error",
-            "tool_name": tool_name,
-            "category": category,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-        }
-
-    output_content = ""
-    output_type = "text"
-    output_file = None
-
-    for line in result.stdout.split("\n"):
-        if OUTPUT_JSON_MARKER in line:
-            output_file = line.split(OUTPUT_JSON_MARKER)[1].strip()
-            output_type = "json"
-        else:
-            for marker in OUTPUT_LOG_MARKERS:
-                if marker in line:
-                    output_file = line.split(marker)[1].strip()
-                    output_type = "markdown"
-                    break
-
-    if output_file and not os.path.isabs(output_file):
-        output_file = os.path.join(PROJECT_ROOT, output_file)
-
-    if output_file and os.path.exists(output_file):
-        with open(output_file, "r", encoding="utf-8") as f:
-            output_content = f.read()
-            if output_type == "json":
-                try:
-                    output_content = json.loads(output_content)
-                except (json.JSONDecodeError, ValueError):
-                    pass
-    else:
-        output_content = result.stdout
-
-    return {
-        "status": "success",
-        "tool_name": tool_name,
-        "category": category,
-        "output": output_content,
-        "type": output_type,
-        "logs": result.stdout,
-    }
+    return advanced.execute_tool(tool_path, PROJECT_ROOT, category, tool_name, topic, context or "")
 
 @app.post("/run")
 async def run_tool(request: RunRequest):
-    """Execute a tool as a subprocess and return the output."""
     try:
-        return _execute_tool(request.category, request.tool_name, request.topic, request.context)
-    except subprocess.TimeoutExpired:
-        raise HTTPException(status_code=504, detail="Tool execution timed out")
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return await run_in_threadpool(_execute_tool, request.category, request.tool_name, request.topic, request.context)
+    except Exception as exc:
+        raise _api_error(exc) from None
 
 
 @app.get("/patterns")
@@ -654,30 +556,14 @@ async def list_reasoning_patterns():
     return patterns
 
 def _execute_pattern(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    pattern = REASONING_PATTERNS.get(pattern_name)
-    if not pattern:
-        raise HTTPException(status_code=404, detail=f"Pattern '{pattern_name}' not found")
-
-    kwargs = _normalize_registry_payload(REASONING_PATTERNS, pattern_name, payload or {})
-    result, metadata = pattern["function"](**kwargs)
-
-    return {
-        "status": "success",
-        "pattern": pattern_name,
-        "result": result,
-        "metadata": metadata,
-    }
+    return advanced.execute_pattern(REASONING_PATTERNS, pattern_name, payload)
 
 @app.post("/patterns/{pattern_name}")
 async def run_pattern(pattern_name: str, payload: Dict[str, Any] = Body(...)):
-    """Execute a reasoning pattern and return structured output."""
     try:
-        return _execute_pattern(pattern_name, payload or {})
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error running pattern {pattern_name}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return await run_in_threadpool(_execute_pattern, pattern_name, payload or {})
+    except Exception as exc:
+        raise _api_error(exc) from None
 
 
 @app.get("/adversarial")
@@ -694,84 +580,36 @@ async def list_adversarial_patterns():
     return patterns
 
 def _execute_adversarial(pattern_name: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    pattern = ADVERSARIAL_PATTERNS.get(pattern_name)
-    if not pattern:
-        raise HTTPException(status_code=404, detail=f"Adversarial pattern '{pattern_name}' not found")
-
-    kwargs = _normalize_registry_payload(ADVERSARIAL_PATTERNS, pattern_name, payload or {})
-    result, metadata = pattern["function"](**kwargs)
-
-    return {
-        "status": "success",
-        "pattern": pattern_name,
-        "result": result,
-        "metadata": metadata,
-    }
+    return advanced.execute_pattern(ADVERSARIAL_PATTERNS, pattern_name, payload)
 
 @app.post("/adversarial/{pattern_name}")
 async def run_adversarial(pattern_name: str, payload: Dict[str, Any] = Body(...)):
-    """Run adversarial reasoning flows (red vs blue, dialectical, etc.)."""
     try:
-        return _execute_adversarial(pattern_name, payload or {})
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error running adversarial pattern {pattern_name}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return await run_in_threadpool(_execute_adversarial, pattern_name, payload or {})
+    except Exception as exc:
+        raise _api_error(exc) from None
 
 
 def _execute_meta_chain_design(design_data: Dict[str, Any]) -> Dict[str, Any]:
-    prompts = design_data.get("prompts") or []
-    if not prompts:
-        raise HTTPException(status_code=400, detail="Design must include prompts to execute")
-
-    generator = MetaChainGenerator()
-    outputs, filled_prompts, usage, trace = MinimalChainable.run(
-        context=design_data.get("context") or {},
-        model=generator.model_info,
-        llm_callable=core_prompt,
-        prompts=prompts,
-        return_trace=True,
-        artifact_store=generator.artifact_store,
-        topic=design_data.get("goal", "meta_chain_run").lower().replace(" ", "_")[:50],
-    )
-    trace["final_result"] = outputs[-1] if outputs else None
-
-    return {
-        "status": "success",
-        "execution_trace": trace,
-        "outputs": outputs,
-        "prompts": filled_prompts,
-        "usage": usage,
-    }
+    return advanced.execute_design(design_data, generator_factory=MetaChainGenerator, llm_callable=core_prompt)
 
 
 @app.post("/meta-chain/design")
 async def design_meta_chain(request: MetaDesignRequest):
-    """Generate a chain design using the meta-chain generator."""
-    generator = MetaChainGenerator()
     try:
-        design = generator.design_chain(request.goal, request.context, request.constraints)
-    except Exception as e:
-        logger.error(f"Error designing meta-chain: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-    return {
-        "status": "success",
-        "design": design.to_dict()
-    }
+        design = await run_in_threadpool(advanced.design_chain, request.goal, request.context,
+                                        request.constraints, generator_factory=MetaChainGenerator)
+        return {"status": "success", "design": design}
+    except Exception as exc:
+        raise _api_error(exc) from None
 
 
 @app.post("/meta-chain/execute")
 async def execute_meta_chain(request: MetaExecuteRequest):
-    """Execute a previously designed chain and return the execution trace."""
     try:
-        return _execute_meta_chain_design(request.design or {})
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error executing meta-chain: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return await run_in_threadpool(_execute_meta_chain_design, request.design or {})
+    except Exception as exc:
+        raise _api_error(exc) from None
 
 
 @app.post("/emergence/compare")
@@ -798,7 +636,7 @@ async def compare_emergence(payload: Dict[str, Any] = Body(...)):
     )
 
     try:
-        comparison, metadata = measure_emergence(
+        comparison, metadata = await run_in_threadpool(measure_emergence,
             topic=topic,
             chain_function=pattern["function"],
             baseline_prompt=baseline_prompt,
@@ -806,11 +644,10 @@ async def compare_emergence(payload: Dict[str, Any] = Body(...)):
             **normalized_kwargs,
         )
     except Exception as e:
-        logger.error(f"Error measuring emergence for {chain_name}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _api_error(e) from None
 
     return {
-        "status": "success",
+        "status": "error" if comparison.get("status") == "failed" else "success",
         "comparison": comparison,
         "metadata": metadata
     }
@@ -1016,12 +853,12 @@ async def ui_run_tool(
     category, tool_name = tool_key.split(":", 1)
 
     try:
-        result = _execute_tool(category, tool_name, topic, context)
+        result = await run_in_threadpool(_execute_tool, category, tool_name, topic, context)
     except Exception as e:
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Tool run failed: {e}"},
+            {"message": _safe_message(e)},
         )
 
     return templates.TemplateResponse(
@@ -1057,16 +894,16 @@ async def ui_run_pattern(
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Invalid JSON payload: {e}"},
+            {"message": "Use a valid JSON object for these inputs."},
         )
 
     try:
-        result = _execute_pattern(pattern_name, payload)
+        result = await run_in_threadpool(_execute_pattern, pattern_name, payload)
     except Exception as e:
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Pattern failed: {e}"},
+            {"message": _safe_message(e)},
         )
 
     return templates.TemplateResponse(
@@ -1095,16 +932,16 @@ async def ui_run_adversarial(
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Invalid JSON payload: {e}"},
+            {"message": "Use a valid JSON object for these inputs."},
         )
 
     try:
-        result = _execute_adversarial(pattern_name, payload)
+        result = await run_in_threadpool(_execute_adversarial, pattern_name, payload)
     except Exception as e:
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Adversarial run failed: {e}"},
+            {"message": _safe_message(e)},
         )
 
     return templates.TemplateResponse(
@@ -1129,7 +966,7 @@ async def ui_meta_design(
             return templates.TemplateResponse(
                 request,
                 "partials/error.html",
-                {"message": f"Invalid context JSON: {e}"},
+                {"message": "Use a valid JSON object for context."},
             )
     else:
         context = _parse_context_text(context_text)
@@ -1141,20 +978,20 @@ async def ui_meta_design(
             if item:
                 constraint_list.append(item)
 
-    generator = MetaChainGenerator()
     try:
-        design = generator.design_chain(goal, context, constraint_list)
+        design = await run_in_threadpool(advanced.design_chain, goal, context, constraint_list,
+                                        generator_factory=MetaChainGenerator)
     except Exception as e:
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Meta-chain design failed: {e}"},
+            {"message": _safe_message(e)},
         )
 
     return templates.TemplateResponse(
         request,
         "partials/meta_design.html",
-        {"design": design.to_dict()},
+        {"design": design},
     )
 
 
@@ -1169,11 +1006,11 @@ async def ui_meta_execute(
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Invalid design JSON: {e}"},
+            {"message": "Use a valid JSON object for the design."},
         )
 
     try:
-        result = _execute_meta_chain_design(design_data)
+        result = await run_in_threadpool(_execute_meta_chain_design, design_data)
     except HTTPException as e:
         return templates.TemplateResponse(
             request,
@@ -1184,7 +1021,7 @@ async def ui_meta_execute(
         return templates.TemplateResponse(
             request,
             "partials/error.html",
-            {"message": f"Meta-chain execute failed: {e}"},
+            {"message": _safe_message(e)},
         )
 
     return templates.TemplateResponse(

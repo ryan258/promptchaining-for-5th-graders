@@ -6,8 +6,6 @@ from typing import Any, Dict, List, Tuple
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-import time
-import random
 import math
 
 
@@ -150,44 +148,5 @@ def prompt_once(model_info: Tuple[OpenAI, str], prompt_text: str):
 
 
 def prompt(model_info: Tuple[OpenAI, str], prompt_text: str):
-    """
-    Send a prompt to an AI model and return (content, usage).
-    """
-    client, model_name = model_info
-    settings = get_prompt_settings()
-
-    max_retries = 3
-    base_delay = 1
-    max_delay = 10
-
-    for attempt in range(max_retries):
-        try:
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt_text}],
-                max_tokens=settings["max_tokens"],
-                temperature=settings["temperature"],
-                timeout=settings["timeout"],
-                extra_headers=settings["headers"],
-            )
-
-            content = response.choices[0].message.content
-            usage = response.usage
-
-            if not content:
-                raise ValueError("Received empty content from API")
-
-            return content, usage
-
-        except Exception as e:
-            print(f"⚠️ Attempt {attempt + 1}/{max_retries} failed: {e}")
-
-            if attempt == max_retries - 1:
-                raise
-
-            delay = min(max_delay, base_delay * (2 ** attempt))
-            jitter = random.uniform(0, 0.1 * delay)
-            sleep_time = delay + jitter
-
-            print(f"⏳ Waiting {sleep_time:.2f}s before retry...")
-            time.sleep(sleep_time)
+    """One explicit request for framework callers; the human owns any retry."""
+    return prompt_once(model_info, prompt_text)

@@ -2,7 +2,7 @@
 """
 💰 Cost Report Tool
 
-Analyzes log files to calculate and display API costs.
+Summarizes configured and legacy log cost estimates; does not read provider billing.
 
 Usage:
     python tools/cost_report.py
@@ -15,6 +15,7 @@ import os
 import argparse
 import glob
 import re
+import math
 from datetime import datetime, timedelta
 
 # Setup project root
@@ -33,12 +34,13 @@ def parse_cost_from_log(log_path):
             content = f.read()
             
         # Look for cost pattern: "**Total Cost**: $0.000123"
-        match = re.search(r'\*\*Total Cost\*\*: \$([\d\.]+)', content)
+        match = re.search(r'\*\*(?:Estimated|Total) Cost\*\*: \$([\d\.]+)', content)
         if match:
-            return float(match.group(1))
-        return 0.0
-    except Exception:
-        return 0.0
+            value = float(match.group(1))
+            return value if math.isfinite(value) and value >= 0 else None
+        return None
+    except (OSError, ValueError):
+        return None
 
 def generate_cost_report(days=30, verbose=False):
     """Generate cost report for the last N days"""
@@ -48,12 +50,14 @@ def generate_cost_report(days=30, verbose=False):
         print(f"No logs directory found at {logs_dir}")
         return
 
-    print(f"💰 Cost Report (Last {days} days)")
+    print(f"💰 Local Cost Estimates (Last {days} days)")
     print("=" * 60)
 
     cutoff_date = datetime.now() - timedelta(days=days)
     total_cost = 0.0
     tool_costs = {}
+    unknown_logs = 0
+    priced_logs = 0
     
     # Find all markdown logs
     log_files = glob.glob(os.path.join(logs_dir, "*.md"))
@@ -78,7 +82,10 @@ def generate_cost_report(days=30, verbose=False):
                 
             cost = parse_cost_from_log(log_file)
             
-            if cost > 0:
+            if cost is None:
+                unknown_logs += 1
+            else:
+                priced_logs += 1
                 total_cost += cost
                 tool_costs[tool_name] = tool_costs.get(tool_name, 0.0) + cost
                 
@@ -97,11 +104,13 @@ def generate_cost_report(days=30, verbose=False):
         print(f"{tool:<30} ${cost:.6f}")
         
     print("=" * 60)
-    print(f"TOTAL SPEND:{'':<19} ${total_cost:.6f}")
+    print(f"TOTAL ESTIMATED COST: ${total_cost:.6f}" if priced_logs else "TOTAL ESTIMATED COST: Unknown")
+    print(f"Logs with estimates: {priced_logs}; unknown or unreadable: {unknown_logs}")
+    print("Configured/legacy estimates only. Excludes workbench usage and unreported attempts; verify actual billing with the provider.")
     print("=" * 60)
 
 def main():
-    parser = argparse.ArgumentParser(description="Calculate API costs from logs")
+    parser = argparse.ArgumentParser(description="Summarize local cost estimates and unknown records")
     parser.add_argument('--days', type=int, default=30, help='Number of days to analyze')
     parser.add_argument('--verbose', action='store_true', help='Show individual log costs')
     

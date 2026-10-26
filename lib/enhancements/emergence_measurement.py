@@ -1,27 +1,42 @@
-"""
-Measurement of Emergence
-=========================
+"""Descriptive model assessments of chain and baseline output excerpts.
 
-Scientifically measure whether prompt chains unlock insights impossible from
-single mega-prompts.
-
-This module runs systematic comparisons:
-- Chain approach vs Single mega-prompt
-- Measure: Novelty, Depth, Coherence, Pedagogical effectiveness
-- Statistical analysis across multiple topics
-- Generate evidence-based validation
-
-This answers the fundamental question: "Do chains really work better?"
+These comparisons do not verify facts, measure learning, or establish statistical significance.
 """
 
 import os
 import json
 import inspect
+import math
+
+from ..core.errors import InputError
 from typing import Dict, List, Optional, Any, Tuple, Callable
 from datetime import datetime
 
 from ..core.chain import MinimalChainable
 from ..core.llm_client import get_model, calculate_total_tokens, prompt
+
+
+def _failed_comparison(topic, name, phase, exc):
+    message = f"The {phase} phase failed. No winner was recorded and no later phase was dispatched."
+    return ({"status": "failed", "topic": topic, "chain_approach": name,
+             "winner": "Inconclusive", "scores": {}, "analysis": message},
+            {"status": "failed", "phase": phase, "error_type": type(exc).__name__, "chain_function": name})
+
+
+def _validated_scores(result: dict) -> dict:
+    dimensions = {"novelty", "depth", "coherence", "pedagogical", "actionability"}
+    try:
+        for side in ("approach_a", "approach_b"):
+            scores = result["scores"][side]
+            if set(scores) != dimensions:
+                raise ValueError()
+            if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or not 1 <= v <= 10 for v in scores.values()):
+                raise ValueError()
+        if not isinstance(result.get("summary", ""), str) or not isinstance(result.get("qualitative", {}), dict):
+            raise ValueError()
+    except (KeyError, TypeError, ValueError):
+        raise InputError("The model returned incomplete or invalid assessment scores. No winner was recorded.") from None
+    return result
 
 # ============================================================================
 # CORE COMPARISON FRAMEWORK
@@ -71,10 +86,8 @@ def measure_emergence(
             chain_kwargs,
         )
         chain_output = json.dumps(chain_result, indent=2) if isinstance(chain_result, dict) else str(chain_result)
-    except Exception as e:
-        print(f"Error running chain: {e}")
-        chain_output = f"Chain failed: {e}"
-        chain_meta = {}
+    except Exception as exc:
+        return _failed_comparison(topic, pattern_name, "chain", exc)
 
     chain_time = (datetime.now() - chain_start).total_seconds()
     chain_tokens = chain_meta.get('total_tokens', 0)
@@ -88,13 +101,17 @@ def measure_emergence(
     print(f"\n📄 Running baseline mega-prompt...")
     baseline_start = datetime.now()
 
-    baseline_result, _, baseline_usage, _ = MinimalChainable.run(
-        context={},
-        model=active_model,
-        llm_callable=llm_callable,
-        return_trace=True,
-        prompts=[baseline_prompt]
-    )
+    try:
+        baseline_result, _, baseline_usage, _ = MinimalChainable.run(
+            context={},
+            model=active_model,
+            llm_callable=llm_callable,
+            return_trace=True,
+            prompts=[baseline_prompt]
+        )
+
+    except Exception as exc:
+        return _failed_comparison(topic, pattern_name, "baseline", exc)
 
     baseline_output = baseline_result[0]
     baseline_time = (datetime.now() - baseline_start).total_seconds()
@@ -105,16 +122,24 @@ def measure_emergence(
     # Step 3: Measure both outputs
     print(f"\n📊 Measuring outputs...")
 
-    scores = _measure_outputs(
-        topic=topic,
-        chain_output=chain_output,
-        baseline_output=baseline_output,
-        model_info=active_model,
-        llm_callable=llm_callable,
-    )
+    try:
+        scores = _measure_outputs(
+            topic=topic,
+            chain_output=chain_output,
+            baseline_output=baseline_output,
+            model_info=active_model,
+            llm_callable=llm_callable,
+        )
+
+    except Exception as exc:
+        return _failed_comparison(topic, pattern_name, "assessment", exc)
 
     # Step 4: Compile results
     comparison = {
+        "status": "completed",
+        "evaluation": {"kind": "model assessment", "excerpt_limit": 2000,
+                       "chain_truncated": len(chain_output) > 2000,
+                       "baseline_truncated": len(str(baseline_output)) > 2000},
         "topic": topic,
         "chain_approach": pattern_name,
         "outputs": {
@@ -322,14 +347,14 @@ Return as JSON:
         prompts=[measurement_prompt]
     )
 
-    scores = result[0] if isinstance(result[0], dict) else {}
-
-    return scores
+    return _validated_scores(result[0])
 
 
 def _determine_winner(scores: Dict[str, Any]) -> str:
     """Determine which approach won based on scores."""
-    if not scores or 'scores' not in scores:
+    try:
+        scores = _validated_scores(scores)
+    except InputError:
         return "Inconclusive"
 
     a_scores = scores.get('scores', {}).get('approach_a', {})
@@ -367,7 +392,7 @@ def _analyze_results(scores: Dict[str, Any]) -> str:
 
     analysis = f"Chain excels at: {', '.join(chain_advantages) if chain_advantages else 'none'}. "
     analysis += f"Baseline excels at: {', '.join(baseline_advantages) if baseline_advantages else 'none'}. "
-    analysis += f"{scores.get('qualitative', {}).get('summary', '')}"
+    analysis += f"{scores.get('summary', '') or scores.get('qualitative', {}).get('summary', '')}"
 
     return analysis
 
@@ -387,8 +412,8 @@ def batch_measure(
     """
     Run emergence measurement across multiple topics.
 
-    This provides statistical significance by testing the chain approach
-    on diverse topics.
+    This summarizes descriptive model preferences across selected topics.
+    It performs no statistical significance test.
 
     Args:
         topics: List of topics to test
@@ -403,7 +428,10 @@ def batch_measure(
     print(f"Testing {chain_name or chain_function.__name__} across {len(topics)} topics")
     print(f"{'='*70}")
 
+    if not isinstance(topics, list) or not 1 <= len(topics) <= 20:
+        raise InputError("Choose 1–20 topics for a comparison batch.")
     individual_results = []
+    failures = 0
     chain_wins = 0
     baseline_wins = 0
     ties = 0
@@ -425,7 +453,9 @@ def batch_measure(
             "metadata": metadata
         })
 
-        if comparison["winner"] == "Chain":
+        if comparison.get("status") == "failed":
+            failures += 1
+        elif comparison["winner"] == "Chain":
             chain_wins += 1
         elif comparison["winner"] == "Baseline":
             baseline_wins += 1
@@ -436,19 +466,23 @@ def batch_measure(
 
     # Aggregate statistics
     total = len(topics)
-    chain_win_rate = (chain_wins / total) * 100 if total > 0 else 0
+    scored = chain_wins + baseline_wins + ties
+    chain_win_rate = (chain_wins / scored) * 100 if scored else 0
 
     aggregate = {
         "chain_function": chain_name or chain_function.__name__,
         "topics_tested": total,
+        "comparisons_scored": scored,
+        "failed_comparisons": failures,
         "results": {
             "chain_wins": chain_wins,
             "baseline_wins": baseline_wins,
             "ties": ties,
-            "chain_win_rate": f"{chain_win_rate:.1f}%"
+            "chain_win_rate": f"{chain_win_rate:.1f}%",
+            "baseline_win_rate": f"{100 * baseline_wins / scored if scored else 0:.1f}%"
         },
         "average_scores": _calculate_average_scores(individual_results),
-        "conclusion": _generate_conclusion(chain_wins, baseline_wins, ties, total),
+        "conclusion": _generate_conclusion(chain_wins, baseline_wins, ties, scored),
         "statistical_significance": _assess_significance(chain_wins, baseline_wins, total)
     }
 
@@ -481,29 +515,14 @@ def _calculate_average_scores(results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 def _generate_conclusion(chain_wins: int, baseline_wins: int, ties: int, total: int) -> str:
     """Generate conclusion from results."""
-    if chain_wins > baseline_wins + ties:
-        strength = "strong" if chain_wins > total * 0.7 else "moderate"
-        return f"Chain approach shows {strength} superiority, winning {chain_wins}/{total} comparisons."
-    elif baseline_wins > chain_wins + ties:
-        return f"Baseline approach performs better, winning {baseline_wins}/{total} comparisons."
-    else:
-        return f"Results are mixed ({chain_wins} chain, {baseline_wins} baseline, {ties} ties). Further testing needed."
+    return (f"Across {total} scored comparisons, the model judge preferred the chain {chain_wins} times, "
+            f"the baseline {baseline_wins} times, with {ties} ties. Failed comparisons are excluded. "
+            "These preferences do not establish factual accuracy or learning effectiveness.")
 
 
 def _assess_significance(chain_wins: int, baseline_wins: int, total: int) -> str:
-    """Assess statistical significance (simplified)."""
-    if total < 5:
-        return "Sample size too small for statistical significance"
-
-    win_rate = chain_wins / total
-    if win_rate >= 0.7:
-        return "High confidence - chain consistently outperforms"
-    elif win_rate >= 0.6:
-        return "Moderate confidence - chain shows advantage"
-    elif win_rate >= 0.5:
-        return "Low confidence - results are close"
-    else:
-        return "Chain does not show advantage over baseline"
+    """Retained compatibility field: explicitly disclose that no test is performed."""
+    return "Descriptive model-assessment counts only; no statistical significance test was performed."
 
 
 # ============================================================================
@@ -517,10 +536,12 @@ def generate_report(
 ) -> str:
     """Generate a markdown report of the measurement results."""
 
-    report = f"""# Emergence Measurement Report
+    report = f"""# Model Assessment Report
 
 **Chain Function:** {aggregate['chain_function']}
-**Topics Tested:** {aggregate['topics_tested']}
+**Topics attempted:** {aggregate['topics_tested']}
+**Failed comparisons excluded:** {aggregate.get('failed_comparisons', 0)}
+**Input scope:** First 2,000 characters of each output; model judgment only.
 **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 ---
@@ -529,7 +550,7 @@ def generate_report(
 
 {aggregate['conclusion']}
 
-**Statistical Significance:** {aggregate['statistical_significance']}
+**Assessment limits:** {aggregate['statistical_significance']}
 
 ---
 
@@ -537,8 +558,8 @@ def generate_report(
 
 | Metric | Chain | Baseline | Winner |
 |--------|-------|----------|--------|
-| Wins | {aggregate['results']['chain_wins']} | {aggregate['results']['baseline_wins']} | {'Chain' if aggregate['results']['chain_wins'] > aggregate['results']['baseline_wins'] else 'Baseline'} |
-| Win Rate | {aggregate['results']['chain_win_rate']} | {100 - float(aggregate['results']['chain_win_rate'].rstrip('%')):.1f}% | - |
+| Wins | {aggregate['results']['chain_wins']} | {aggregate['results']['baseline_wins']} | {'Chain' if aggregate['results']['chain_wins'] > aggregate['results']['baseline_wins'] else 'Baseline' if aggregate['results']['baseline_wins'] > aggregate['results']['chain_wins'] else 'Tie'} |
+| Win Rate | {aggregate['results']['chain_win_rate']} | {aggregate['results'].get('baseline_win_rate', 'Unknown')} | - |
 | Ties | {aggregate['results']['ties']} | {aggregate['results']['ties']} | - |
 
 ---
@@ -564,7 +585,7 @@ def generate_report(
 
     report += "\n---\n\n## Conclusion\n\n"
     report += aggregate['conclusion'] + "\n\n"
-    report += f"Statistical confidence: {aggregate['statistical_significance']}\n"
+    report += f"Assessment limits: {aggregate['statistical_significance']}\n"
 
     # Save report
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

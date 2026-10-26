@@ -48,7 +48,7 @@ NAV = [
     ("home", "Workbench", "/"),
     ("recipes", "Recipes", "/studio/recipes"),
     ("library", "My library", "/studio/library"),
-    ("learn", "How it works", "/studio/learn"),
+    ("learn", "Guides", "/studio/guides"),
     ("advanced", "Advanced", "/studio/advanced"),
 ]
 
@@ -281,16 +281,21 @@ def library(request: Request, q: str = ""):
 
 @router.get("/studio/backup")
 def backup():
-    data = get_store().backup().model_dump_json(indent=2)
-    return Response(data, media_type="application/json",
-                    headers={"Content-Disposition": 'attachment; filename="prompt-studio-backup.json"'})
+    try:
+        data = get_store().archive()
+    except (ValueError, OSError):
+        raise HTTPException(400, "Backup could not be created. Preserve a stopped workspace-folder copy; existing work is unchanged.") from None
+    return Response(data, media_type="application/zip",
+                    headers={"Content-Disposition": 'attachment; filename="prompt-studio-backup.zip"'})
 
 
 @router.post("/studio/restore")
 async def restore(request: Request, backup_file: UploadFile = File(...)):
     try:
-        raw = await backup_file.read(10_000_001)
-        recipes, runs = get_store().restore(raw)
+        from lib.workbench.backups import ARCHIVE_LIMIT
+        raw = await backup_file.read(ARCHIVE_LIMIT + 1)
+        from starlette.concurrency import run_in_threadpool
+        recipes, runs = await run_in_threadpool(get_store().restore, raw)
         return RedirectResponse(f"/studio/library?restored={recipes}+recipes+and+{runs}+runs+added", status_code=303)
     except (ValueError, KeyError) as exc:
         return problem(request, exc)

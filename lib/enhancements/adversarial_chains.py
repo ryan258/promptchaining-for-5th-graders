@@ -18,6 +18,7 @@ from typing import Callable, Dict, List, Optional, Any, Tuple
 
 from ..core.llm_client import calculate_total_tokens, prompt
 from ._runner import execute_pattern
+from ..core.limits import bounded_count
 
 # ============================================================================
 # PATTERN 1: RED TEAM vs BLUE TEAM
@@ -57,6 +58,7 @@ def red_vs_blue(
             rounds=3
         )
     """
+    bounded_count(rounds, "rounds")
     criteria_str = ", ".join(judge_criteria) if judge_criteria else "logical strength, evidence quality, practical considerations"
 
     prompts = []
@@ -160,7 +162,7 @@ Topic: {topic}
 Position debated: {position_to_defend}
 Rounds: {rounds}
 
-Blue Team's opening: {{{{output[0]}}}}
+Blue Team's opening: {{{{output[-{2 * rounds + 1}]}}}}
 Final round attacks: {{{{output[-2]}}}}
 Final round defense: {{{{output[-1]}}}}
 
@@ -436,6 +438,7 @@ def adversarial_socratic(
             aggressive=True
         )
     """
+    bounded_count(depth, "depth")
     style = "aggressively challenge and find every flaw" if aggressive else "probe gently"
 
     prompts = []

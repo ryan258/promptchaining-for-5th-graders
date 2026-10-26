@@ -9,10 +9,13 @@ from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
 import os
 import datetime
-import time
+from uuid import uuid4
+
+from .limits import validate_prompts
+from .templates import render_template
 
 # Import artifact store for persistent knowledge accumulation
-from .artifact_store import ArtifactStore, resolve_artifact_references
+from .artifact_store import ArtifactStore
 
 # This is like a report card that tells us how our fusion chain did
 class FusionChainResult(BaseModel):
@@ -65,7 +68,9 @@ class FusionChain:
         if get_model_name is None:
             raise ValueError("FusionChain.run requires `get_model_name`.")
 
-        def process_model(model):
+        fusion_id = uuid4().hex[:12]
+
+        def process_model(index, model):
             """
             This little function runs the prompt chain for one model.
             We need this because of how parallel processing works.
@@ -74,7 +79,7 @@ class FusionChain:
                 context, model, llm_callable, prompts,
                 return_usage=True,
                 artifact_store=artifact_store,
-                topic=topic
+                topic=f"{topic or 'fusion'}_{fusion_id}_model_{index + 1}" if artifact_store is not None else topic
             )
             return outputs, context_filled_prompts, usage_stats
 
@@ -89,7 +94,7 @@ class FusionChain:
         with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
             # Submit tasks and remember which future belongs to which model index
             future_to_index = {
-                executor.submit(process_model, model): idx
+                executor.submit(process_model, idx, model): idx
                 for idx, model in enumerate(models)
             }
             
@@ -205,7 +210,7 @@ class MinimalChainable:
         artifact_store: Optional['ArtifactStore'] = None,  # Store for saving/loading artifacts
         topic: Optional[str] = None,  # Topic name for artifact storage (auto-detected if not provided)
         callable: Optional[Callable] = None,  # Legacy alias for llm_callable
-    ) -> Union[List[Any], Tuple[List[Any], List[str], List[Any]], Tuple[List[Any], List[str], List[Any], Dict]]:
+    ) -> Union[Tuple[List[Any], List[str]], Tuple[List[Any], List[str], List[Any]], Tuple[List[Any], List[str], List[Any], Dict]]:
         """
         This is where the magic happens!
 
@@ -227,6 +232,8 @@ class MinimalChainable:
         if prompts is None:
             raise ValueError("MinimalChainable.run requires `prompts`.")
         
+        validate_prompts(prompts)
+
         # Create empty lists to store our results
         output = []                    # Stores AI responses
         context_filled_prompts = []    # Stores the actual prompts we sent
@@ -282,112 +289,21 @@ class MinimalChainable:
         # Go through each prompt one by one
         for i, prompt in enumerate(prompts):
 
-            # STEP 0: Resolve artifact references (if artifact store provided)
-            # This lets us use {{artifact:machine_learning:components}}
-            artifact_keys_used = []
-            if artifact_store is not None and resolve_artifact_references is not None:
-                prompt, artifact_keys_used = resolve_artifact_references(prompt, artifact_store)
-
-            # STEP 1: Replace context variables
-            # Look for things like {{topic}} and replace them with real values
-            for key, value in context.items():
-                # Check if this variable is in our prompt
-                if "{{" + key + "}}" in prompt:
-                    # Replace {{key}} with the actual value
-                    prompt = prompt.replace("{{" + key + "}}", str(value))
-
-            # STEP 2: Replace references to previous outputs
-            # This is where we can use {{output[-1]}} to get the last response
-            
-            # We count backwards from the current prompt
-            # j=1 means "1 prompt ago", j=2 means "2 prompts ago", etc.
-            for j in range(i, 0, -1):
-                # Get the response from j prompts ago
-                previous_output = output[i - j]
-
-                # Try to parse stringified JSON so {{output[-1].key}} still works
-                parsed_output = previous_output
-                if isinstance(previous_output, str):
-                    try:
-                        parsed_output = json.loads(previous_output)
-                    except (json.JSONDecodeError, TypeError):
-                        parsed_output = previous_output
-
-                # Handle JSON (dictionary) outputs specially
-                if isinstance(parsed_output, dict):
-                    # If they want the whole JSON object
-                    if f"{{{{output[-{j}]}}}}" in prompt:
-                        # Replace with the JSON as a string
-                        prompt = prompt.replace(
-                            f"{{{{output[-{j}]}}}}", json.dumps(parsed_output)
-                        )
-                    
-                    # If they want a specific key from the JSON
-                    for key, value in parsed_output.items():
-                        if f"{{{{output[-{j}].{key}}}}}" in prompt:
-                            # Replace {{output[-1].title}} with the actual title
-                            replacement = (
-                                json.dumps(value, ensure_ascii=False)
-                                if isinstance(value, (dict, list))
-                                else str(value)
-                            )
-                            prompt = prompt.replace(
-                                f"{{{{output[-{j}].{key}}}}}", replacement
-                            )
-                            
-                # Handle regular text outputs or fallback when JSON parsing failed
-                else:
-                    if f"{{{{output[-{j}]}}}}" in prompt:
-                        # Replace with the previous text response
-                        prompt = prompt.replace(
-                            f"{{{{output[-{j}]}}}}", str(previous_output)
-                        )
-                    # Best-effort: if we still see scoped references, replace them with the raw text
-                    prompt = re.sub(
-                        rf"{{{{output\[-{j}\]\.[^}}]+}}}}",
-                        str(previous_output),
-                        prompt
-                    )
+            prompt, artifact_keys_used = render_template(prompt, context, output, artifact_store)
 
             # Save the prompt with all variables filled in
             # This helps us debug and see exactly what we sent to the AI
             context_filled_prompts.append(prompt)
 
-            # STEP 3: Send the prompt to the AI model (with retries for JSON validation)
-            max_retries = 3
-            result = None
+            # One logical step invokes its callable once. Formatting mistakes
+            # and provider errors never trigger hidden billable requests.
+            result_raw = llm_callable(model, prompt)
             usage = None
-            
-            for attempt in range(max_retries):
-                try:
-                    # We expect the callable to return (content, usage) or just content
-                    result_raw = llm_callable(model, prompt)
-                    
-                    usage = None
-                    if isinstance(result_raw, tuple) and len(result_raw) == 2:
-                        result, usage = result_raw
-                    else:
-                        result = result_raw
-
-                    # STEP 4: Try to parse JSON responses (robust to fences/truncation)
-                    parsed_result = _coerce_json(result)
-                    
-                    # Validation: If prompt asks for JSON but we got a string, retry
-                    if "JSON" in prompt and isinstance(parsed_result, str) and attempt < max_retries - 1:
-                        print(f"⚠️ Step {i+1} Attempt {attempt + 1}/{max_retries}: Failed to parse JSON. Retrying...")
-                        continue
-                    
-                    result = parsed_result
-                    break
-                except Exception as e:
-                    print(f"⚠️ Step {i+1} Attempt {attempt + 1}/{max_retries} failed: {e}")
-                    if attempt == max_retries - 1:
-                        # On final failure, stop the chain to prevent downstream pollution
-                        print(f"❌ Step {i+1} failed after {max_retries} attempts. Stopping chain.")
-                        raise e
-                    
-                    # Brief backoff for JSON validation failures (API backoff is handled in main.py)
-                    time.sleep(1 * (attempt + 1))
+            if isinstance(result_raw, tuple) and len(result_raw) == 2:
+                result, usage = result_raw
+            else:
+                result = result_raw
+            result = _coerce_json(result)
 
             # Save this result so future prompts can reference it
             output.append(result)
@@ -415,7 +331,7 @@ class MinimalChainable:
                 )
 
             # Store usage if available
-            if usage:
+            if usage is not None:
                 # Convert usage object to dict if possible to ensure JSON serializability
                 if hasattr(usage, "model_dump"):
                     usage_dict = usage.model_dump()
@@ -427,6 +343,8 @@ class MinimalChainable:
                     usage_dict = usage
 
                 usage_stats_list.append(usage_dict)
+            else:
+                usage_stats_list.append({})
 
         # Build execution trace if requested
         if return_trace:
@@ -522,38 +440,29 @@ class MinimalChainable:
             os.makedirs(logs_dir)
 
         # Generate timestamped filename
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         filename = f"{timestamp}_{demo_name}.md"
         filepath = os.path.join(logs_dir, filename)
 
         markdown_content = f"# 🪵 Log: {demo_name}\n\n"
         markdown_content += f"**Date:** {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
 
-        # Calculate cost if usage stats are available
-        total_cost = 0.0
-        if usage_stats:
-            input_price = float(os.getenv("LOG_INPUT_TOKEN_PRICE_PER_MILLION", "0.15")) / 1_000_000
-            output_price = float(os.getenv("LOG_OUTPUT_TOKEN_PRICE_PER_MILLION", "0.60")) / 1_000_000
-
-            total_input_tokens = 0
-            total_output_tokens = 0
-
-            for usage in usage_stats:
-                # Handle both object and dict access
-                if isinstance(usage, dict):
-                    prompt_tokens = usage.get('prompt_tokens', 0)
-                    completion_tokens = usage.get('completion_tokens', 0)
-                else:
-                    prompt_tokens = getattr(usage, 'prompt_tokens', 0)
-                    completion_tokens = getattr(usage, 'completion_tokens', 0)
-
-                total_input_tokens += prompt_tokens
-                total_output_tokens += completion_tokens
-
-            total_cost = (total_input_tokens * input_price) + (total_output_tokens * output_price)
-
-            markdown_content += f"**Total Cost**: ${total_cost:.6f}\n"
-            markdown_content += f"**Tokens**: {total_input_tokens} in / {total_output_tokens} out\n\n"
+        # Only estimate when both prices are explicitly configured. Unknown
+        # usage or prices must never look like a zero-dollar provider invoice.
+        total_input_tokens = sum((u.get("prompt_tokens", 0) if isinstance(u, dict) else getattr(u, "prompt_tokens", 0)) or 0 for u in (usage_stats or []))
+        total_output_tokens = sum((u.get("completion_tokens", 0) if isinstance(u, dict) else getattr(u, "completion_tokens", 0)) or 0 for u in (usage_stats or []))
+        markdown_content += f"**Tokens reported**: {total_input_tokens} in / {total_output_tokens} out\n\n"
+        try:
+            import math
+            input_price = float(os.environ["LOG_INPUT_TOKEN_PRICE_PER_MILLION"])
+            output_price = float(os.environ["LOG_OUTPUT_TOKEN_PRICE_PER_MILLION"])
+            if not all(math.isfinite(v) and v >= 0 for v in (input_price, output_price)) or not usage_stats or any(not u for u in usage_stats):
+                raise ValueError()
+            estimate = (total_input_tokens * input_price + total_output_tokens * output_price) / 1_000_000
+            markdown_content += f"**Estimated Cost**: ${estimate:.6f}\n"
+            markdown_content += f"**Price assumptions**: ${input_price:g} input / ${output_price:g} output per million tokens; configured rates, not verified billing.\n\n"
+        except (KeyError, ValueError):
+            markdown_content += "**Estimated Cost**: Unknown — complete usage and explicit token prices are required.\n\n"
 
         markdown_content += "## 🗣️ Prompts Sent\n\n"
         for i, prompt in enumerate(prompts, 1):

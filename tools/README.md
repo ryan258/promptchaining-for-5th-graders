@@ -1,6 +1,6 @@
 # Reference Tool Implementations
 
-This directory contains reference implementations demonstrating best practices for building prompt chaining tools.
+This directory contains reference implementations showing the portable framework and CLI conventions. For the main saved workflow, start with the [workbench guides](../docs/README.md).
 
 ## Philosophy
 
@@ -10,8 +10,8 @@ These tools are designed for **low-energy usability**. If you can't use them on 
 
 1. **Zero-config start**: Load user context automatically from `context/user_profile.json`
 2. **CLI-first**: Accept input via args or stdin
-3. **Fast**: < 3 minutes for 80% of use cases
-4. **Energy ROI positive**: Value out > effort in
+3. **Bounded work**: Short explicit chains; runtime depends on provider behavior
+4. **Useful effort**: Judge the actual result and your effort to obtain it
 5. **Professional output**: Structured JSON + markdown with comprehensive analysis
 6. **Execution traces**: Full chain visualization data for web UI
 
@@ -157,21 +157,15 @@ This enables the web UI's beautiful chain visualization where users can:
 
 ## Full Tool Catalog
 
-The complete catalog of 33 production tools has been moved to a separate repository for easier management and plugin-based architecture.
+This checkout exposes two learning tools in Advanced. Earlier notes mention a larger external tool catalog; that catalog is not installed or verified here.
 
 These 2 reference implementations demonstrate all the patterns used across the full catalog.
 
-## Energy Cost vs Return
+## Execution and evidence limits
 
-**Concept Simplifier:**
-- Energy cost: Low (2-3 minutes)
-- Energy return: High (deep understanding shortcut)
-- Net: Strongly positive ✅
+Both exposed learning tools make four logical requests. Each step is attempted once; no provider or JSON-format retry occurs automatically. Advanced requests do not use resumable workbench checkpoints. Check provider usage after an ambiguous failure before another action.
 
-**Subject Connector:**
-- Energy cost: Low (2-3 minutes)
-- Energy return: Medium-High (creative insights, project ideas)
-- Net: Positive ✅
+Descriptions of effort reduction are design intentions. No measured energy saving, fixed completion time, provider quality or learning benefit is established by these examples or offline tests. Treat generated content as a draft and verify its factual claims. Cost reports contain estimates or unknown values, not account billing totals.
 
 ## What Makes a Good Prompt Chain?
 

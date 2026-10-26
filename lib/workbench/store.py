@@ -7,6 +7,7 @@ from typing import Callable
 import hashlib
 
 from .models import Backup, Recipe, Run, SavedRecipe, new_id, now
+from .backups import archive_backup, read_backup, JSON_LIMIT
 
 
 class Conflict(ValueError):
@@ -132,28 +133,44 @@ class Store:
         return recovered
 
     def backup(self) -> Backup:
+        recipes, runs = self._snapshot()
+        if len(recipes) > 2000 or len(runs) > 2000:
+            raise ValueError("Use a Studio ZIP archive for more than 2,000 recipes or runs.")
+        backup = Backup(recipes=recipes, runs=runs)
+        if len(backup.model_dump_json(indent=2).encode("utf-8")) > JSON_LIMIT:
+            raise ValueError("This JSON backup exceeds its restore limit. Use a .zip backup instead.")
+        return backup
+
+    def archive(self) -> bytes:
+        return archive_backup(*self._snapshot())
+
+    def _snapshot(self) -> tuple[list[SavedRecipe], list[Run]]:
         # One read transaction provides a consistent snapshot even during a run.
         with self.connection() as db:
             db.execute("BEGIN")
             recipes = [SavedRecipe.model_validate_json(row[0]) for row in db.execute("SELECT payload FROM recipes")]
             runs = [Run.model_validate_json(row[0]) for row in db.execute("SELECT payload FROM runs")]
-        return Backup(recipes=recipes, runs=runs)
+        from .runner import validate_recipe
+        try:
+            for record in [*recipes, *runs]:
+                validate_recipe(record.recipe)
+        except ValueError:
+            raise ValueError("Saved work contains an invalid recipe reference. Preserve a stopped workspace-folder copy before repairing it.") from None
+        return recipes, runs
 
     def restore(self, raw: bytes) -> tuple[int, int]:
-        if len(raw) > 10_000_000:
-            raise ValueError("Choose a Studio JSON backup smaller than 10 MB.")
-        backup = Backup.model_validate_json(raw)
+        recipes, runs = read_backup(raw)
         from .runner import validate_recipe
-        for record in backup.recipes:
+        for record in recipes:
             validate_recipe(record.recipe)
-        for run in backup.runs:
+        for run in runs:
             validate_recipe(run.recipe)
         # Import adds records. Matching records are skipped; different records
         # with the same ID receive a fresh ID, so local work is never overwritten.
         counts = [0, 0]
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
-            for kind, records in enumerate((backup.recipes, backup.runs)):
+            for kind, records in enumerate((recipes, runs)):
                 table = "recipes" if kind == 0 else "runs"
                 for record in records:
                     if kind == 1:

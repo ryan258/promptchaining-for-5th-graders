@@ -4,7 +4,13 @@ Automated content generation for MS-focused blog with minimal cognitive load.
 
 ## Overview
 
-This module provides a **Low-Energy Content Pipeline** that generates publication-ready content for MS blog topics. Perfect for days when brain fog makes writing difficult.
+This module provides a **Low-Energy Content Pipeline** that generates draft content for author review for MS blog topics. Perfect for days when brain fog makes writing difficult.
+
+## Boundaries
+
+These CLI tools are separate from the resumable workbench. Each model step is attempted once and requires an explicit action after failure. Generated scenarios are illustrative; personal experience, measured time/energy savings, medical benefits, sources and setup details require actual evidence or a [verify] marker. Structural validation checks sections and length, not truth or publication readiness.
+
+Prompt-card `energy_level` changes the actual final-draft constraint: low requests under 600 words and at most three essential setup actions; medium under 900 words and at most five; high under 1,200 words with optional worked detail. These are model instructions, not measured energy outcomes or enforced word counts.
 
 ## Features
 
@@ -49,7 +55,7 @@ content, metadata = generate_shortcut_spotlight(
 # - Keyboard shortcuts table
 # - 3-4 practical use cases
 # - Before/After comparison
-# - Energy savings estimate
+# - Possible effort reduction, without invented measurements
 # - Troubleshooting section
 ```
 
@@ -99,7 +105,7 @@ ideas, metadata = expand_content_idea(
 ```
 
 ### 5. Low-Energy Pipeline ⭐
-**THE COMPLETE SYSTEM** - One command from idea to publishable content.
+**Draft workflow** - One command from idea to a saved draft for review.
 
 ```python
 from tools.ms_blog.ms_content_tools import low_energy_pipeline

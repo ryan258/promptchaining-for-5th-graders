@@ -125,6 +125,13 @@ def generate_prompt_card(
     Returns:
         Tuple of (markdown_content, metadata)
     """
+    if energy_level not in {"low", "medium", "high"}:
+        raise ValueError("Choose low, medium or high for energy_level.")
+    effort = {
+        "low": "Keep the final draft under 600 words. One essential action at a time, at most three setup actions; put optional detail last.",
+        "medium": "Keep the final draft under 900 words. Use at most five setup actions and separate optional detail.",
+        "high": "Keep the final draft under 1200 words. Add worked detail when useful, while preserving a short quick path.",
+    }[energy_level]
     model_info = get_model()
 
     # Design the prompt chain for generating a prompt card
@@ -134,6 +141,8 @@ def generate_prompt_card(
 
 Target audience: {target_audience}
 Additional context: {additional_context}
+Effort constraint for this whole draft: {effort}
+Do not invent personal experiences, measured benefits, sources or statistics. Label sample scenarios illustrative.
 
 Provide a structured analysis:
 1. Core challenge: What's the root issue?
@@ -201,6 +210,8 @@ Variations & Troubleshooting: {{{{output[-1]}}}}
 
 Original problem: "{problem}"
 Target audience: {target_audience}
+Effort constraint: {effort}
+This is a draft for review. Do not invent measured benefits, personal stories, quotes or resources. Mark factual claims needing sources as [verify]. Label generated scenarios as illustrative.
 
 Generate a complete markdown document with:
 
@@ -218,7 +229,7 @@ energy_cost: "[low/medium/high]"
 2. Problem Statement section (## The Problem)
 3. Readiness checklist (## Before You Start)
 4. The Prompt section (## The Prompt) with clear copy-paste formatting
-5. Examples section (## Examples) with 2-3 real scenarios
+5. Examples section (## Examples) with 2-3 clearly labelled illustrative scenarios
 6. Variations section (## Variations) with all three versions
 7. Troubleshooting section (## Troubleshooting)
 8. Related Resources section (## Related Resources)
@@ -227,7 +238,7 @@ Use accordion formatting where helpful for long sections.
 Ensure accessibility: clear headings, simple language, good structure.
 Focus on reducing cognitive load in presentation.
 
-Return ONLY the complete markdown, ready to save as a .md file."""
+Return ONLY the complete markdown draft, ready for the author to review and save as a .md file."""
     ]
 
     # Run the chain
@@ -299,7 +310,7 @@ Additional context: {additional_context}
 Provide:
 1. What it is: Clear explanation of the tool/technique
 2. Accessibility angle: Why it matters for MS (fatigue, mobility, cognitive load)
-3. Energy savings: How much effort/energy does this save?
+3. Possible effort reduction: explain the proposed mechanism. Do not claim measured savings or medical benefits without supplied evidence.
 4. Who benefits most: Which MS symptoms does this address?
 
 Format as JSON.""",
@@ -343,7 +354,7 @@ Use cases: {{{{output[-1]}}}}
 
 Create:
 1. Before/After comparison: Quick visual of the improvement
-2. Energy savings estimate: "Saves X minutes/Y mental energy per day"
+2. Possible effort reduction: use qualitative language. Quantify time or energy savings only when a measurement is explicitly supplied; otherwise say Not measured.
 3. Related shortcuts: 2-3 similar tools/techniques
 4. Next steps: What to learn after mastering this
 
@@ -384,7 +395,7 @@ time_to_setup: "[5min/15min/30min]"
 9. Related Resources
 
 Use clear headings, simple language, and accessible formatting.
-Include energy savings prominently.
+Describe possible effort reduction without inventing measurements, medical benefits or personal experience. Mark unverified setup details and resources [verify].
 
 Return ONLY the markdown."""
     ]
@@ -517,7 +528,7 @@ Phases: {{{{output[-2]}}}}
 Prompts: {{{{output[-1]}}}}
 
 Create:
-1. Before/After narrative: Story of life before vs after this system
+1. A clearly labelled illustrative before/after scenario. Never invent lived experience, measured results or medical benefits.
 2. Troubleshooting checklist: Top 5-7 issues with solutions
 3. Related resources: What to learn next, related guides/prompts
 4. Adaptation tips: How to adjust for bad symptom days
@@ -1104,10 +1115,10 @@ def low_energy_pipeline(
     auto_save: bool = True
 ) -> Dict[str, Any]:
     """
-    THE COMPLETE SYSTEM: From idea to publishable content.
+    Draft workflow: from an idea to saved content for review.
 
     This is the game-changer for low-energy days. Just describe your problem
-    and get publication-ready content.
+    and get draft content for review.
 
     Args:
         input_text: Describe the problem or topic
@@ -1291,7 +1302,7 @@ Return JSON with:
     print("🎉 CONTENT GENERATED!")
     print("="*60)
     print(f"\n📝 Format: {chosen_format}")
-    print(f"✅ Validation: {'PASSED' if validation['valid'] else 'NEEDS REVIEW'}")
+    print(f"Structure check: {'passed' if validation['valid'] else 'needs repair'}; factual and author review still required")
     if file_path:
         print(f"📁 Saved to: {file_path}")
 

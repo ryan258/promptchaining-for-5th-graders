@@ -16,15 +16,15 @@ def workspace_directory() -> Path:
     return Path(os.getenv("PROMPT_STUDIO_DATA", str(ROOT / "workspace"))).expanduser().resolve()
 
 
-def atomic_write(path: Path, text: str):
+def atomic_write(path: Path, text: str | bytes):
     path = path.expanduser().resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         raise ValueError("That file already exists. Choose a new backup filename to preserve the existing copy.")
     descriptor, name = tempfile.mkstemp(prefix=".studio-backup-", dir=path.parent)
     try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-            stream.write(text)
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(text.encode("utf-8") if isinstance(text, str) else text)
             stream.flush()
             os.fsync(stream.fileno())
         # Hard-link publication is atomic and refuses to overwrite a raced file.
@@ -47,7 +47,7 @@ def main(argv=None) -> int:
     command = args.command or "start"
 
     if command == "doctor":
-        modules = ("fastapi", "uvicorn", "jinja2", "multipart", "openai", "dotenv", "pydantic", "chromadb")
+        modules = ("fastapi", "uvicorn", "jinja2", "markdown_it", "multipart", "openai", "dotenv", "pydantic", "chromadb")
         missing = [name for name in modules if importlib.util.find_spec(name) is None]
         print(f"Python: {sys.version.split()[0]}")
         if missing:
@@ -83,12 +83,16 @@ def main(argv=None) -> int:
     try:
         if command == "backup":
             from datetime import datetime
-            path = Path(args.path) if args.path else ROOT / "backups" / f"studio-{datetime.now():%Y%m%d-%H%M%S}.json"
-            atomic_write(path, store.backup().model_dump_json(indent=2))
+            path = Path(args.path) if args.path else ROOT / "backups" / f"studio-{datetime.now():%Y%m%d-%H%M%S}.zip"
+            if path.suffix.lower() not in {".json", ".zip"}:
+                raise ValueError("Choose a .zip archive or a .json backup filename.")
+            data = store.backup().model_dump_json(indent=2) if path.suffix.lower() == ".json" else store.archive()
+            atomic_write(path, data)
             print(f"Workspace saved: {path.expanduser().resolve()}")
         elif command == "restore":
             with Path(args.path).expanduser().open("rb") as stream:
-                raw = stream.read(10_000_001)
+                from lib.workbench.backups import ARCHIVE_LIMIT
+                raw = stream.read(ARCHIVE_LIMIT + 1)
             recipes, runs = store.restore(raw)
             print(f"Added {recipes} recipes and {runs} runs. Existing work was preserved. No requests sent.")
     except (ValueError, OSError) as exc:

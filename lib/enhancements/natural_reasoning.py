@@ -20,6 +20,7 @@ from typing import Callable, Dict, List, Optional, Any, Tuple
 
 from ..core.llm_client import calculate_total_tokens, prompt
 from ._runner import execute_pattern
+from ..core.limits import bounded_count
 
 
 # ============================================================================
@@ -53,7 +54,7 @@ def scientific_method(
     Returns:
         Tuple of (results dict, metadata dict)
     """
-    evidence_str = "\n".join(evidence_sources) if evidence_sources else "No specific evidence provided - use general knowledge"
+    evidence_str = "\n".join(evidence_sources) if evidence_sources else "No evidence supplied. Propose hypotheses and tests; do not invent observations, studies or results."
 
     prompts = [
         # Step 1: Observation
@@ -64,7 +65,7 @@ Context: {context}
 Available evidence: {evidence_str}
 
 STEP 1: OBSERVATION
-What observations led to this hypothesis? What phenomena are we trying to explain?
+Separate observations explicitly supplied in the context from assumptions and proposed observations. If none were supplied, say so. Do not invent personal facts or empirical evidence.
 
 Provide:
 1. Key observations that prompted this hypothesis
@@ -128,14 +129,16 @@ Return as JSON:
 }}""",
 
         # Step 4: Analysis
-        f"""You are a scientist analyzing experimental results.
+        f"""You are planning how to analyze a proposed experiment. No experiment has been performed by this tool.
 
 Hypothesis: {hypothesis}
 Experimental design: {{{{output[-1].experimental_design}}}}
 Predictions: {{{{output[-2].if_true}}}}
 
 STEP 4: ANALYSIS
-Analyze what the experiment would likely show, given current knowledge.
+Original supplied context: {context}
+Original supplied evidence: {evidence_str}
+Describe possible outcomes and what evidence would distinguish them. Predictions are not observed results. Do not turn generated expectations into evidence.
 
 Provide:
 1. Expected results based on existing evidence
@@ -146,20 +149,22 @@ Provide:
 Return as JSON:
 {{
   "expected_results": "What we'd likely observe",
-  "strength_of_evidence": "Strong/Moderate/Weak support or refutation",
+  "strength_of_evidence": "Only assess supplied evidence; otherwise Not established",
   "alternative_explanations": ["explanation 1", ...],
   "limitations": ["limitation 1", ...]
 }}""",
 
         # Step 5: Conclusion
-        f"""You are a scientist drawing conclusions from the scientific investigation.
+        f"""You are summarizing a proposed investigation. This tool has not performed an experiment or verified sources.
 
 Hypothesis: {hypothesis}
 Analysis: {{{{output[-1]}}}}
 Evidence strength: {{{{output[-1].strength_of_evidence}}}}
 
 STEP 5: CONCLUSION
-Draw a rigorous scientific conclusion and identify next steps.
+Original context: {context}
+Supplied evidence: {evidence_str}
+Give a provisional assessment of the supplied evidence and next tests. If evidence is absent, hypothetical, or insufficient, the verdict must be Inconclusive. Do not cite generated predictions as proof.
 
 Provide:
 1. Verdict on hypothesis (Supported / Refuted / Inconclusive)
@@ -230,6 +235,7 @@ def socratic_dialogue(
         Tuple of (dialogue dict, metadata dict)
     """
     # Build the dialogue chain
+    bounded_count(depth, "depth")
     prompts = []
 
     # Initial belief statement
@@ -788,6 +794,7 @@ def five_whys(
     Returns:
         Tuple of (analysis dict, metadata dict)
     """
+    bounded_count(depth, "depth")
     prompts = [
         # Initial problem statement
         f"""You are analyzing a problem using the 5 Whys technique.
@@ -809,28 +816,30 @@ Return as JSON:
     for why_num in range(1, depth + 1):
         prompts.append(f"""You are conducting root cause analysis.
 
-{"Problem: " + problem if why_num == 1 else "Previous cause: {output[-1].cause}"}
+{"Problem: " + problem if why_num == 1 else "Previous cause: {{output[-1].cause}}"}
 
 WHY #{why_num}: Why did {"this problem occur" if why_num == 1 else "this cause happen"}?
 
-Identify the immediate cause at this level. Go deeper than surface explanations.
+Original problem: {problem}
+Supplied context: {context}
+Propose one possible cause and a way to check it. Keep supplied observations separate from assumptions. A configured depth never establishes a root cause.
 
 Return as JSON:
 {{
   "why_number": {why_num},
   "question": "The specific 'why' question asked",
   "cause": "The immediate cause at this level",
-  "evidence": "What suggests this is the cause",
-  "is_root_cause": {"true" if why_num == depth else "false"}
+  "evidence": "Supplied observation supporting this hypothesis, or Not supplied",
+  "is_root_cause": false
 }}""")
 
     # Synthesis and solution
     prompts.append(f"""You are synthesizing root cause analysis.
 
 Original problem: {problem}
-Root cause (Why #{depth}): {{{{output[-1].cause}}}}
+Latest cause hypothesis (Why #{depth}): {{{{output[-1].cause}}}}
 
-SYNTHESIS: Connect the chain and propose systemic fixes.
+SYNTHESIS: Propose a causal hypothesis and small reversible tests. No cause is established solely by this generated chain. Say Not established when evidence is insufficient.
 
 Provide:
 1. The full causal chain
@@ -843,7 +852,7 @@ Provide:
 Return as JSON:
 {{
   "causal_chain": ["Problem → Why 1 → Why 2 → ... → Root cause"],
-  "root_cause": "The fundamental issue",
+  "root_cause": "A provisional hypothesis, or Not established",
   "why_this_is_root": "Why this is systemic, not symptomatic",
   "systemic_solutions": ["solution 1", "solution 2", ...],
   "quick_fixes": ["temporary fix 1", ...],
