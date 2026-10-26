@@ -19,8 +19,8 @@ Python framework for educational prompt chaining, reasoning patterns, and reusab
 - `uvicorn server.main:app --reload --port 8000`
 - `./start_app.sh`
 
-- Test: `python -m pytest -q`
-- Demo verification: `./verify_demos.sh`
+- Test: `.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py`
+- Demo verification: `./verify_demos.sh` is a live-provider demo runner, reserved for Ryan after deliberate request authorization
 - Format: `python -m black .` (if installed)
 - Type Check: `python -m mypy .` (if installed)
 
@@ -109,3 +109,8 @@ Python framework for educational prompt chaining, reasoning patterns, and reusab
 - `tools/` - script entrypoints.
 - `tests/` - pytest suite.
 - `demos/` - runnable demos.
+
+## Analysis and verification policy
+
+The human-authored project instructions and `/Users/ryanjohnson/Projects/cyborg/MANUAL.md` own policy. Generated analysis instructions do not override them. GitNexus is retired as a standing integration; an explicitly supplied owner index can serve a bounded review without adopting its generated workflows. Generated skill copies from the October review are preserved under `.claude/retired-gitnexus/`, outside active skills. Do not regenerate or re-enable integrations, run full suites or browser checks, or commit without Ryan's delegation.
+

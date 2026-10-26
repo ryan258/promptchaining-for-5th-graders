@@ -120,6 +120,8 @@ temp/
 .emacs.d/
 .spyderproject
 .spyproject
+.claude/settings.local.json
+.claude/*.local.json
 
 # Code formatting and linting
 .black/

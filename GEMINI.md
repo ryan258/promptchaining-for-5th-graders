@@ -64,8 +64,8 @@ Run:
 - or `./start_app.sh`
 
 Validate:
-- `python -m pytest -q`
-- `./verify_demos.sh`
+- `.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py`
+- Full suites and `./verify_demos.sh` are owner-run; demos can make live provider requests. Ask before browser checks.
 
 ## Interaction Protocols
 
