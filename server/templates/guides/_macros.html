@@ -1,0 +1,7 @@
+{% macro card(guide) -%}
+<a class="guide-card" href="{{ guide.href }}"><span class="eyebrow">{{ guide.group }}</span><h3>{{ guide.title }}</h3><p>{{ guide.description }}</p><span class="text-link">Read guide <span aria-hidden="true">→</span></span></a>
+{%- endmacro %}
+
+{% macro help(note, slug, label) -%}
+<aside class="guide-hint"><p>{{ note }}</p><a class="text-link" href="/studio/guides/{{ slug }}" target="_blank" rel="noopener">{{ label }} <span aria-hidden="true">↗</span><span class="visually-hidden"> (opens in a new tab)</span></a></aside>
+{%- endmacro %}

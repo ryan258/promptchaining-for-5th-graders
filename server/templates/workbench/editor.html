@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% import "guides/_macros.html" as guides %}
 {% block content %}
 <section class="page-intro"><div><p class="eyebrow"><a href="/studio/recipes">Recipes</a> <span aria-hidden="true">/</span> Make it yours</p><h1>{{ recipe.title }}</h1><p class="hero-text">{{ recipe.description }}</p></div><span class="recipe-step-count">{{ recipe.steps | length }} steps to something useful</span></section>
 {% if saved_notice %}<p class="notice success" role="status">Recipe saved on this computer. You can find it under Recipes.</p>{% endif %}
+{{ guides.help("Connect your prompts, carry answers forward, and shape a useful result.", "building-chains", "Read the prompt guide") }}
 <noscript><p class="notice">You can save and prepare chains without JavaScript. Automatic browser drafts and adding or reordering steps need JavaScript.</p></noscript>
 <form method="post" action="/studio/prepare" class="chain-editor" data-chain-editor data-draft-key="{{ source }}">
   <section class="editor-intention">

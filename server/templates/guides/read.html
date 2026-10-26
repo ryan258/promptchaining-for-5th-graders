@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% import "guides/_macros.html" as help %}
+{% block content %}
+<div class="guide-reader-top"><a class="text-link" href="/studio/guides">← All guides</a><a class="text-link" href="{{ document.guide.href }}/download">Download this guide ↓</a></div>
+{% include "guides/_search.html" %}
+<header class="guide-heading"><p class="eyebrow"><a href="/studio/guides">Guides</a> <span aria-hidden="true">/</span> {{ document.guide.group }}</p><h1 id="guide-title">{{ document.title }}</h1><p>{{ document.guide.description }}</p></header>
+{% if document.guide.group == 'Earlier notes' %}<aside class="notice"><strong>Earlier project notes</strong><p>This material describes previous work. Use the current <a href="/studio/guides/getting-more">operating guide</a> for the main workbench.</p></aside>{% endif %}
+<div class="guide-reader">
+  <aside class="guide-sidebar"><details class="guide-toc" data-guide-toc open><summary>On this page</summary><nav aria-label="On this page"><a href="#guide-title">Guide overview</a>{% for section in document.sections %}{% if section.anchor %}<a href="#{{ section.anchor }}" class="toc-level-{{ section.level }}">{{ section.title }}</a>{% endif %}{% endfor %}</nav></details><a class="text-link" href="/studio/guides">Browse all guides →</a></aside>
+  <article class="guide-body" aria-labelledby="guide-title">{{ document.html | safe }}<a class="text-link guide-back-top" href="#guide-title">Back to top ↑</a></article>
+</div>
+{% if related %}<section class="guide-related"><div class="section-heading"><div><p class="eyebrow">Keep going when it helps</p><h2>A useful next read.</h2></div><a class="text-link" href="/studio/guides">All guides →</a></div><div class="guide-grid">{% for guide in related %}{{ help.card(guide) }}{% endfor %}</div></section>{% endif %}
+{% endblock %}

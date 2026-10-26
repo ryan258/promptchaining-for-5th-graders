@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "guides/_macros.html" as help %}
+{% block content %}
+<section class="page-intro guides-intro"><div><p class="eyebrow">A little help, right here</p><h1>Make this work for you.</h1><p class="hero-text">Choose a guide for what you’re doing, or search for the bit you need. Your questions, your pace.</p></div><a class="button secondary" href="/studio/learn">How chaining works <span aria-hidden="true">↗</span></a></section>
+{% include "guides/_search.html" %}
+<div class="guide-quick-links" aria-label="Common guide searches"><span class="muted">A quick way in:</span><a href="/studio/guides?q=backup">Backups</a><a href="/studio/guides?q=placeholders">Prompt references</a><a href="/studio/guides?q=keyboard">Keyboard shortcuts</a><a href="/studio/guides?q=failed">A failed run</a></div>
+{% if query %}
+<section class="guide-results" aria-labelledby="guide-results-title"><div class="section-heading compact-heading"><h2 id="guide-results-title">{{ hits | length }} {{ 'guide' if hits | length == 1 else 'guides' }} for “{{ query }}”</h2><span class="muted">Titles, instructions, and examples</span></div>
+{% for hit in hits %}<a class="guide-search-hit" href="{{ hit.href }}"><span class="eyebrow">{{ hit.guide.group }}{% if hit.section.anchor %} · {{ hit.section.title }}{% endif %}</span><h3>{{ hit.guide.title }}</h3><p>{{ hit.excerpt }}</p><span class="text-link">Go to this part <span aria-hidden="true">→</span></span></a>{% else %}<div class="empty-work"><div><h2>Let’s try another word.</h2><p>Try a topic such as “save”, “model”, or “prompt”, or browse the guides by task.</p><a class="text-link" href="/studio/guides">Browse all guides →</a></div></div>{% endfor %}</section>
+{% else %}
+<a class="guide-start-card" href="/studio/guides/getting-more"><div><p class="eyebrow">If you read one guide</p><h2>Get more out of a session.</h2><p>Turn a rough intention into useful work, review the right handoffs, and keep the method that helped.</p></div><span aria-hidden="true">→</span></a>
+{% for group, guides in groups.items() %}{% if group not in ['Reference', 'Earlier notes'] %}<section class="guide-group" aria-labelledby="group-{{ loop.index }}"><div class="section-heading"><h2 id="group-{{ loop.index }}">{{ group }}</h2></div><div class="guide-grid">{% for guide in guides %}{{ help.card(guide) }}{% endfor %}</div></section>{% endif %}{% endfor %}
+{% for group in ['Reference', 'Earlier notes'] %}{% if groups.get(group) %}<details class="guide-reference"><summary>{{ group }} <span>{{ groups[group] | length }} guides</span></summary><p class="field-note">{% if group == 'Earlier notes' %}Historical material. For everyday use, start with the current guides above.{% else %}Architecture, verification, advanced tools, and the full documentation map.{% endif %}</p><div class="guide-grid">{% for guide in groups[group] %}{{ help.card(guide) }}{% endfor %}</div></details>{% endif %}{% endfor %}
+{% endif %}
+<aside class="workbench-note"><p>Guides are included with the app and stay available without a model request. Use <kbd>Alt</kbd> + <kbd>G</kbd> outside text fields to return here.</p><a class="text-link" href="/studio/recipes">Put it to use →</a></aside>
+{% endblock %}

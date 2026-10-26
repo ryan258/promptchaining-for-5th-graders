@@ -24,7 +24,7 @@
     <textarea name="design_json" class="visually-hidden" aria-hidden="true">{{ design | pretty_json }}</textarea>
     <div class="action-row action-row-tight">
       <span id="meta-execute-loading-inline" class="loading-note htmx-indicator">Executing this chain...</span>
-      <button type="submit">Execute This Chain</button>
+      <span class="field-note">Executes {{ design.prompts | length }} requests. No automatic retries; provider charges apply.</span><button type="submit">Execute This Chain</button>
     </div>
   </form>
 

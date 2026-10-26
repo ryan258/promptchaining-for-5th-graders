@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% import "guides/_macros.html" as guides %}
 {% block content %}
 <section class="page-intro"><div><p class="eyebrow">The rest of the workshop</p><h1>A few deeper tools.</h1><p class="hero-text">The original framework is here when you need it. These tools use their own execution and artifact flows; resumable runs live in the main workbench.</p></div></section>
+{{ guides.help("Choose a specialised method and understand its execution behavior.", "advanced-tools", "Advanced tools guide") }}
 <div class="recipe-grid advanced-grid">
   <a class="recipe-card" href="/studio/tools"><span class="eyebrow">Focused transformations</span><h2>Learning tools</h2><p>Simplify a concept or connect two subjects using the existing command-line tools.</p><span class="text-link">Run a tool ↗</span></a>
   <a class="recipe-card" href="/studio/reasoning"><span class="eyebrow">Different ways to think</span><h2>Reasoning patterns</h2><p>Explore scientific, Socratic, design, judicial and root-cause reasoning.</p><span class="text-link">Explore reasoning ↗</span></a>

@@ -8,6 +8,8 @@
     <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"historyCacheSize":0,"selfRequestsOnly":true}' />
     <script src="/static/vendor/htmx-1.9.12.min.js" defer></script>
     <script src="/static/workbench.js" defer></script>
+    <script src="/static/guides.js" defer></script>
+    <script src="/static/advanced.js" defer></script>
   </head>
   <body class="page-{{ active_page or 'home' }}">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -27,7 +29,7 @@
         {% endif %}
       </header>
       <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
-      <footer class="studio-footer"><span>Made for a curious mind. Saved on this computer.</span><span><a href="/studio/learn#shortcuts">Keyboard shortcuts</a><span aria-hidden="true"> · </span><a href="/studio/advanced">Advanced tools</a></span></footer>
+      <footer class="studio-footer"><span>Made for a curious mind. Saved on this computer.</span><span><a href="/studio/guides">Guides</a><span aria-hidden="true"> · </span><a href="/studio/guides/accessibility#keyboard-controls">Keyboard shortcuts</a><span aria-hidden="true"> · </span><a href="/studio/advanced">Advanced tools</a></span></footer>
     </div>
     <div class="toast" id="studio-message" role="status" aria-live="polite" hidden></div>
     <script>

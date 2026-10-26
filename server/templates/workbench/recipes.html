@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% import "workbench/_macros.html" as wb %}
+{% import "guides/_macros.html" as guides %}
 {% block content %}
 <section class="page-intro"><div><p class="eyebrow">A starting point, not a blank page</p><h1>Find your next thought.</h1><p class="hero-text">Six small ways to make progress. Pick one, give it a topic, and make it yours.</p></div><a class="button secondary" href="/studio/new?recipe=blank">Build my own <span aria-hidden="true">＋</span></a></section>
+{{ guides.help("Choose by the result you want to leave with.", "recipes", "Help choosing a recipe") }}
 <div class="recipe-grid recipes-full">{% for key, recipe in recipes.items() %}{{ wb.recipe_card(key, recipe, loop.index) }}{% endfor %}</div>
 <section class="work-section"><div class="section-heading"><div><p class="eyebrow">Methods worth keeping</p><h2>Your recipes</h2></div></div>
   {% if saved %}<div class="recipe-grid">{% for item in saved %}<a class="recipe-card" href="/studio/new?saved={{ item.id }}"><span class="eyebrow">Saved {{ item.created_at | local_date }}</span><h3>{{ item.recipe.title }}</h3><p>{{ item.recipe.description or 'Your own way through an idea.' }}</p><span class="text-link">{{ item.recipe.steps | length }} steps <span aria-hidden="true">↗</span></span></a>{% endfor %}</div>

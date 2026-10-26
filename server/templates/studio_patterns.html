@@ -57,6 +57,7 @@
 
     {% for pattern in patterns %}
       <fieldset class="pattern-fieldset" data-pattern-fields="{{ pattern.name }}"{% if not loop.first %} hidden disabled{% endif %}>
+        <p class="notice" data-request-plan data-count-field="{{ pattern.request_field }}" data-count-base="{{ pattern.request_base }}" data-count-factor="{{ pattern.request_factor }}">Runs {{ pattern.request_count }} model requests. No automatic retries. Provider charges apply. Generated reasoning requires your review.</p>
         <div class="field-grid">
           {% for field in pattern.fields %}
             <div class="field-group{% if field.full_width %} field-group-full{% endif %}">
@@ -75,6 +76,7 @@
                   id="{{ pattern.name }}_{{ field.name }}"
                   value="{{ field.default_value }}"
                   placeholder="{{ field.placeholder }}"
+                  min="{{ field.minimum }}" max="{{ field.maximum }}" step="1"
                 />
               {% elif field.kind == "select" %}
                 <select name="{{ field.name }}" id="{{ pattern.name }}_{{ field.name }}">
