@@ -4,7 +4,7 @@ Automated content generation for MS-focused blog with minimal cognitive load.
 
 ## Overview
 
-This module provides a **Low-Energy Content Pipeline** that generates draft content for author review for MS blog topics. Perfect for days when brain fog makes writing difficult.
+The **Low-Energy Content Pipeline** turns an idea into a draft and a short review checklist for the author.
 
 ## Boundaries
 
@@ -166,12 +166,7 @@ python tools/ms_blog/cli.py guide "Symptom tracking system"
 ### Run Tests
 
 ```bash
-# Run all tests
-python tools/ms_blog/test_ms_tools.py
-
-# Run specific test
-python tools/ms_blog/test_ms_tools.py --test prompt
-python tools/ms_blog/test_ms_tools.py --test pipeline
+.venv/bin/python -m pytest -q tools/ms_blog/test_ms_tools.py
 ```
 
 ## How It Works
@@ -246,11 +241,11 @@ By default, content is saved to:
 output/ms_blog/[filename].md
 ```
 
-You can customize the output directory:
+To keep drafts in a separate review directory:
 ```python
 result = low_energy_pipeline(
     input_text="...",
-    output_dir="/path/to/hugo/content/prompts"
+    output_dir="/path/to/local/draft-review"
 )
 ```
 
@@ -262,17 +257,9 @@ Content adapts to your energy level:
 - **Medium**: Balanced detail, standard examples, good explanations
 - **High**: Comprehensive detail, multiple examples, thorough explanations
 
-## Success Metrics
+## Review the draft
 
-**Efficiency:**
-- Time to publish: **2-4 hours → 15-30 minutes**
-- Cognitive load: **High focus → Works on foggy days**
-- Consistency: **100% adherence to standards**
-
-**Output:**
-- Content velocity: **2-3x current pace**
-- Quality: Matches or exceeds manual exemplars
-- SEO: All proper tags/meta automatically
+The default `output/ms_blog/` directory is ignored by Git. If a draft filename already exists, the tool writes a new file and reports the actual path. Structural checks flag missing sections and short drafts for revision. Check factual claims, source details, setup instructions, metadata, and whether the examples suit the intended reader. Use your review experience to decide whether a particular workflow saves effort.
 
 ## Examples
 
@@ -287,7 +274,7 @@ result = low_energy_pipeline(
 
 # ✅ Created: daily-work-log-prompt.md
 # Format: Prompt Card (auto-detected)
-# Ready to publish with minimal review
+# Review and verify before considering publication.
 ```
 
 ### Example 2: Brainstorm Content Ideas
@@ -358,27 +345,13 @@ generate_shortcut_spotlight(
 ## Next Steps
 
 1. **Try the demo**: `python demos/ms_blog_demo.py --interactive`
-2. **Run tests**: `python tools/ms_blog/test_ms_tools.py`
+2. **Run the offline MS tool checks**: `.venv/bin/python -m pytest -q tools/ms_blog/test_ms_tools.py`
 3. **Generate real content**: Use the CLI or Python API
-4. **Review and publish**: Check the review checklist, test prompts, publish
+4. **Review the draft**: Check claims, use the prompts, and verify the setup instructions.
 
-## Integration with Hugo Blog
+## Move a reviewed draft to Hugo
 
-To use with your actual Hugo blog:
-
-```python
-# Point to your Hugo content directory
-result = low_energy_pipeline(
-    input_text="...",
-    output_dir="/path/to/your/hugo/blog/content/prompts"
-)
-
-# Then in your blog directory:
-# hugo server  # Preview
-# git add .
-# git commit -m "Add new prompt card"
-# git push
-```
+Keep generated files in the draft directory while you review the writing and front matter. Move the selected reviewed draft into the appropriate Hugo content folder and preview it in the site’s normal local workflow. Follow the site's publication process when the draft is ready.
 
 ## Architecture
 

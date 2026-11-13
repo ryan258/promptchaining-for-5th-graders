@@ -14,50 +14,45 @@ from typing import Optional
 
 
 try:
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
+    from tools.tool_utils import setup_project_root, learning_profile_fields, get_input_from_args, save_chain_output
 except ImportError:
     import sys
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
+    from tools.tool_utils import setup_project_root, learning_profile_fields, get_input_from_args, save_chain_output
 
 project_root = setup_project_root(__file__)
 
 from lib.core.chain import MinimalChainable
-from lib.core.llm_client import build_models, prompt
+from lib.core.llm_client import get_model, request_completion
 from lib.core.artifact_store import ArtifactStore
 
 
-def concept_simplifier(topic: str, additional_context: str = "", artifact_store: Optional[ArtifactStore] = None):
+def concept_simplifier(topic: str, additional_context: str = "", artifact_store: Optional[ArtifactStore] = None,
+                       *, model_info=None, llm_callable=request_completion, artifact_topic=None, result_file=None):
     print("🧭 Concept Simplifier")
     print(f"Topic: {topic}")
     if additional_context:
         print(f"Context: {additional_context}")
     print()
 
-    user_profile = load_user_context(project_root)
-    tone = user_profile.get("writing_style", {}).get("tone", "Clear and direct")
-    audience = user_profile.get("learning_profile", {}).get("audience", "Curious adult")
-
-    client, model_names = build_models()
-    model_info = (client, model_names[0])
+    model_info = model_info or get_model()
 
     # Create artifact store for persistent knowledge
     artifact_store = artifact_store or ArtifactStore()
 
     context_data = {
         "topic": topic,
-        "tone": tone,
-        "audience": audience,
+        **learning_profile_fields(project_root),
         "additional_context": additional_context,
     }
 
     result, context_filled_prompts, usage_stats, execution_trace = MinimalChainable.run(
         context=context_data,
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=llm_callable,
         return_trace=True,
         artifact_store=artifact_store,
-        topic=topic,
+        topic=artifact_topic or topic,
         prompts=[
             # Prompt 1: Decompose with expert educator lens
             """You are an expert educator specializing in making complex topics accessible to {{audience}}.
@@ -68,6 +63,9 @@ Decompose '{{topic}}' into exactly 3 essential components using this framework:
 3. **Outputs/results** - What's produced?
 4. **Why it matters** - Real-world significance
 5-6. **Critical nuances** (optional) - Important subtleties
+
+Apply the supplied context where relevant: {{additional_context}}
+Tone: {{tone}}
 
 For each component, explain in 1-2 clear sentences. Avoid jargon unless you immediately define it.
 
@@ -197,14 +195,17 @@ Keep explainer to 120-150 words total. Provide 2-3 pitfalls and 2-3 next_steps. 
     )
 
     output_dir = os.path.join(project_root, "output", "learning", "concept_simplifier")
-    save_chain_output(project_root, output_dir, "concept_simplifier", topic, execution_trace, result, context_filled_prompts, usage_stats, artifact_store)
+    save_chain_output(project_root, output_dir, "concept_simplifier", topic, execution_trace, result,
+                      context_filled_prompts, usage_stats, artifact_store, result_file=result_file)
+    return result[-1], execution_trace
 
 
 def main():
-    topic, context = get_input_from_args(
-        description="Break complex topics into digestible parts with analogies and a short explainer"
+    topic, context, result_file = get_input_from_args(
+        description="Break complex topics into digestible parts with analogies and a short explainer",
+        allow_studio_request=True,
     )
-    concept_simplifier(topic, context)
+    concept_simplifier(topic, context, result_file=result_file)
 
 
 if __name__ == "__main__":

@@ -154,6 +154,26 @@ Respond in JSON:
         print()
 
 
+def test_progressive_depth_only_sends_artifacts_from_this_composition(tmp_path):
+    store = ArtifactStore(base_dir=str(tmp_path / "artifacts"))
+    store.save("Previous work", "step_1", "UNRELATED_PRIVATE_ANSWER")
+    sent = []
+
+    def answer(_, prompt):
+        sent.append(prompt)
+        return f"answer {len(sent)}", {"total_tokens": 5}
+
+    composer = ChainComposer(artifact_store=store, model_info=(None, "offline"), llm_callable=answer)
+    result = composer.compose(ChainRecipe.progressive_depth("Literal {{code}} example"))
+
+    assert len(sent) == 5
+    assert "Literal {{code}} example" in sent[0]
+    assert all(f"answer {i}" in sent[-1] for i in range(1, 5))
+    assert "UNRELATED_PRIVATE_ANSWER" not in sent[-1]
+    assert "previous_work:step_1" not in result.final_artifacts
+    assert result.total_tokens == 25 and result.usage_complete
+
+
 if __name__ == "__main__":
     print("=" * 70)
     print("🧪 CHAIN COMPOSER TEST SUITE")

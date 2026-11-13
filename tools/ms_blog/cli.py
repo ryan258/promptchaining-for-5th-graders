@@ -24,12 +24,16 @@ import argparse
 import sys
 import os
 import json
+import re
+from datetime import datetime
 from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+from lib.core.errors import user_error
+from lib.core.llm_client import has_api_key
 from tools.ms_blog.ms_content_tools import (
     low_energy_pipeline,
     generate_prompt_card,
@@ -38,11 +42,12 @@ from tools.ms_blog.ms_content_tools import (
     expand_content_idea,
     batch_generate_content,
     generate_content_calendar,
+    save_draft,
     save_markdown,
     sanitize_filename
 )
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="MS Blog Content Generator")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
@@ -93,17 +98,28 @@ def main():
     calendar_parser.add_argument("--frequency", default="3x/week", help="Frequency")
     calendar_parser.add_argument("--output-dir", help="Directory to save output")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # Default output directory
     default_output_dir = os.path.join(project_root, "output", "ms_blog")
 
     # Validate API Key
-    if not os.getenv("OPENROUTER_API_KEY"):
-        print("❌ Error: OPENROUTER_API_KEY not found in environment variables.")
-        print("   Please check your .env file.")
-        sys.exit(1)
+    if args.command and not has_api_key():
+        print("Add an OpenRouter key to .env before generating drafts.", file=sys.stderr)
+        return 1
 
+    try:
+        run_command(args, default_output_dir)
+    except OSError:
+        print("Could not save the draft. Check the chosen output directory and available disk space.", file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(user_error(exc), file=sys.stderr)
+        return 1
+    return 0
+
+
+def run_command(args, default_output_dir):
     if args.command == "pipeline":
         print(f"🚀 Running pipeline for: {args.input}")
         result = low_energy_pipeline(
@@ -112,7 +128,8 @@ def main():
             output_dir=args.output_dir or default_output_dir,
             auto_save=not args.no_save
         )
-        print(f"\n✅ Done! Saved to: {result.get('file_path', 'Not saved')}")
+        if args.no_save:
+            print(result["content"])
 
     elif args.command == "prompt":
         print(f"🚀 Generating prompt card for: {args.problem}")
@@ -121,7 +138,7 @@ def main():
             target_audience=args.audience,
             energy_level=args.energy
         )
-        _save_and_report(content, args.output_dir or default_output_dir, "prompt-card")
+        _save_and_report(content, args.output_dir or default_output_dir, "prompt-card", meta["validation"])
 
     elif args.command == "shortcut":
         print(f"🚀 Generating shortcut for: {args.tool}")
@@ -130,7 +147,7 @@ def main():
             ms_benefit=args.benefit,
             category=args.category
         )
-        _save_and_report(content, args.output_dir or default_output_dir, "shortcut")
+        _save_and_report(content, args.output_dir or default_output_dir, "shortcut", meta["validation"])
 
     elif args.command == "guide":
         print(f"🚀 Generating guide for: {args.system}")
@@ -139,7 +156,7 @@ def main():
             complexity=args.complexity,
             estimated_time=args.time
         )
-        _save_and_report(content, args.output_dir or default_output_dir, "guide")
+        _save_and_report(content, args.output_dir or default_output_dir, "guide", meta["validation"])
 
     elif args.command == "ideas":
         print(f"🚀 Generating ideas for: {args.seed}")
@@ -170,36 +187,18 @@ def main():
         # Interactive mode
         run_interactive_menu(default_output_dir)
 
-def _save_and_report(content, output_dir, prefix):
-    import re
-    try:
-        # Extract title or use timestamp
-        title_match = re.search(r'title: "(.*?)"', content)
-        if title_match:
-            # Use shared sanitization utility
-            filename = sanitize_filename(title_match.group(1), prefix=prefix)
-        else:
-            from datetime import datetime
-            filename = f"{prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.md"
-
-        path = save_markdown(content, os.path.join(output_dir, filename))
-        print(f"\n✅ Saved to: {path}")
-    except OSError as e:
-        print(f"\n❌ Error saving file: {e}")
-    except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
+def _save_and_report(content, output_dir, prefix, validation):
+    title_match = re.search(r'^title:\s*["\']?([^"\'\n]+)', content, re.MULTILINE)
+    filename = sanitize_filename(title_match.group(1) if title_match else "", prefix=prefix)
+    path = save_markdown(content, os.path.join(output_dir, filename))
+    print(f"\nSaved draft for review: {path}")
+    for note in validation["issues"] + validation["warnings"]:
+        print(f"Review: {note}")
 
 def _save_json_and_report(data, output_dir, prefix):
-    from datetime import datetime
-    try:
-        os.makedirs(output_dir, exist_ok=True)
-        filename = f"{prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-        path = os.path.join(output_dir, filename)
-        with open(path, 'w') as f:
-            json.dump(data, f, indent=2)
-        print(f"\n✅ Saved to: {path}")
-    except OSError as e:
-        print(f"\n❌ Error saving JSON: {e}")
+    filename = f"{prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+    path = save_draft(json.dumps(data, indent=2, ensure_ascii=False), os.path.join(output_dir, filename))
+    print(f"\nSaved draft for review: {path}")
 
 def run_interactive_menu(output_dir):
     print("\n" + "="*60)
@@ -221,17 +220,17 @@ def run_interactive_menu(output_dir):
         low_energy_pipeline(topic, auto_save=True, output_dir=output_dir)
     elif choice == "2":
         problem = input("Enter problem: ")
-        content, _ = generate_prompt_card(problem)
-        _save_and_report(content, output_dir, "prompt")
+        content, metadata = generate_prompt_card(problem)
+        _save_and_report(content, output_dir, "prompt", metadata["validation"])
     elif choice == "3":
         tool = input("Enter tool name: ")
         benefit = input("Enter MS benefit: ")
-        content, _ = generate_shortcut_spotlight(tool, benefit)
-        _save_and_report(content, output_dir, "shortcut")
+        content, metadata = generate_shortcut_spotlight(tool, benefit)
+        _save_and_report(content, output_dir, "shortcut", metadata["validation"])
     elif choice == "4":
         system = input("Enter system name: ")
-        content, _ = generate_guide(system)
-        _save_and_report(content, output_dir, "guide")
+        content, metadata = generate_guide(system)
+        _save_and_report(content, output_dir, "guide", metadata["validation"])
     elif choice == "5":
         seed = input("Enter seed idea: ")
         ideas, _ = expand_content_idea(seed)
@@ -250,4 +249,4 @@ def run_interactive_menu(output_dir):
         run_interactive_menu(output_dir)
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

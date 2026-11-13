@@ -16,7 +16,7 @@ They unlock deep philosophical reasoning, ethics, and nuanced understanding.
 
 from typing import Callable, Dict, List, Optional, Any, Tuple
 
-from ..core.llm_client import calculate_total_tokens, prompt
+from ..core.llm_client import calculate_total_tokens, request_completion as prompt
 from ._runner import execute_pattern
 from ..core.limits import bounded_count
 
@@ -66,8 +66,8 @@ def red_vs_blue(
     # Opening statements
     prompts.append(f"""You are BLUE TEAM in a Red vs Blue debate.
 
-Topic: {topic}
-Position to defend: {position_to_defend}
+Topic: {{{{topic}}}}
+Position to defend: {{{{position_to_defend}}}}
 
 OPENING STATEMENT: Present your strongest case for this position.
 
@@ -96,8 +96,8 @@ Return as JSON:
         # Red Team attacks
         prompts.append(f"""You are RED TEAM in a Red vs Blue debate.
 
-Topic: {topic}
-Blue Team's position: {position_to_defend}
+Topic: {{{{topic}}}}
+Blue Team's position: {{{{position_to_defend}}}}
 Blue Team's {"opening statement" if round_num == 1 else "last defense"}: {{{{output[-1]}}}}
 
 ROUND {round_num} - RED TEAM ATTACK: Find and exploit weaknesses.
@@ -127,8 +127,8 @@ Return as JSON:
         # Blue Team defends
         prompts.append(f"""You are BLUE TEAM in a Red vs Blue debate.
 
-Topic: {topic}
-Your position: {position_to_defend}
+Topic: {{{{topic}}}}
+Your position: {{{{position_to_defend}}}}
 Red Team's attacks: {{{{output[-1]}}}}
 
 ROUND {round_num} - BLUE TEAM DEFENSE: Counter the attacks and strengthen your position.
@@ -158,8 +158,8 @@ Return as JSON:
     # Judge's evaluation
     prompts.append(f"""You are an impartial JUDGE evaluating a Red vs Blue debate.
 
-Topic: {topic}
-Position debated: {position_to_defend}
+Topic: {{{{topic}}}}
+Position debated: {{{{position_to_defend}}}}
 Rounds: {rounds}
 
 Blue Team's opening: {{{{output[-{2 * rounds + 1}]}}}}
@@ -168,7 +168,7 @@ Final round defense: {{{{output[-1]}}}}
 
 JUDGE'S EVALUATION: Assess both sides fairly.
 
-Evaluate based on: {criteria_str}
+Evaluate based on: {{{{criteria_str}}}}
 
 Provide:
 1. Strength of Blue Team's case (0-10)
@@ -196,6 +196,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"criteria_str": criteria_str, "position_to_defend": position_to_defend, "topic": topic},
     )
 
     # Structure the debate
@@ -270,9 +271,9 @@ def dialectical(
         # Step 1: Elaborate the thesis
         f"""You are a philosopher applying dialectical reasoning.
 
-Thesis: {thesis}
-Domain: {domain}
-Context: {context}
+Thesis: {{{{thesis}}}}
+Domain: {{{{domain}}}}
+Context: {{{{context}}}}
 
 STEP 1: THESIS
 Fully develop the thesis position.
@@ -357,7 +358,7 @@ Return as JSON:
         # Step 4: Test the synthesis
         f"""You are a philosopher testing a dialectical synthesis.
 
-Original thesis: {thesis}
+Original thesis: {{{{thesis}}}}
 Synthesis: {{{{output[-1].synthesis_statement}}}}
 
 STEP 4: EVALUATION
@@ -387,6 +388,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"context": context, "domain": domain, "thesis": thesis},
     )
 
     metadata = {
@@ -446,13 +448,13 @@ def adversarial_socratic(
     # Initial claim
     prompts.append(f"""You are defending a claim against adversarial questioning.
 
-Claim: {claim}
+Claim: {{{{claim}}}}
 
 STATE YOUR CLAIM: Present it with your strongest initial defense.
 
 Return as JSON:
 {{
-  "claim": "{claim}",
+  "claim": "{{{{claim}}}}",
   "initial_defense": "Why you believe this claim is true",
   "key_premises": ["premise 1", "premise 2", ...],
   "confidence": "High/Medium/Low"
@@ -463,11 +465,11 @@ Return as JSON:
         # Aggressive questioning
         prompts.append(f"""You are an adversarial questioner using the Socratic method.
 
-Claim being tested: {claim}
+Claim being tested: {{{{claim}}}}
 Defender's current position: {{{{output[-1]}}}}
 
 ROUND {round_num} - ADVERSARIAL QUESTION
-Your goal: {style} in the claim.
+Your goal: {{{{style}}}} in the claim.
 
 Find:
 - Hidden assumptions that might be false
@@ -490,7 +492,7 @@ Return as JSON:
         # Defender responds
         prompts.append(f"""You are defending your claim under adversarial questioning.
 
-Original claim: {claim}
+Original claim: {{{{claim}}}}
 Adversarial question: {{{{output[-1].question}}}}
 
 ROUND {round_num} - DEFENSE
@@ -514,7 +516,7 @@ Return as JSON:
     # Final verdict
     prompts.append(f"""You are evaluating an adversarially-tested claim.
 
-Original claim: {claim}
+Original claim: {{{{claim}}}}
 Rounds of questioning: {depth}
 Final position: {{{{output[-1]}}}}
 
@@ -544,6 +546,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"claim": claim, "style": style},
     )
 
     # Structure the dialogue

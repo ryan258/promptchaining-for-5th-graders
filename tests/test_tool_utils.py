@@ -4,7 +4,8 @@ import json
 import shutil
 import pytest
 from unittest.mock import MagicMock, patch
-from tools.tool_utils import save_chain_output
+from tools.cost_report import parse_cost_from_log
+from tools.tool_utils import learning_profile_fields, save_chain_output
 
 @pytest.fixture
 def mock_chainable():
@@ -74,3 +75,19 @@ def test_save_chain_output_sanitization(tmp_path, mock_chainable):
     assert "?" not in generated_file
     # Check that it replaced chars with _ (or removed them depending on impl)
     assert "Crazy___Topic___With___Symbols_" in generated_file or "Crazy" in generated_file
+
+
+def test_cost_report_ignores_prices_in_prompt_or_answer(tmp_path):
+    log = tmp_path / "result.md"
+    log.write_text("# Chain log\n**Estimated Cost**: Unknown\n\n## AI responses\n**Estimated Cost**: $99.00\n")
+    assert parse_cost_from_log(log) is None
+
+
+def test_learning_profile_uses_only_its_declared_fields(tmp_path):
+    profile = tmp_path / "context" / "user_profile.json"
+    profile.parent.mkdir()
+    profile.write_text('{"writing_style":{"tone":" Precise "},"learning_profile":{"audience": []},"private":"other"}')
+    assert learning_profile_fields(tmp_path) == {"tone": "Precise", "audience": "Curious adult"}
+    assert learning_profile_fields(tmp_path, connector=True) == {"tone": "Precise"}
+    profile.write_text("{broken")
+    assert learning_profile_fields(tmp_path, connector=True) == {"tone": "Clear and practical"}

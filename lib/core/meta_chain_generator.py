@@ -30,9 +30,11 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from uuid import uuid4
 
 from .chain import MinimalChainable
-from .llm_client import build_models, prompt
+from .errors import InputError
+from .llm_client import build_models, request_completion
 from .artifact_store import ArtifactStore
 
 
@@ -400,7 +402,7 @@ class MetaChainGenerator:
         self,
         artifact_store: Optional[ArtifactStore] = None,
         model_info: Optional[Any] = None,
-        llm_callable: Any = prompt,
+        llm_callable: Any = request_completion,
     ):
         """
         Create a meta-chain generator.
@@ -442,8 +444,6 @@ class MetaChainGenerator:
             ChainDesign with the designed chain
         """
         print("🧠 Designing chain...")
-        print(f"   Goal: {goal}")
-        print()
 
         context = context or {}
         constraints = constraints or []
@@ -453,9 +453,9 @@ class MetaChainGenerator:
             # Step 1: Analyze the goal
             f"""You are a meta-cognitive architect.
 
-Analyze this goal: "{goal}"
+Analyze this goal: {{{{design_goal}}}}
 
-Context: {json.dumps(context, indent=2) if context else "None"}
+Context: {{{{design_context}}}}
 
 What cognitive operations are needed to achieve it?
 
@@ -468,7 +468,7 @@ Consider:
 - How should pieces combine?
 - What's the optimal order?
 
-Constraints: {constraints if constraints else "None"}
+Constraints: {{{{design_constraints}}}}
 
 Respond in JSON:
 {{
@@ -494,7 +494,7 @@ Generate the specific prompts for each cognitive move.
 
 For each move in the optimal_sequence:
 - Create a detailed, specific prompt
-- Use context variables where appropriate: {context_vars}
+- Use context variables where appropriate: {{context_vars}}
 - Ensure each prompt builds on previous outputs
 - Use {{{{output[-1]}}}} to reference previous steps
 
@@ -508,34 +508,35 @@ Respond in JSON:
       "uses_previous_output": true/false
     }
   ]
-}""".replace("{context_vars}", str(list(context.keys())))
+}"""
         ]
 
         # Execute the meta-chain
-        result, _, _ = MinimalChainable.run(
-            context={"goal": goal},
+        result, _, _, trace = MinimalChainable.run(
+            context={"design_goal": goal, "design_context": context, "design_constraints": constraints,
+                     "context_vars": list(context)},
             model=self.model_info,
             llm_callable=self.llm_callable,
             prompts=meta_prompts,
-            return_usage=True,
+            return_trace=True,
             artifact_store=self.artifact_store,
-            topic=f"meta_chain_design_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            topic=f"meta_chain_design_{uuid4().hex}"
         )
+        if not trace["completion_complete"]:
+            raise InputError("The design answer did not finish. Review the saved design artifacts before trying again.")
 
         # Extract the design
         goal_analysis = result[0]
         prompt_design = result[1]
 
-        # Debug output
-        print(f"   Goal analysis type: {type(goal_analysis)}")
-        print(f"   Prompt design type: {type(prompt_design)}")
-
         # Build ChainDesign - handle both dict and string cases
-        if isinstance(goal_analysis, dict) and isinstance(prompt_design, dict):
-            cognitive_moves = goal_analysis.get("optimal_sequence", [])
-            prompts_data = prompt_design.get("prompts", [])
-            prompts = [p.get("prompt", "") if isinstance(p, dict) else str(p) for p in prompts_data]
-            reasoning = goal_analysis.get("reasoning", "")
+        cognitive_moves = goal_analysis.get("optimal_sequence") if isinstance(goal_analysis, dict) else None
+        reasoning = goal_analysis.get("reasoning") if isinstance(goal_analysis, dict) else None
+        prompts_data = prompt_design.get("prompts") if isinstance(prompt_design, dict) else None
+        if (isinstance(cognitive_moves, list) and all(isinstance(move, str) for move in cognitive_moves)
+                and isinstance(reasoning, str) and isinstance(prompts_data, list) and prompts_data
+                and all(isinstance(step, dict) and isinstance(step.get("prompt"), str) for step in prompts_data)):
+            prompts = [step["prompt"] for step in prompts_data]
 
             design = ChainDesign(
                 goal=goal,
@@ -551,15 +552,10 @@ Respond in JSON:
             )
 
             print("✅ Chain designed!")
-            print()
-            print(design.visualize())
-
             return design
         else:
             # Fallback: create a simple design if meta-chain didn't format correctly
             print("⚠️  Meta-chain returned unexpected format, using fallback")
-            print(f"   Goal analysis: {str(goal_analysis)[:100]}")
-            print(f"   Prompt design: {str(prompt_design)[:100]}")
 
             # Create a simple 2-step chain as fallback
             design = ChainDesign(
@@ -567,10 +563,10 @@ Respond in JSON:
                 reasoning="Fallback design due to meta-chain format issue",
                 cognitive_moves=["decompose", "synthesize"],
                 prompts=[
-                    f"Analyze and explain {context.get('topic', goal)} in detail.",
+                    "Analyze and explain {{topic}} in detail.",
                     "Based on this analysis: {{output[-1]}}, create a concise summary."
                 ],
-                context=context,
+                context={"topic": goal, **context},
                 metadata={
                     "fallback": True,
                     "generated_at": datetime.now().isoformat()
@@ -600,15 +596,17 @@ Respond in JSON:
         artifact_store = artifact_store or self.artifact_store
 
         # Execute the chain
-        result, prompts, usage = MinimalChainable.run(
+        result, prompts, usage, trace = MinimalChainable.run(
             context=design.context,
             model=self.model_info,
             llm_callable=self.llm_callable,
             prompts=design.prompts,
-            return_usage=True,
+            return_trace=True,
             artifact_store=artifact_store,
-            topic=design.goal.lower().replace(" ", "_")[:50]
+            topic=f"{design.goal[:50]}_run_{uuid4().hex[:12]}"
         )
+        if not trace["completion_complete"]:
+            raise InputError("The generated chain did not finish. Review the saved artifacts before trying again.")
 
         print("✅ Chain executed!")
         print()

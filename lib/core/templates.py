@@ -10,6 +10,20 @@ TOKEN = re.compile(r"\{\{\{\{([^{}]+?)\}\}\}\}|\{\{\s*([^{}]+?)\s*\}\}")
 OUTPUT = re.compile(r"output\[-([1-9][0-9]*)\](?:\.([A-Za-z_][A-Za-z0-9_]*))?")
 
 
+def validate_template_inputs(prompts: list[str], context: dict, *, allow_artifacts: bool) -> None:
+    """Validate static input names before the first step can be dispatched."""
+    for template in prompts:
+        for match in TOKEN.finditer(template):
+            token = match[2]
+            if token is None or token in context or OUTPUT.fullmatch(token):
+                continue
+            if token.startswith("artifact:"):
+                if allow_artifacts:
+                    continue
+                raise InputError("Copy selected artifact content into context before running this prompt.")
+            raise InputError("A prompt contains an unknown placeholder. Check its inputs before running.")
+
+
 def render_template(template: str, context: dict, outputs: list, artifact_store=None) -> tuple[str, list[str]]:
     used = []
 

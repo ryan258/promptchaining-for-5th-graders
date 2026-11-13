@@ -33,8 +33,10 @@ def parse_cost_from_log(log_path):
         with open(log_path, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        # Look for cost pattern: "**Total Cost**: $0.000123"
-        match = re.search(r'\*\*(?:Estimated|Total) Cost\*\*: \$([\d\.]+)', content)
+        # Only the application-written log header can carry an estimate.
+        header = re.split(r'^##\s', content, maxsplit=1, flags=re.MULTILINE)[0]
+        match = re.search(r'^\*\*(?:Estimated|Total) Cost\*\*:\s+\$([0-9]+(?:\.[0-9]+)?)\s*$',
+                          header, flags=re.MULTILINE)
         if match:
             value = float(match.group(1))
             return value if math.isfinite(value) and value >= 0 else None
@@ -53,7 +55,7 @@ def generate_cost_report(days=30, verbose=False):
     print(f"💰 Local Cost Estimates (Last {days} days)")
     print("=" * 60)
 
-    cutoff_date = datetime.now() - timedelta(days=days)
+    cutoff_date = datetime.now().date() - timedelta(days=days)
     total_cost = 0.0
     tool_costs = {}
     unknown_logs = 0
@@ -67,7 +69,7 @@ def generate_cost_report(days=30, verbose=False):
         filename = os.path.basename(log_file)
         try:
             date_str = filename[:10]
-            file_date = datetime.strptime(date_str, "%Y-%m-%d")
+            file_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             
             if file_date < cutoff_date:
                 continue

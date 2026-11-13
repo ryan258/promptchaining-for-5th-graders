@@ -13,34 +13,34 @@ import os
 from typing import Optional
 
 try:
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
+    from tools.tool_utils import setup_project_root, learning_profile_fields, get_input_from_args, save_chain_output
 except ImportError:
     import sys
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-    from tools.tool_utils import setup_project_root, load_user_context, get_input_from_args, save_chain_output
+    from tools.tool_utils import setup_project_root, learning_profile_fields, get_input_from_args, save_chain_output
 
 project_root = setup_project_root(__file__)
 
 from lib.core.chain import MinimalChainable
 from lib.core.artifact_store import ArtifactStore
-from lib.core.llm_client import build_models, prompt
+from lib.core.errors import InputError
+from lib.core.llm_client import get_model, request_completion
 
 
-def subject_connector(subject_a: str, subject_b: str, artifact_store: Optional[ArtifactStore] = None):
+def subject_connector(subject_a: str, subject_b: str, artifact_store: Optional[ArtifactStore] = None,
+                      *, model_info=None, llm_callable=request_completion, artifact_topic=None, result_file=None):
+    if not subject_a.strip() or not subject_b.strip():
+        raise InputError("Enter both subjects before running Subject Connector.")
     print("🔗 Subject Connector")
     print(f"Subject A: {subject_a}")
     print(f"Subject B: {subject_b}\n")
 
-    user_profile = load_user_context(project_root)
-    tone = user_profile.get("writing_style", {}).get("tone", "Clear and practical")
-
-    client, model_names = build_models()
-    model_info = (client, model_names[0])
+    model_info = model_info or get_model()
 
     context_data = {
         "subject_A": subject_a,
         "subject_B": subject_b,
-        "tone": tone,
+        **learning_profile_fields(project_root, connector=True),
     }
 
     artifact_store = artifact_store or ArtifactStore()
@@ -48,10 +48,10 @@ def subject_connector(subject_a: str, subject_b: str, artifact_store: Optional[A
     result, context_filled_prompts, usage_stats, execution_trace = MinimalChainable.run(
         context=context_data,
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=llm_callable,
         return_trace=True,
         artifact_store=artifact_store,
-        topic=f"{subject_a}_vs_{subject_b}",
+        topic=artifact_topic or f"{subject_a}_vs_{subject_b}",
 
         prompts=[
             # Connections
@@ -108,15 +108,18 @@ Respond in JSON:
         )
 
     output_dir = os.path.join(project_root, "output", "learning", "subject_connector")
-    save_chain_output(project_root, output_dir, "subject_connector", f"{subject_a}_vs_{subject_b}", execution_trace, result, context_filled_prompts, usage_stats, artifact_store)
+    save_chain_output(project_root, output_dir, "subject_connector", f"{subject_a}_vs_{subject_b}", execution_trace,
+                      result, context_filled_prompts, usage_stats, artifact_store, result_file=result_file)
+    return result[-1], execution_trace
 
 
 def main():
-    subject_a, subject_b = get_input_from_args(
+    subject_a, subject_b, result_file = get_input_from_args(
         description="Connect two subjects with surprising links and a project idea",
-        default_context_help="Second subject"
+        default_context_help="Second subject",
+        allow_studio_request=True,
     )
-    subject_connector(subject_a, subject_b)
+    subject_connector(subject_a, subject_b, result_file=result_file)
 
 
 if __name__ == "__main__":

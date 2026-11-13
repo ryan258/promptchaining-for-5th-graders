@@ -18,7 +18,7 @@ tool that teaches how experts think about complex problems.
 
 from typing import Callable, Dict, List, Optional, Any, Tuple
 
-from ..core.llm_client import calculate_total_tokens, prompt
+from ..core.llm_client import calculate_total_tokens, request_completion as prompt
 from ._runner import execute_pattern
 from ..core.limits import bounded_count
 
@@ -60,9 +60,9 @@ def scientific_method(
         # Step 1: Observation
         f"""You are a scientist applying the scientific method.
 
-Hypothesis to test: {hypothesis}
-Context: {context}
-Available evidence: {evidence_str}
+Hypothesis to test: {{{{hypothesis}}}}
+Context: {{{{context}}}}
+Available evidence: {{{{evidence_str}}}}
 
 STEP 1: OBSERVATION
 Separate observations explicitly supplied in the context from assumptions and proposed observations. If none were supplied, say so. Do not invent personal facts or empirical evidence.
@@ -82,7 +82,7 @@ Return as JSON:
         # Step 2: Predictions
         f"""You are a scientist. Based on the hypothesis and observations, make testable predictions.
 
-Hypothesis: {hypothesis}
+Hypothesis: {{{{hypothesis}}}}
 Observations: {{{{output[-1].observations}}}}
 
 STEP 2: PREDICTIONS
@@ -105,7 +105,7 @@ Return as JSON:
         # Step 3: Thought Experiment / Analysis
         f"""You are a scientist designing an experiment to test the hypothesis.
 
-Hypothesis: {hypothesis}
+Hypothesis: {{{{hypothesis}}}}
 Predictions if true: {{{{output[-1].if_true}}}}
 Test method: {{{{output[-1].test_method}}}}
 
@@ -131,13 +131,13 @@ Return as JSON:
         # Step 4: Analysis
         f"""You are planning how to analyze a proposed experiment. No experiment has been performed by this tool.
 
-Hypothesis: {hypothesis}
+Hypothesis: {{{{hypothesis}}}}
 Experimental design: {{{{output[-1].experimental_design}}}}
 Predictions: {{{{output[-2].if_true}}}}
 
 STEP 4: ANALYSIS
-Original supplied context: {context}
-Original supplied evidence: {evidence_str}
+Original supplied context: {{{{context}}}}
+Original supplied evidence: {{{{evidence_str}}}}
 Describe possible outcomes and what evidence would distinguish them. Predictions are not observed results. Do not turn generated expectations into evidence.
 
 Provide:
@@ -157,13 +157,13 @@ Return as JSON:
         # Step 5: Conclusion
         f"""You are summarizing a proposed investigation. This tool has not performed an experiment or verified sources.
 
-Hypothesis: {hypothesis}
+Hypothesis: {{{{hypothesis}}}}
 Analysis: {{{{output[-1]}}}}
 Evidence strength: {{{{output[-1].strength_of_evidence}}}}
 
 STEP 5: CONCLUSION
-Original context: {context}
-Supplied evidence: {evidence_str}
+Original context: {{{{context}}}}
+Supplied evidence: {{{{evidence_str}}}}
 Give a provisional assessment of the supplied evidence and next tests. If evidence is absent, hypothetical, or insufficient, the verdict must be Inconclusive. Do not cite generated predictions as proof.
 
 Provide:
@@ -189,6 +189,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"context": context, "evidence_str": evidence_str, "hypothesis": hypothesis},
     )
 
     metadata = {
@@ -241,7 +242,7 @@ def socratic_dialogue(
     # Initial belief statement
     prompts.append(f"""You are a student stating your belief for Socratic examination.
 
-Belief to examine: {belief}
+Belief to examine: {{{{belief}}}}
 
 State your belief clearly and explain why you hold it. What are your initial reasons and assumptions?
 
@@ -255,7 +256,7 @@ Return as JSON:
     # Generate question-answer pairs
     for round_num in range(1, depth + 1):
         # Teacher asks probing question
-        prompts.append(f"""You are a {teacher_persona} using the Socratic method.
+        prompts.append(f"""You are a {{{{teacher_persona}}}} using the Socratic method.
 
 Student's current understanding: {{{{output[-1]}}}}
 
@@ -297,7 +298,7 @@ Return as JSON:
     # Final synthesis
     prompts.append(f"""You are a student synthesizing insights from Socratic dialogue.
 
-Original belief: {belief}
+Original belief: {{{{belief}}}}
 Rounds of questioning: {depth}
 Final understanding: {{{{output[-1]}}}}
 
@@ -312,7 +313,7 @@ Provide:
 
 Return as JSON:
 {{
-  "original_belief": "{belief}",
+  "original_belief": "{{{{belief}}}}",
   "refined_belief": "Your updated understanding",
   "key_insights": ["insight 1", "insight 2", ...],
   "questioned_assumptions": ["assumption 1", ...],
@@ -326,6 +327,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"belief": belief, "teacher_persona": teacher_persona},
     )
 
     # Structure the dialogue for easy reading
@@ -389,9 +391,9 @@ def design_thinking(
         # Phase 1: Empathize
         f"""You are a design thinker in the EMPATHIZE phase.
 
-Problem space: {problem}
-Target user: {target_user}
-Constraints: {constraints_str}
+Problem space: {{{{problem}}}}
+Target user: {{{{target_user}}}}
+Constraints: {{{{constraints_str}}}}
 
 EMPATHIZE: Deeply understand the user's needs, pain points, and context.
 
@@ -419,7 +421,7 @@ Return as JSON:
         f"""You are a design thinker in the DEFINE phase.
 
 User insights: {{{{output[-1]}}}}
-Original problem: {problem}
+Original problem: {{{{problem}}}}
 
 DEFINE: Frame the problem from the user's perspective.
 
@@ -444,7 +446,7 @@ Return as JSON:
         f"""You are a design thinker in the IDEATE phase.
 
 Problem statement: {{{{output[-1].problem_statement}}}}
-Constraints: {constraints_str}
+Constraints: {{{{constraints_str}}}}
 
 IDEATE: Generate diverse solution ideas without judgment.
 
@@ -474,7 +476,7 @@ Return as JSON:
 
 Top ideas: {{{{output[-1].most_promising}}}}
 Problem statement: {{{{output[-2].problem_statement}}}}
-Constraints: {constraints_str}
+Constraints: {{{{constraints_str}}}}
 
 PROTOTYPE: Design a concrete, detailed solution.
 
@@ -533,6 +535,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"constraints_str": constraints_str, "problem": problem, "target_user": target_user},
     )
 
     metadata = {
@@ -591,7 +594,7 @@ def judicial_reasoning(
         # Step 1: Facts of the case
         f"""You are a judge analyzing a case.
 
-Case: {case}
+Case: {{{{case}}}}
 
 STEP 1: FACTS OF THE CASE
 Establish the facts clearly and objectively.
@@ -619,9 +622,9 @@ Return as JSON:
         # Step 2: Applicable principles
         f"""You are a judge identifying applicable principles.
 
-Case: {case}
+Case: {{{{case}}}}
 Facts: {{{{output[-1]}}}}
-Suggested principles: {principles_str}
+Suggested principles: {{{{principles_str}}}}
 
 STEP 2: APPLICABLE PRINCIPLES
 What principles, rules, or values apply to this case?
@@ -647,10 +650,10 @@ Return as JSON:
         # Step 3: Precedent analysis
         f"""You are a judge analyzing precedents.
 
-Case: {case}
+Case: {{{{case}}}}
 Facts: {{{{output[-2]}}}}
 Principles: {{{{output[-1]}}}}
-Known precedents: {precedents_str}
+Known precedents: {{{{precedents_str}}}}
 
 STEP 3: PRECEDENT ANALYSIS
 How have similar cases been decided?
@@ -678,7 +681,7 @@ Return as JSON:
         # Step 4: Arguments
         f"""You are a judge considering arguments from both sides.
 
-Case: {case}
+Case: {{{{case}}}}
 Facts: {{{{output[-3]}}}}
 Principles: {{{{output[-2]}}}}
 
@@ -709,7 +712,7 @@ Return as JSON:
         # Step 5: Ruling and reasoning
         f"""You are a judge issuing a ruling.
 
-Case: {case}
+Case: {{{{case}}}}
 Facts: {{{{output[-4]}}}}
 Principles: {{{{output[-3]}}}}
 Arguments: {{{{output[-1]}}}}
@@ -742,6 +745,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"case": case, "precedents_str": precedents_str, "principles_str": principles_str},
     )
 
     metadata = {
@@ -799,8 +803,8 @@ def five_whys(
         # Initial problem statement
         f"""You are analyzing a problem using the 5 Whys technique.
 
-Problem: {problem}
-Context: {context}
+Problem: {{{{problem}}}}
+Context: {{{{context}}}}
 
 STATE THE PROBLEM: Clearly describe the problem as a specific, observable event.
 
@@ -816,12 +820,12 @@ Return as JSON:
     for why_num in range(1, depth + 1):
         prompts.append(f"""You are conducting root cause analysis.
 
-{"Problem: " + problem if why_num == 1 else "Previous cause: {{output[-1].cause}}"}
+{"Problem: {{problem}}" if why_num == 1 else "Previous cause: {{output[-1].cause}}"}
 
 WHY #{why_num}: Why did {"this problem occur" if why_num == 1 else "this cause happen"}?
 
-Original problem: {problem}
-Supplied context: {context}
+Original problem: {{{{problem}}}}
+Supplied context: {{{{context}}}}
 Propose one possible cause and a way to check it. Keep supplied observations separate from assumptions. A configured depth never establishes a root cause.
 
 Return as JSON:
@@ -836,7 +840,7 @@ Return as JSON:
     # Synthesis and solution
     prompts.append(f"""You are synthesizing root cause analysis.
 
-Original problem: {problem}
+Original problem: {{{{problem}}}}
 Latest cause hypothesis (Why #{depth}): {{{{output[-1].cause}}}}
 
 SYNTHESIS: Propose a causal hypothesis and small reversible tests. No cause is established solely by this generated chain. Say Not established when evidence is insufficient.
@@ -865,6 +869,7 @@ Return as JSON:
         prompts,
         model_info=model_info,
         llm_callable=llm_callable,
+        context={"context": context, "problem": problem},
     )
 
     # Structure the why chain

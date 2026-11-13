@@ -25,11 +25,15 @@ from datetime import datetime
 import importlib.util
 import inspect
 from copy import deepcopy
+from fnmatch import fnmatchcase
 from functools import lru_cache
 from pathlib import Path
+from uuid import uuid4
 
 from .chain import MinimalChainable
-from .llm_client import build_models, prompt
+from .errors import InputError
+from .limits import MAX_CHAIN_STEPS, validate_prompts
+from .llm_client import build_models, request_completion
 from .artifact_store import ArtifactStore
 
 
@@ -73,9 +77,11 @@ class ChainStep:
 
     # For synthesize type
     artifact_pattern: Optional[str] = None
+    synthesis_prompt: Optional[str] = None
 
     # Common
     topic: Optional[str] = None  # For artifact storage
+    scope_output: bool = False
 
     def __repr__(self):
         if self.step_type == "tool":
@@ -112,7 +118,7 @@ class CompositionResult:
             output += "\n"
 
         output += f"Total Steps: {len(self.steps_executed)}\n"
-        label = "Total reported tokens" if self.usage_complete else "Known token subtotal (some tool usage unavailable)"
+        label = "Total reported tokens" if self.usage_complete else "Known token subtotal (some usage unavailable)"
         output += f"{label}: {self.total_tokens}\n"
         output += f"Artifacts Created: {len(self.final_artifacts)}\n"
 
@@ -135,7 +141,7 @@ class ChainComposer:
         self,
         artifact_store: Optional[ArtifactStore] = None,
         model_info: Optional[Any] = None,
-        llm_callable: Callable = prompt,
+        llm_callable: Callable = request_completion,
     ):
         """
         Create a chain composer.
@@ -175,47 +181,56 @@ class ChainComposer:
         Returns:
             CompositionResult with execution details
         """
+        if not 1 <= len(steps) <= MAX_CHAIN_STEPS:
+            raise InputError(f"Choose 1–{MAX_CHAIN_STEPS} composition steps.")
+        for step in steps:
+            if step.step_type == "chain":
+                validate_prompts(step.prompts)
+            elif step.step_type == "tool":
+                if not self._find_tool_path(step.tool_name):
+                    raise InputError("Choose an installed tool for each tool step.")
+            elif step.step_type != "synthesize":
+                raise InputError("Choose a tool, chain or synthesis step.")
+
         print("🎼 Starting Chain Composition")
         print(f"   Steps: {len(steps)}")
         print()
 
         global_context = global_context or {}
-        self.execution_trace = []
-        self.total_tokens = 0
         steps_executed = []
+        artifacts_created = {}
+        composition_id = uuid4().hex[:12]
 
         for i, step in enumerate(steps, 1):
             print(f"🔗 Step {i}/{len(steps)}: {step.name}")
             print(f"   Type: {step.step_type}")
 
-            step_result = None
+            topic = step.topic or step.name
+            if step.scope_output or step.step_type == "synthesize":
+                topic = f"{topic[:100]}_{composition_id}_step_{i}"
 
             if step.step_type == "tool":
-                step_result = self._execute_tool_step(step, global_context)
+                step_result = self._execute_tool_step(step, global_context, topic if step.scope_output else None)
             elif step.step_type == "chain":
-                step_result = self._execute_chain_step(step, global_context)
-            elif step.step_type == "synthesize":
-                step_result = self._execute_synthesize_step(step, global_context)
+                step_result = self._execute_chain_step(step, global_context, topic)
             else:
-                raise ValueError(f"Unknown step type: {step.step_type}")
+                step_result = self._execute_synthesize_step(step, global_context, topic, artifacts_created)
 
             steps_executed.append(step_result)
-            self.execution_trace.append(deepcopy(step_result))
+            for key in step_result["artifacts_created"]:
+                artifacts_created[key] = self.artifact_store.get_by_key(key)
             print(f"   ✅ Complete")
             print()
 
-        # Gather all artifacts
-        all_artifacts = {}
-        for key, value in self.artifact_store.artifacts.items():
-            all_artifacts[key] = value
-
         result = CompositionResult(
             steps_executed=steps_executed,
-            final_artifacts=all_artifacts,
-            execution_trace=deepcopy(self.execution_trace),
-            total_tokens=self.total_tokens,
+            final_artifacts=artifacts_created,
+            execution_trace=deepcopy(steps_executed),
+            total_tokens=sum(step.get("tokens", 0) for step in steps_executed),
             usage_complete=all(step.get("usage_complete", True) for step in steps_executed)
         )
+        self.execution_trace = deepcopy(steps_executed)
+        self.total_tokens = result.total_tokens
 
         print("🎉 Composition Complete!")
         print()
@@ -226,7 +241,8 @@ class ChainComposer:
     def _execute_tool_step(
         self,
         step: ChainStep,
-        global_context: Dict[str, Any]
+        global_context: Dict[str, Any],
+        artifact_topic: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute a tool (like concept_simplifier or subject_connector).
@@ -253,26 +269,32 @@ class ChainComposer:
         tool_func = getattr(module, tool_name)
 
         # Execute tool and track new artifacts
-        before_keys = set(self.artifact_store.artifacts.keys())
+        before_metadata = self.artifact_store.metadata.copy()
 
         signature = inspect.signature(tool_func)
         call_kwargs = {
             name: value
             for name, value in tool_args.items()
-            if name in signature.parameters
+            if name in signature.parameters and name not in {"artifact_store", "artifact_topic", "llm_callable", "model_info", "result_file"}
         }
-        if "artifact_store" in signature.parameters:
-            call_kwargs["artifact_store"] = self.artifact_store
+        dependencies = {"artifact_store": self.artifact_store, "artifact_topic": artifact_topic,
+                        "llm_callable": self.llm_callable, "model_info": self.model_info}
+        call_kwargs.update({name: value for name, value in dependencies.items() if name in signature.parameters})
 
         try:
-            signature.bind_partial(**call_kwargs)
+            signature.bind(**call_kwargs)
         except TypeError as exc:
             raise ValueError(f"Invalid arguments for tool '{tool_name}': {exc}") from exc
 
-        tool_func(**call_kwargs)
+        tool_result = tool_func(**call_kwargs)
+        if (isinstance(tool_result, tuple) and len(tool_result) == 2 and isinstance(tool_result[1], dict)
+                and "steps" in tool_result[1]):
+            _, trace = tool_result
+            return {"name": step.name, "type": "tool", "tool_name": tool_name,
+                    **self._trace_summary(trace)}
 
-        after_keys = set(self.artifact_store.artifacts.keys())
-        artifacts_created = sorted(after_keys - before_keys)
+        artifacts_created = sorted(key for key, meta in self.artifact_store.metadata.copy().items()
+                                   if before_metadata.get(key) is not meta)
 
         return {
             "name": step.name,
@@ -286,7 +308,8 @@ class ChainComposer:
     def _execute_chain_step(
         self,
         step: ChainStep,
-        global_context: Dict[str, Any]
+        global_context: Dict[str, Any],
+        topic: str,
     ) -> Dict[str, Any]:
         """
         Execute a custom chain of prompts.
@@ -302,73 +325,53 @@ class ChainComposer:
             prompts=step.prompts,
             return_trace=True,
             artifact_store=self.artifact_store,
-            topic=step.topic or step.name
+            topic=topic,
         )
-
-        # Track tokens
-        total_step_tokens = 0
-        for u in usage:
-            if isinstance(u, dict):
-                total_step_tokens += u.get('prompt_tokens', 0) + u.get('completion_tokens', 0)
-
-        self.total_tokens += total_step_tokens
-
-        # Get artifacts created
-        topic_key = self.artifact_store._normalize_key(step.topic or step.name)
-        artifacts_created = [
-            key for key in self.artifact_store.artifacts.keys()
-            if key.startswith(f"{topic_key}:")
-        ]
 
         return {
             "name": step.name,
             "type": "chain",
             "prompts_count": len(step.prompts),
-            "tokens": total_step_tokens,
-            "trace": trace,
-            "usage_complete": all(bool(u) for u in usage),
-            "artifacts_created": artifacts_created
+            **self._trace_summary(trace),
         }
 
     def _execute_synthesize_step(
         self,
         step: ChainStep,
-        global_context: Dict[str, Any]
+        global_context: Dict[str, Any],
+        topic: str,
+        artifacts_created: Dict[str, Any],
     ) -> Dict[str, Any]:
         """
-        Execute a synthesis step that combines artifacts.
+        Combine outputs created by earlier steps in this composition.
         """
         pattern = step.artifact_pattern or "*:*"
 
         print(f"   Synthesizing artifacts matching: {pattern}")
 
-        matching_artifacts = self.artifact_store.query(pattern)
+        matching_artifacts = {key: value for key, value in artifacts_created.items() if fnmatchcase(key, pattern)}
+        if not matching_artifacts:
+            raise InputError("No earlier outputs in this composition match the synthesis inputs.")
 
         print(f"   Found {len(matching_artifacts)} artifacts")
 
-        # Build a synthesis prompt that references all matching artifacts
-        artifact_refs = "\n".join([
-            f"- {key}: {{{{artifact:{key}}}}}"
-            for key in matching_artifacts.keys()
-        ])
-
-        synthesis_prompt = f"""You are a synthesis expert.
+        synthesis_prompt = step.synthesis_prompt or """You are a synthesis expert.
 
 Analyze these artifacts and find emergent patterns:
 
-{artifact_refs}
+{{composition_artifacts}}
 
 What insights emerge when you view them together?
 What patterns appear across all of them?
 
 Respond in JSON:
-{{
+{
   "patterns": ["Pattern 1", "Pattern 2", "Pattern 3"],
   "meta_insights": "Overall insight from combining all artifacts",
   "recommendations": ["Recommendation 1", "Recommendation 2"]
-}}"""
+}"""
 
-        context = {**global_context, **step.context}
+        context = {**global_context, **step.context, "composition_artifacts": matching_artifacts}
 
         result, prompts, usage, trace = MinimalChainable.run(
             context=context,
@@ -377,26 +380,24 @@ Respond in JSON:
             prompts=[synthesis_prompt],
             return_trace=True,
             artifact_store=self.artifact_store,
-            topic=step.topic or "synthesis"
+            topic=topic,
         )
-
-        # Track tokens
-        total_step_tokens = 0
-        for u in usage:
-            if isinstance(u, dict):
-                total_step_tokens += u.get('prompt_tokens', 0) + u.get('completion_tokens', 0)
-
-        self.total_tokens += total_step_tokens
 
         return {
             "name": step.name,
             "type": "synthesize",
             "artifacts_analyzed": list(matching_artifacts.keys()),
-            "tokens": total_step_tokens,
-            "trace": trace,
-            "usage_complete": all(bool(u) for u in usage),
+            **self._trace_summary(trace),
             "result": result[0] if result else None
         }
+
+    @staticmethod
+    def _trace_summary(trace):
+        if trace.get("completion_complete") is False:
+            raise InputError("A composition answer did not finish. Review saved artifacts before trying again.")
+        return {"trace": trace, "tokens": trace.get("total_tokens", 0),
+                "usage_complete": trace.get("usage_complete", False),
+                "artifacts_created": [step["artifact_key"] for step in trace.get("steps", []) if "artifact_key" in step]}
 
     @classmethod
     def refresh_tool_registry(cls) -> None:
@@ -434,19 +435,22 @@ class ChainRecipe:
                 name=f"Analyze {topic_a}",
                 step_type="tool",
                 tool_name="concept_simplifier",
-                tool_args={"topic": topic_a}
+                tool_args={"topic": topic_a},
+                scope_output=True,
             ),
             ChainStep(
                 name=f"Analyze {topic_b}",
                 step_type="tool",
                 tool_name="concept_simplifier",
-                tool_args={"topic": topic_b}
+                tool_args={"topic": topic_b},
+                scope_output=True,
             ),
             ChainStep(
                 name="Find connections",
                 step_type="tool",
                 tool_name="subject_connector",
-                tool_args={"subject_a": topic_a, "subject_b": topic_b}
+                tool_args={"subject_a": topic_a, "subject_b": topic_b},
+                scope_output=True,
             ),
             ChainStep(
                 name="Synthesize all insights",
@@ -473,7 +477,8 @@ class ChainRecipe:
                 name=f"Analyze {topic}",
                 step_type="tool",
                 tool_name="concept_simplifier",
-                tool_args={"topic": topic}
+                tool_args={"topic": topic},
+                scope_output=True,
             ))
 
         # Step 2: Connect adjacent topics
@@ -485,22 +490,23 @@ class ChainRecipe:
                 tool_args={
                     "subject_a": topics[i],
                     "subject_b": topics[i+1]
-                }
+                },
+                scope_output=True,
             ))
 
         # Step 3: Synthesize into curriculum
         steps.append(ChainStep(
             name="Build learning path",
-            step_type="chain",
+            step_type="synthesize",
             topic="curriculum",
-            prompts=[
-                f"""You are a curriculum designer.
+            context={"topics": topics},
+            synthesis_prompt="""You are a curriculum designer.
 
 Based on these topics and their connections:
-{', '.join(topics)}
+{{topics}}
 
-And these artifacts showing what we've learned:
-{{{{artifact:*:expert_educator}}}}
+Use these artifacts from the preceding steps:
+{{composition_artifacts}}
 
 Design a 4-week learning curriculum.
 
@@ -511,18 +517,17 @@ For each week:
 - How it builds on previous weeks
 
 Respond in JSON:
-{{
+{
   "weeks": [
-    {{
+    {
       "week": 1,
       "topic": "...",
       "objectives": ["...", "..."],
       "key_concepts": ["...", "..."],
       "exercises": ["...", "..."]
-    }}
+    }
   ]
-}}"""
-            ]
+}""",
         ))
 
         return steps
@@ -547,6 +552,7 @@ Respond in JSON:
                 name=f"Explain for {level}",
                 step_type="chain",
                 topic=f"{topic}_{level.replace(' ', '_')}",
+                scope_output=True,
                 context={"topic": topic, "level": level},
                 prompts=[
                     f"""You are an expert educator.
@@ -568,25 +574,24 @@ Respond in JSON:
         # Synthesize the progression
         steps.append(ChainStep(
             name="Analyze learning progression",
-            step_type="chain",
+            step_type="synthesize",
             topic=f"{topic}_progression",
-            prompts=[
-                f"""You are a learning science expert.
+            context={"topic": topic},
+            synthesis_prompt="""You are a learning science expert.
 
-Analyze how explanations of '{topic}' progress across levels:
+Analyze how explanations of '{{topic}}' progress across levels:
 
-{{{{artifact:*:step_1}}}}
+{{composition_artifacts}}
 
 What pedagogical principles are at work?
 How does complexity increase appropriately?
 
 Respond in JSON:
-{{
+{
   "progression_patterns": ["Pattern 1", "Pattern 2"],
   "scaffolding_techniques": ["Technique 1", "Technique 2"],
   "optimal_learning_path": "Recommendation for learners"
-}}"""
-            ]
+}""",
         ))
 
         return steps

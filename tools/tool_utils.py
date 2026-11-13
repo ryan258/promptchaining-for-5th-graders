@@ -10,6 +10,7 @@ import json
 import tempfile
 import subprocess
 import argparse
+from uuid import uuid4
 
 def setup_project_root(current_file, depth=2):
     """
@@ -25,15 +26,30 @@ def setup_project_root(current_file, depth=2):
     return project_root
 
 def load_user_context(project_root):
-    """Load user profile for context-aware generation"""
+    """Read the optional local profile, falling back safely on an invalid file."""
     context_path = os.path.join(project_root, 'context', 'user_profile.json')
     try:
-        with open(context_path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # Return empty dict instead of printing warning to keep output clean
-        # unless verbose logging is needed
+        with open(context_path, 'r', encoding='utf-8') as f:
+            text = f.read(100_001)
+        profile = json.loads(text) if len(text) <= 100_000 else {}
+    except (OSError, ValueError, RecursionError):
         return {}
+    return profile if isinstance(profile, dict) else {}
+
+
+def learning_profile_fields(project_root, *, connector: bool = False) -> dict[str, str]:
+    """Describe exactly the profile fields available to a learning tool."""
+    profile = load_user_context(project_root)
+
+    def field(section, name, default):
+        values = profile.get(section)
+        value = values.get(name) if isinstance(values, dict) else None
+        return value.strip() if isinstance(value, str) and 0 < len(value.strip()) <= 300 else default
+
+    tone = field("writing_style", "tone", "Clear and practical" if connector else "Clear and direct")
+    if connector:
+        return {"tone": tone}
+    return {"tone": tone, "audience": field("learning_profile", "audience", "Curious adult")}
 
 def open_in_editor(initial_content="# Enter your content below\n# Lines starting with # will be ignored\n\n"):
     """Open a temporary file in the user's default editor"""
@@ -71,7 +87,7 @@ def read_interactive_input(prompt_title="Interactive Input", prompt_message="Ent
         print("\n\n❌ Cancelled")
         sys.exit(0)
 
-def get_input_from_args(description, default_context_help="Additional context"):
+def get_input_from_args(description, default_context_help="Additional context", *, allow_studio_request=False):
     """
     Standard CLI argument parsing.
     Returns (topic, context_string).
@@ -83,8 +99,20 @@ def get_input_from_args(description, default_context_help="Additional context"):
     parser.add_argument('topic', nargs='?', help='Main topic or input')
     parser.add_argument('--context', default='', help=default_context_help)
     parser.add_argument('--editor', action='store_true', help='Open editor for input')
+    if allow_studio_request:
+        parser.add_argument('--result-file', help=argparse.SUPPRESS)
     
     args = parser.parse_args()
+    result_file = getattr(args, 'result_file', None)
+    if result_file:
+        try:
+            payload = json.load(sys.stdin)
+            topic, context = payload['topic'], payload['context']
+            if not isinstance(topic, str) or not isinstance(context, str):
+                raise ValueError()
+        except (ValueError, KeyError, TypeError):
+            parser.error('Invalid Studio tool request')
+        return topic, context, result_file
 
     topic = None
     if args.editor:
@@ -100,9 +128,9 @@ def get_input_from_args(description, default_context_help="Additional context"):
         print("❌ Error: No input provided")
         sys.exit(1)
         
-    return topic, args.context
+    return (topic, args.context, None) if allow_studio_request else (topic, args.context)
 
-def save_chain_output(project_root, output_dir, tool_name, topic, execution_trace, result, context_filled_prompts, usage_stats, artifact_store=None):
+def save_chain_output(project_root, output_dir, tool_name, topic, execution_trace, result, context_filled_prompts, usage_stats, artifact_store=None, *, result_file=None):
     """
     Standard function to save chain outputs and logs.
     """
@@ -115,16 +143,20 @@ def save_chain_output(project_root, output_dir, tool_name, topic, execution_trac
 
     os.makedirs(output_dir, exist_ok=True)
     
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
     
     # Save JSON trace
     # Simple sanitization
     safe_topic = "".join([c if c.isalnum() else "_" for c in topic[:50]])
-    json_filename = f"{timestamp}-{safe_topic}.json"
+    json_filename = f"{timestamp}-{safe_topic}-{uuid4().hex[:12]}.json"
     output_path = os.path.join(output_dir, json_filename)
     
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(execution_trace, f, indent=2)
+    trace = json.dumps(execution_trace, indent=2, ensure_ascii=False)
+    from lib.core.artifact_store import _atomic_replace
+
+    _atomic_replace(output_path, trace)
+    if result_file is not None:
+        _atomic_replace(result_file, trace)
         
     # Log to Markdown
     log_file = MinimalChainable.log_to_markdown(tool_name, context_filled_prompts, result, usage_stats)

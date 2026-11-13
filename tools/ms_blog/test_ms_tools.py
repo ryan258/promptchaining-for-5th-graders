@@ -7,7 +7,6 @@ Quick validation tests to ensure all generators work correctly.
 """
 
 import sys
-import os
 from pathlib import Path
 import pytest
 from unittest.mock import patch
@@ -16,12 +15,17 @@ from unittest.mock import patch
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+from lib.core import llm_client
+from lib.core.errors import InputError
+from tools.ms_blog import cli
 from tools.ms_blog.ms_content_tools import (
+    batch_generate_content,
     generate_prompt_card,
     generate_shortcut_spotlight,
     generate_guide,
     expand_content_idea,
     low_energy_pipeline,
+    save_markdown,
     validate_content
 )
 
@@ -124,9 +128,36 @@ Fixes and checks.
 
 @pytest.fixture(autouse=True)
 def mock_chain_runner():
-    with patch("tools.ms_blog.ms_content_tools.MinimalChainable.run", side_effect=_mock_chain_run):
-        with patch("tools.ms_blog.ms_content_tools.MinimalChainable.log_to_markdown", return_value="mock_log.md"):
-            yield
+    with (
+        patch("tools.ms_blog.ms_content_tools.get_model", return_value=(None, "offline")),
+        patch("tools.ms_blog.ms_content_tools.MinimalChainable.run", side_effect=_mock_chain_run),
+        patch("tools.ms_blog.ms_content_tools.MinimalChainable.log_to_markdown", return_value="mock_log.md"),
+    ):
+        yield
+
+
+def test_cli_uses_shared_dotenv_loader(tmp_path, monkeypatch):
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.setattr(llm_client, "load_dotenv", lambda: monkeypatch.setenv("OPENROUTER_API_KEY", "synthetic-test-key"))
+    monkeypatch.setattr(cli, "expand_content_idea", lambda **_: ({"ideas": ["An example"]}, {}))
+    assert cli.main(["ideas", "An example", "--output-dir", str(tmp_path)]) == 0
+    assert len(list(tmp_path.glob("ideas-*.json"))) == 1
+
+
+def test_draft_save_preserves_existing_file_and_returns_actual_path(tmp_path):
+    path = tmp_path / "same-title.md"
+    assert Path(save_markdown("First draft", path)) == path
+    copy = Path(save_markdown("Second draft", path))
+    assert path.read_text() == "First draft"
+    assert copy != path and copy.read_text() == "Second draft"
+    assert not list(tmp_path.glob(".draft-*"))
+
+
+def test_batch_rejects_excessive_request_plans_before_generation():
+    with pytest.raises(InputError, match="1 to 20"):
+        batch_generate_content("A topic", count=21)
+    with pytest.raises(InputError, match="1–20 total drafts"):
+        batch_generate_content("A topic", mix={"prompt": 20, "guide": 1})
 
 
 def test_prompt_card_generator():
@@ -307,80 +338,22 @@ def test_low_energy_pipeline():
         raise
 
 
-def run_all_tests():
-    """Run all tests and report results."""
-    print("\n" + "="*60)
-    print("MS BLOG TOOLS - TEST SUITE")
-    print("="*60)
-    print("\nRunning comprehensive tests...\n")
-
-    tests = [
-        ("Validation Function", test_validation_function),
-        ("Prompt Card Generator", test_prompt_card_generator),
-        ("Shortcut Generator", test_shortcut_generator),
-        ("Guide Generator", test_guide_generator),
-        ("Content Idea Expander", test_content_idea_expander),
-        ("Low-Energy Pipeline", test_low_energy_pipeline),
-    ]
-
-    results = []
-    for name, test_func in tests:
-        try:
-            test_func()
-            results.append((name, True))
-        except Exception as e:
-            print(f"\n❌ {name} crashed: {e}")
-            import traceback
-            traceback.print_exc()
-            results.append((name, False))
-
-    # Summary
-    print("\n" + "="*60)
-    print("TEST RESULTS SUMMARY")
-    print("="*60)
-
-    passed = sum(1 for _, result in results if result)
-    total = len(results)
-
-    for name, result in results:
-        status = "✅ PASS" if result else "❌ FAIL"
-        print(f"{status}: {name}")
-
-    print(f"\n{passed}/{total} tests passed")
-
-    if passed == total:
-        print("\n🎉 All tests passed! MS Blog tools are ready to use.")
-    else:
-        print(f"\n⚠️  {total - passed} test(s) failed. Please review errors above.")
-
-    return passed == total
-
 
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Test MS Blog Content Tools")
-    parser.add_argument(
-        "--test",
-        choices=["validation", "prompt", "shortcut", "guide", "ideas", "pipeline", "all"],
-        default="all",
-        help="Which test to run"
-    )
-
-    args = parser.parse_args()
-
-    if args.test == "validation":
-        test_validation_function()
-    elif args.test == "prompt":
-        test_prompt_card_generator()
-    elif args.test == "shortcut":
-        test_shortcut_generator()
-    elif args.test == "guide":
-        test_guide_generator()
-    elif args.test == "ideas":
-        test_content_idea_expander()
-    elif args.test == "pipeline":
-        test_low_energy_pipeline()
-    else:
-        success = run_all_tests()
-        sys.exit(0 if success else 1)
+    tests = {
+        "validation": "test_validation_function",
+        "prompt": "test_prompt_card_generator",
+        "shortcut": "test_shortcut_generator",
+        "guide": "test_guide_generator",
+        "ideas": "test_content_idea_expander",
+        "pipeline": "test_low_energy_pipeline",
+    }
+    parser = argparse.ArgumentParser(description="Run offline MS Blog Content Tools checks.")
+    parser.add_argument("--test", choices=[*tests, "all"], default="all")
+    selected = parser.parse_args().test
+    target = str(Path(__file__).resolve())
+    if selected != "all":
+        target += f"::{tests[selected]}"
+    raise SystemExit(pytest.main(["-q", target]))

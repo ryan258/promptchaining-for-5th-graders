@@ -41,7 +41,7 @@ def main(argv=None) -> int:
     commands.add_parser("doctor", help="Check local setup without API calls or tests")
     backup = commands.add_parser("backup", help="Export the workspace; defaults to a timestamped file")
     backup.add_argument("path", nargs="?")
-    restore = commands.add_parser("restore", help="Add a Studio JSON backup without overwriting work")
+    restore = commands.add_parser("restore", help="Add a Studio ZIP or JSON backup without overwriting work")
     restore.add_argument("path")
     args = parser.parse_args(argv)
     command = args.command or "start"
@@ -56,7 +56,7 @@ def main(argv=None) -> int:
             return 1
         from lib.core.llm_client import configured_model_names, get_prompt_settings, has_api_key
         try:
-            models, settings = configured_model_names(), get_prompt_settings()
+            models, settings = configured_model_names(for_workbench=True), get_prompt_settings()
             print("Dependencies: available")
             print(f"Workspace: {workspace_directory()}")
             print("Live generation: " + ("key configured (not tested)" if has_api_key() else "add a key to .env when ready"))
@@ -75,7 +75,7 @@ def main(argv=None) -> int:
             parser.error("port must be between 1 and 65535")
         print(f"Prompt Chaining Studio · http://127.0.0.1:{port}")
         print("Ctrl+C pauses after the current request, saves the answer, and stops.")
-        uvicorn.run("server.main:app", host="127.0.0.1", port=port, workers=1)
+        uvicorn.run("server.main:app", host="127.0.0.1", port=port, workers=1, access_log=False)
         return 0
 
     from lib.workbench.store import Store

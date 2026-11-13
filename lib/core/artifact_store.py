@@ -10,8 +10,10 @@ import hashlib
 import logging
 import tempfile
 from threading import RLock
+import unicodedata
 
 logger = logging.getLogger(__name__)
+MAX_ARTIFACT_BYTES = 10_000_000
 
 try:
     import chromadb
@@ -103,7 +105,7 @@ class ArtifactStore:
         """
         topic_key = self._normalize_key(topic)
         artifact_key = f"{topic_key}:{step_name}"
-        return self.artifacts.get(artifact_key)
+        return self.get_by_key(artifact_key)
 
     def get_by_key(self, artifact_key: str) -> Optional[Any]:
         """
@@ -115,7 +117,17 @@ class ArtifactStore:
         Returns:
             The artifact data, or None if not found
         """
-        return self.artifacts.get(artifact_key)
+        with self._write_lock:
+            if artifact_key not in self.artifacts:
+                return None
+            topic, _, step = artifact_key.partition(":")
+            topic_path = os.path.join(self.base_dir, topic)
+            path = os.path.join(topic_path, f"{step}.json")
+            if os.path.islink(topic_path) or os.path.islink(path) or not os.path.isfile(path):
+                self.artifacts.pop(artifact_key, None)
+                self.metadata.pop(artifact_key, None)
+                return None
+            return self.artifacts[artifact_key]
 
     def query(self, pattern: str) -> Dict[str, Any]:
         """
@@ -138,9 +150,12 @@ class ArtifactStore:
         regex = re.compile(f"^{regex_pattern}$")
 
         matching = {}
-        for key, value in self.artifacts.items():
-            if regex.match(key):
-                matching[key] = value
+        with self._write_lock:
+            for key in tuple(self.artifacts):
+                if regex.match(key):
+                    value = self.get_by_key(key)
+                    if key in self.artifacts:
+                        matching[key] = value
 
         return matching
 
@@ -152,7 +167,7 @@ class ArtifactStore:
             List of topic names
         """
         topics = set()
-        for key in self.artifacts.keys():
+        for key in self.query("*:*"):
             topic = key.split(":")[0]
             topics.add(topic)
         return sorted(list(topics))
@@ -169,7 +184,7 @@ class ArtifactStore:
         """
         topic_key = self._normalize_key(topic)
         steps = []
-        for key in self.artifacts.keys():
+        for key in self.query(f"{topic_key}:*"):
             if key.startswith(f"{topic_key}:"):
                 step_name = key.split(":", 1)[1]
                 steps.append(step_name)
@@ -188,6 +203,7 @@ class ArtifactStore:
         """
         topic_key = self._normalize_key(topic)
         artifact_key = f"{topic_key}:{step_name}"
+        self.get_by_key(artifact_key)
         return self.metadata.get(artifact_key)
 
     def visualize(self) -> str:
@@ -229,7 +245,7 @@ class ArtifactStore:
                     "data": value,
                     "metadata": self.metadata.get(key, {})
                 }
-                for key, value in self.artifacts.items()
+                for key, value in self.query("*:*").items()
             }
         }
 
@@ -241,9 +257,11 @@ class ArtifactStore:
         "Quantum Physics!" → "quantum_physics"
         """
         # Lowercase, replace spaces with underscores, remove special chars
-        normalized = key.lower()
-        normalized = re.sub(r'[^a-z0-9]+', '_', normalized)
-        normalized = normalized.strip('_')
+        key = unicodedata.normalize("NFC", key).lower()
+        normalized = re.sub(r'[^a-z0-9]+', '_', key).strip('_')
+        if not normalized or len(normalized) > 255:
+            digest = hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
+            normalized = f"{normalized[:160] or 'topic'}_{digest}"
         return normalized
 
     def _save_to_disk(self, topic_key: str, step_name: str, data: Any, metadata: Dict):
@@ -259,10 +277,14 @@ class ArtifactStore:
         if not isinstance(step_name, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,120}", step_name):
             raise ValueError("Use a short artifact step name containing letters, numbers, underscores or hyphens.")
         # Serialize both values before touching an existing saved file.
-        data_text = json.dumps(data, indent=2, ensure_ascii=False)
+        data_text = json.dumps(data, indent=2, ensure_ascii=False, allow_nan=False)
         metadata = {**metadata, "content_sha256": hashlib.sha256(data_text.encode("utf-8")).hexdigest()}
-        meta_text = json.dumps(metadata, indent=2, ensure_ascii=False)
+        meta_text = json.dumps(metadata, indent=2, ensure_ascii=False, allow_nan=False)
+        if max(len(data_text.encode("utf-8")), len(meta_text.encode("utf-8"))) > MAX_ARTIFACT_BYTES:
+            raise ValueError("Artifact data or metadata exceeds the supported size.")
         topic_dir = os.path.join(self.base_dir, topic_key)
+        if os.path.islink(topic_dir):
+            raise ValueError("An artifact topic cannot be a symbolic link.")
         os.makedirs(topic_dir, exist_ok=True)
 
         # Save data
@@ -293,8 +315,13 @@ class ArtifactStore:
                 continue
 
             # Load all .json files (except .meta.json)
-            for filename in os.listdir(topic_path):
-                if filename.endswith(".meta.json"):
+            try:
+                filenames = os.listdir(topic_path)
+            except OSError:
+                self.load_warnings.append(topic_dir_name)
+                continue
+            for filename in filenames:
+                if filename.endswith(".meta.json") or filename.startswith("."):
                     continue
 
                 if filename.endswith(".json"):
@@ -303,10 +330,9 @@ class ArtifactStore:
                     # Load data
                     data_path = os.path.join(topic_path, filename)
                     try:
-                        with open(data_path, "r", encoding="utf-8") as f:
-                            raw = f.read()
+                        raw = _read_artifact_text(data_path)
                         data = json.loads(raw)
-                    except (OSError, ValueError, UnicodeError):
+                    except (OSError, ValueError, RecursionError):
                         self.load_warnings.append(f"{topic_dir_name}/{filename}")
                         logger.warning("Skipped an unreadable artifact; original file preserved")
                         continue
@@ -316,13 +342,12 @@ class ArtifactStore:
                     metadata = {}
                     if os.path.exists(meta_path):
                         try:
-                            with open(meta_path, "r", encoding="utf-8") as f:
-                                metadata = json.load(f)
+                            metadata = json.loads(_read_artifact_text(meta_path))
                             if (not isinstance(metadata, dict)
                                     or (metadata.get("content_sha256") and metadata["content_sha256"] != hashlib.sha256(raw.encode("utf-8")).hexdigest())
                                     or (not metadata.get("content_sha256") and os.stat(meta_path).st_mtime_ns < os.stat(data_path).st_mtime_ns)):
                                 metadata = {}
-                        except (OSError, ValueError, UnicodeError):
+                        except (OSError, ValueError, RecursionError):
                             metadata = {}
 
                     # Store in memory
@@ -337,6 +362,8 @@ class ArtifactStore:
 
         try:
             chroma_dir = os.path.join(self.base_dir, "_chroma")
+            if os.path.islink(chroma_dir):
+                return
             os.makedirs(chroma_dir, exist_ok=True)
             self.chroma_client = chromadb.PersistentClient(
                 path=chroma_dir,
@@ -385,6 +412,33 @@ class ArtifactStore:
         except Exception:
             # Never let Chroma mirroring break primary artifact persistence.
             return
+
+
+def _read_artifact_text(path: str) -> str:
+    if os.path.islink(path) or not os.path.isfile(path):
+        raise ValueError("Expected a regular artifact file.")
+    with open(path, "rb") as stream:
+        data = stream.read(MAX_ARTIFACT_BYTES + 1)
+    if len(data) > MAX_ARTIFACT_BYTES:
+        raise ValueError("Artifact file exceeds the supported size.")
+    return data.decode("utf-8")
+
+
+def remove_artifact_mirror(base_dir: str, topic: str, step: str) -> bool:
+    """Remove an artifact from an existing Chroma mirror after its JSON is removed."""
+    chroma_dir = os.path.join(base_dir, "_chroma")
+    if not os.path.exists(chroma_dir):
+        return True
+    if chromadb is None or os.path.islink(chroma_dir):
+        return False
+    try:
+        client = chromadb.PersistentClient(path=chroma_dir,
+                                          settings=chromadb.config.Settings(anonymized_telemetry=False))
+        client.get_or_create_collection(name="artifacts", embedding_function=None).delete(ids=[f"{topic}:{step}"])
+    except Exception:
+        logger.warning("Artifact JSON removed; Chroma mirror could not be updated")
+        return False
+    return True
 
 
 def _atomic_replace(path: str, text: str) -> None:

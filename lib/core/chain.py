@@ -8,14 +8,37 @@ from typing import List, Dict, Callable, Any, Union, Tuple, Optional, Literal, o
 from pydantic import BaseModel  # Helps us create clean data structures
 import concurrent.futures  # Lets us do multiple things at the same time
 import os
+import math
 import datetime
 from uuid import uuid4
 
+from .errors import InputError
 from .limits import validate_prompts
-from .templates import render_template
+from .llm_client import Completion, normalize_usage
+from .templates import render_template, validate_template_inputs
 
 # Import artifact store for persistent knowledge accumulation
-from .artifact_store import ArtifactStore
+from .artifact_store import ArtifactStore, _atomic_replace
+
+def _parse_response_json(response: Any, *, allow_embedded: bool = False) -> Any:
+    """Recognize JSON without repairing an incomplete answer into a valid handoff."""
+    if not isinstance(response, str):
+        return response
+    fence = re.compile(r"```(?:json)?\s*([\s\S]*?)\s*```", re.IGNORECASE)
+    fenced = fence.search(response) if allow_embedded else fence.fullmatch(response.strip())
+    candidate = fenced[1] if fenced else response.strip()
+    if allow_embedded and not fenced:
+        start = re.search(r"[{\[]", candidate)
+        end = max(candidate.rfind("}"), candidate.rfind("]"))
+        if start and end >= start.start():
+            candidate = candidate[start.start():end + 1]
+    if not candidate.startswith(("{", "[")):
+        return response
+    try:
+        return json.loads(candidate)
+    except (ValueError, RecursionError):
+        return response
+
 
 # This is like a report card that tells us how our fusion chain did
 class FusionChainResult(BaseModel):
@@ -75,12 +98,14 @@ class FusionChain:
             This little function runs the prompt chain for one model.
             We need this because of how parallel processing works.
             """
-            outputs, context_filled_prompts, usage_stats = MinimalChainable.run(
+            outputs, context_filled_prompts, usage_stats, trace = MinimalChainable.run(
                 context, model, llm_callable, prompts,
-                return_usage=True,
+                return_trace=True,
                 artifact_store=artifact_store,
                 topic=f"{topic or 'fusion'}_{fusion_id}_model_{index + 1}" if artifact_store is not None else topic
             )
+            if not trace["completion_complete"]:
+                raise InputError("A comparison answer did not finish. Review saved artifacts before evaluating it.")
             return outputs, context_filled_prompts, usage_stats
 
         # Create empty lists to store results
@@ -243,49 +268,11 @@ class MinimalChainable:
         if topic is None and artifact_store is not None:
             topic = context.get("topic") or context.get("subject_A") or context.get("subject_a")
 
-        # Helper to coerce loose markdown/json strings into real JSON when possible
-        def _coerce_json(text: str):
-            if not isinstance(text, str):
-                return text
+        validate_template_inputs(prompts, context, allow_artifacts=artifact_store is not None)
 
-            # Strip code fences if present
-            fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
-            candidate = fence_match.group(1) if fence_match else text
-
-            # Grab the main JSON-looking slice
-            start = None
-            for ch in ["{", "["]:
-                pos = candidate.find(ch)
-                if pos != -1 and (start is None or pos < start):
-                    start = pos
-            if start is None:
-                return text
-
-            end = max(candidate.rfind("}"), candidate.rfind("]"))
-            if end == -1:
-                return text
-
-            snippet = candidate[start : end + 1]
-
-            def attempt_load(s: str):
-                try:
-                    return json.loads(s)
-                except Exception:
-                    return None
-
-            parsed = attempt_load(snippet)
-            if parsed is not None:
-                return parsed
-
-            # Try to balance braces if truncated
-            open_braces = snippet.count("{")
-            close_braces = snippet.count("}")
-            open_brackets = snippet.count("[")
-            close_brackets = snippet.count("]")
-            fixed = snippet + ("}" * max(0, open_braces - close_braces)) + ("]" * max(0, open_brackets - close_brackets))
-            parsed = attempt_load(fixed)
-            return parsed if parsed is not None else text
-
+        steps = []
+        artifact_names = set()
+        completion_complete = True
         # Go through each prompt one by one
         for i, prompt in enumerate(prompts):
 
@@ -298,27 +285,42 @@ class MinimalChainable:
             # One logical step invokes its callable once. Formatting mistakes
             # and provider errors never trigger hidden billable requests.
             result_raw = llm_callable(model, prompt)
+            completion = result_raw if isinstance(result_raw, Completion) else None
             usage = None
-            if isinstance(result_raw, tuple) and len(result_raw) == 2:
-                result, usage = result_raw
+            if completion is not None:
+                result, usage = completion.text, completion.usage
+                if completion.finish_reason not in (None, "stop"):
+                    completion_complete = False
+                else:
+                    result = _parse_response_json(result)
             else:
-                result = result_raw
-            result = _coerce_json(result)
-
-            # Save this result so future prompts can reference it
+                if isinstance(result_raw, tuple) and len(result_raw) == 2:
+                    result_raw, usage = result_raw
+                result = _parse_response_json(result_raw, allow_embedded=True)
             output.append(result)
 
-            # STEP 5: Save as artifact (if artifact store provided and topic available)
+            role = MinimalChainable._extract_role_from_prompt(prompts[i])
+            counts = normalize_usage(usage)
+            if usage is None:
+                stored_usage = {}
+            elif hasattr(usage, "model_dump"):
+                stored_usage = usage.model_dump()
+            elif hasattr(usage, "dict"):
+                stored_usage = usage.dict()
+            elif hasattr(usage, "__dict__"):
+                stored_usage = vars(usage)
+            else:
+                stored_usage = usage
+            usage_stats_list.append(stored_usage)
+            artifact_key = None
             if artifact_store is not None and topic:
-                # Extract semantic step name from the original prompt
-                step_name = MinimalChainable._extract_role_from_prompt(prompts[i])
-                if not step_name:
-                    step_name = f"step_{i + 1}"
-                else:
-                    # Convert role to step name: "Expert Educator" → "expert_educator"
-                    step_name = re.sub(r'[^a-z0-9]+', '_', step_name.lower()).strip('_')
-
-                # Save the artifact with metadata
+                step_name = re.sub(r"[^a-z0-9]+", "_", (role or "").lower()).strip("_")[:100]
+                step_name = step_name or f"step_{i + 1}"
+                if step_name in artifact_names:
+                    step_name = f"{step_name}_{i + 1}"
+                    while step_name in artifact_names:
+                        step_name = f"{step_name}_"
+                artifact_names.add(step_name)
                 artifact_store.save(
                     topic=topic,
                     step_name=step_name,
@@ -326,58 +328,36 @@ class MinimalChainable:
                     metadata={
                         "prompt_index": i,
                         "original_prompt": prompts[i][:100] + "..." if len(prompts[i]) > 100 else prompts[i],
-                        "artifacts_used": artifact_keys_used
-                    }
+                        "artifacts_used": artifact_keys_used,
+                        **({"finish_reason": completion.finish_reason, "response_id": completion.response_id,
+                            "response_model": completion.response_model} if completion is not None else {}),
+                    },
                 )
+                artifact_key = f"{artifact_store._normalize_key(topic)}:{step_name}"
 
-            # Store usage if available
-            if usage is not None:
-                # Convert usage object to dict if possible to ensure JSON serializability
-                if hasattr(usage, "model_dump"):
-                    usage_dict = usage.model_dump()
-                elif hasattr(usage, "dict"):
-                    usage_dict = usage.dict()
-                elif hasattr(usage, "__dict__"):
-                    usage_dict = usage.__dict__
-                else:
-                    usage_dict = usage
+            if return_trace:
+                step = {"step_number": i + 1, "role": role or f"Step {i + 1}",
+                        "prompt": prompt, "response": result, "tokens": counts.get("total_tokens")}
+                if artifact_key is not None:
+                    step["artifact_key"] = artifact_key
+                if completion is not None:
+                    step.update(raw_response=completion.text, finish_reason=completion.finish_reason,
+                                response_id=completion.response_id, response_model=completion.response_model)
+                steps.append(step)
 
-                usage_stats_list.append(usage_dict)
-            else:
-                usage_stats_list.append({})
+            if not completion_complete:
+                if not return_trace and i + 1 < len(prompts):
+                    raise InputError(f"Step {i + 1} did not finish. Review the partial answer before continuing.")
+                break
 
-        # Build execution trace if requested
         if return_trace:
             execution_trace = {
-                "steps": [],
+                "steps": steps,
                 "final_result": output[-1] if output else None,
-                "total_tokens": 0
+                "total_tokens": sum(step["tokens"] or 0 for step in steps),
+                "usage_complete": all(step["tokens"] is not None for step in steps),
+                "completion_complete": completion_complete,
             }
-
-            for i, (filled_prompt, response) in enumerate(zip(context_filled_prompts, output)):
-                # Extract role from the original prompt (before variable substitution)
-                role = MinimalChainable._extract_role_from_prompt(prompts[i])
-                if not role:
-                    role = f"Step {i + 1}"
-
-                # Get token usage for this step
-                tokens = None
-                if i < len(usage_stats_list):
-                    usage = usage_stats_list[i]
-                    if isinstance(usage, dict):
-                        prompt_tokens = usage.get('prompt_tokens', 0)
-                        completion_tokens = usage.get('completion_tokens', 0)
-                        tokens = prompt_tokens + completion_tokens
-                        execution_trace["total_tokens"] += tokens
-
-                execution_trace["steps"].append({
-                    "step_number": i + 1,
-                    "role": role,
-                    "prompt": filled_prompt,
-                    "response": response,
-                    "tokens": tokens
-                })
-
             return output, context_filled_prompts, usage_stats_list, execution_trace
 
         # Return outputs, filled-in prompts, and usage stats (if requested)
@@ -436,12 +416,12 @@ class MinimalChainable:
         logs_dir = os.path.join(project_root, "logs")
 
         # Create logs directory if it doesn't exist
-        if not os.path.exists(logs_dir):
-            os.makedirs(logs_dir)
+        os.makedirs(logs_dir, exist_ok=True)
 
         # Generate timestamped filename
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
-        filename = f"{timestamp}_{demo_name}.md"
+        safe_name = re.sub(r"[^A-Za-z0-9_-]", "_", demo_name)[:100] or "chain"
+        filename = f"{timestamp}_{safe_name}.md"
         filepath = os.path.join(logs_dir, filename)
 
         markdown_content = f"# 🪵 Log: {demo_name}\n\n"
@@ -449,14 +429,18 @@ class MinimalChainable:
 
         # Only estimate when both prices are explicitly configured. Unknown
         # usage or prices must never look like a zero-dollar provider invoice.
-        total_input_tokens = sum((u.get("prompt_tokens", 0) if isinstance(u, dict) else getattr(u, "prompt_tokens", 0)) or 0 for u in (usage_stats or []))
-        total_output_tokens = sum((u.get("completion_tokens", 0) if isinstance(u, dict) else getattr(u, "completion_tokens", 0)) or 0 for u in (usage_stats or []))
-        markdown_content += f"**Tokens reported**: {total_input_tokens} in / {total_output_tokens} out\n\n"
+        counts = [normalize_usage(usage) for usage in (usage_stats or [])]
+        total_input_tokens = sum(usage.get("prompt_tokens", 0) for usage in counts)
+        total_output_tokens = sum(usage.get("completion_tokens", 0) for usage in counts)
+        complete = len(counts) == len(prompts) and bool(counts) and all(
+            {"prompt_tokens", "completion_tokens"} <= usage.keys() for usage in counts
+        )
+        label = "Tokens reported" if complete else "Known token subtotal (some usage unavailable)"
+        markdown_content += f"**{label}**: {total_input_tokens} in / {total_output_tokens} out\n\n"
         try:
-            import math
             input_price = float(os.environ["LOG_INPUT_TOKEN_PRICE_PER_MILLION"])
             output_price = float(os.environ["LOG_OUTPUT_TOKEN_PRICE_PER_MILLION"])
-            if not all(math.isfinite(v) and v >= 0 for v in (input_price, output_price)) or not usage_stats or any(not u for u in usage_stats):
+            if not complete or not all(math.isfinite(v) and v >= 0 for v in (input_price, output_price)):
                 raise ValueError()
             estimate = (total_input_tokens * input_price + total_output_tokens * output_price) / 1_000_000
             markdown_content += f"**Estimated Cost**: ${estimate:.6f}\n"
@@ -481,9 +465,8 @@ class MinimalChainable:
                 markdown_content += f"{response}\n\n"
 
         try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(markdown_content)
+            _atomic_replace(filepath, markdown_content)
             return filepath
-        except Exception as e:
-            print(f"⚠️ Failed to save log file: {e}")
+        except OSError:
+            print("Could not save the local chain log.")
             return ""

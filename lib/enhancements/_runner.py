@@ -3,7 +3,8 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..core.chain import MinimalChainable
-from ..core.llm_client import get_model, prompt
+from ..core.errors import InputError
+from ..core.llm_client import get_model, request_completion
 
 
 def execute_pattern(
@@ -11,12 +12,12 @@ def execute_pattern(
     prompts: List[str],
     *,
     model_info: Optional[Tuple[Any, str]] = None,
-    llm_callable: Callable = prompt,
+    llm_callable: Callable = request_completion,
     context: Optional[Dict[str, Any]] = None,
 ) -> Tuple[List[Any], List[Any]]:
     """Run a pattern with shared logging and injectable model/callable dependencies."""
     active_model = model_info or get_model()
-    result, filled_prompts, usage, _trace = MinimalChainable.run(
+    result, filled_prompts, usage, trace = MinimalChainable.run(
         context=context or {},
         model=active_model,
         llm_callable=llm_callable,
@@ -24,4 +25,6 @@ def execute_pattern(
         prompts=prompts,
     )
     MinimalChainable.log_to_markdown(pattern_name, filled_prompts, result, usage)
+    if not trace["completion_complete"]:
+        raise InputError("The model answer did not finish. Review the local chain log before trying again.")
     return result, usage

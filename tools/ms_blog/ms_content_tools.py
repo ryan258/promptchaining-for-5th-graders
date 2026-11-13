@@ -16,25 +16,45 @@ All generators use prompt chaining for emergent insights and high-quality output
 import os
 import sys
 import json
+import re
+import tempfile
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 from pathlib import Path
+from uuid import uuid4
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from lib.core.chain import MinimalChainable
-from lib.core.llm_client import get_model, prompt
-from tools.tool_utils import load_user_context
+from lib.core.errors import InputError, user_error
+from lib.core.llm_client import get_model, request_completion
+
+
+def save_draft(content: str, output_path: str | Path) -> str:
+    """Publish a private draft without replacing an existing file."""
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, name = tempfile.mkstemp(prefix=".draft-", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        try:
+            os.link(name, path)
+        except FileExistsError:
+            path = path.with_name(f"{path.stem[:48]}-{uuid4().hex}{path.suffix}")
+            os.link(name, path)
+    finally:
+        Path(name).unlink(missing_ok=True)
+    return str(path)
 
 
 def save_markdown(content: str, output_path: str) -> str:
-    """Save generated markdown content to file."""
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w') as f:
-        f.write(content)
-    return output_path
+    """Save Markdown and return the actual new draft path."""
+    return save_draft(content, output_path)
 
 
 def sanitize_filename(title: str, prefix: str = "untitled") -> str:
@@ -48,14 +68,14 @@ def sanitize_filename(title: str, prefix: str = "untitled") -> str:
     Returns:
         Safe filename ending in .md
     """
-    safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_'))[:48].strip(" -_")
     if safe_title:
         return f"{safe_title.lower().replace(' ', '-')}.md"
     # Fallback for titles with only special characters
     return f"{prefix}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.md"
 
 
-def validate_content(content: str, content_type: str) -> Dict[str, Any]:
+def validate_content(content: str, content_type: str, *, complete: bool = True) -> Dict[str, Any]:
     """
     Validate generated content meets quality standards.
 
@@ -68,6 +88,11 @@ def validate_content(content: str, content_type: str) -> Dict[str, Any]:
     """
     issues = []
     warnings = []
+
+    if not isinstance(content, str):
+        raise InputError("The model did not return a Markdown draft.")
+    if not complete:
+        issues.append("The model stopped before finishing the draft.")
 
     # Check for minimum length
     if len(content) < 500:
@@ -137,10 +162,10 @@ def generate_prompt_card(
     # Design the prompt chain for generating a prompt card
     prompts = [
         # Step 1: Analyze the problem deeply
-        f"""Analyze this MS-related problem: "{problem}"
+        f"""Analyze this MS-related problem: "{{{{problem}}}}"
 
-Target audience: {target_audience}
-Additional context: {additional_context}
+Target audience: {{{{target_audience}}}}
+Additional context: {{{{additional_context}}}}
 Effort constraint for this whole draft: {effort}
 Do not invent personal experiences, measured benefits, sources or statistics. Label sample scenarios illustrative.
 
@@ -208,8 +233,8 @@ Prompt Design: {{{{output[-3]}}}}
 Examples: {{{{output[-2]}}}}
 Variations & Troubleshooting: {{{{output[-1]}}}}
 
-Original problem: "{problem}"
-Target audience: {target_audience}
+Original problem: "{{{{problem}}}}"
+Target audience: {{{{target_audience}}}}
 Effort constraint: {effort}
 This is a draft for review. Do not invent measured benefits, personal stories, quotes or resources. Mark factual claims needing sources as [verify]. Label generated scenarios as illustrative.
 
@@ -243,9 +268,9 @@ Return ONLY the complete markdown draft, ready for the author to review and save
 
     # Run the chain
     result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
+        context={"problem": problem, "target_audience": target_audience, "additional_context": additional_context},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=prompts
     )
@@ -261,7 +286,7 @@ Return ONLY the complete markdown draft, ready for the author to review and save
         'energy_level': energy_level,
         'generated_at': datetime.now().isoformat(),
         'token_usage': usage,
-        'validation': validate_content(final_content, 'prompt_card')
+        'validation': validate_content(final_content, 'prompt_card', complete=trace.get("completion_complete", True))
     }
 
     # Log the generation
@@ -301,11 +326,11 @@ def generate_shortcut_spotlight(
 
     prompts = [
         # Step 1: Research and understand the tool
-        f"""Analyze this accessibility tool/technique: "{tool}"
+        f"""Analyze this accessibility tool/technique: "{{{{tool}}}}"
 
-Category: {category}
-MS Benefit: {ms_benefit}
-Additional context: {additional_context}
+Category: {{{{category}}}}
+MS Benefit: {{{{ms_benefit}}}}
+Additional context: {{{{additional_context}}}}
 
 Provide:
 1. What it is: Clear explanation of the tool/technique
@@ -368,9 +393,9 @@ Setup instructions: {{{{output[-3]}}}}
 Use cases: {{{{output[-2]}}}}
 Comparison & recommendations: {{{{output[-1]}}}}
 
-Original tool: "{tool}"
-Category: {category}
-MS Benefit: {ms_benefit}
+Original tool: "{{{{tool}}}}"
+Category: {{{{category}}}}
+MS Benefit: {{{{ms_benefit}}}}
 
 Generate complete markdown with:
 
@@ -379,7 +404,7 @@ Generate complete markdown with:
 title: "[Tool Name]: [Clear Benefit]"
 description: "[SEO-friendly description]"
 date: {datetime.now().strftime('%Y-%m-%d')}
-tags: ["shortcuts", "{category}", "accessibility"]
+tags: ["shortcuts", "{{{{category}}}}", "accessibility"]
 difficulty: "[beginner/intermediate/advanced]"
 energy_cost: "[low/medium/high]"
 time_to_setup: "[5min/15min/30min]"
@@ -401,9 +426,9 @@ Return ONLY the markdown."""
     ]
 
     result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
+        context={"tool": tool, "category": category, "ms_benefit": ms_benefit, "additional_context": additional_context},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=prompts
     )
@@ -418,7 +443,7 @@ Return ONLY the markdown."""
         'ms_benefit': ms_benefit,
         'generated_at': datetime.now().isoformat(),
         'token_usage': usage,
-        'validation': validate_content(final_content, 'shortcut')
+        'validation': validate_content(final_content, 'shortcut', complete=trace.get("completion_complete", True))
     }
 
     MinimalChainable.log_to_markdown(
@@ -460,13 +485,13 @@ def generate_guide(
 
     prompts = [
         # Step 1: Decompose the system
-        f"""Analyze this system for MS users: "{system}"
+        f"""Analyze this system for MS users: "{{{{system}}}}"
 
-Complexity: {complexity}
-Estimated time: {estimated_time}
-Context: {additional_context}
+Complexity: {{{{complexity}}}}
+Estimated time: {{{{estimated_time}}}}
+Context: {{{{additional_context}}}}
 
-Break down this system into {num_phases} clear phases.
+Break down this system into {{{{num_phases}}}} clear phases.
 Each phase should:
 - Have a clear goal
 - Build on previous phases
@@ -497,7 +522,7 @@ Format as JSON with key 'quick_path' containing the compressed steps.""",
         f"""Using the phase breakdown:
 {{{{output[-2]}}}}
 
-For each of the {num_phases} phases, create detailed content:
+For each of the {{{{num_phases}}}} phases, create detailed content:
 - Phase name and goal
 - Step-by-step instructions (numbered)
 - Why this matters (brief motivation)
@@ -544,9 +569,9 @@ Detailed phases: {{{{output[-3]}}}}
 Prompt Kit: {{{{output[-2]}}}}
 Before/After & troubleshooting: {{{{output[-1]}}}}
 
-Original system: "{system}"
-Complexity: {complexity}
-Time: {estimated_time}
+Original system: "{{{{system}}}}"
+Complexity: {{{{complexity}}}}
+Time: {{{{estimated_time}}}}
 
 Generate complete markdown with:
 
@@ -557,8 +582,8 @@ description: "[SEO description]"
 date: {datetime.now().strftime('%Y-%m-%d')}
 tags: ["guides", "setup", "[relevant-tags]"]
 jtbd: "[primary job to be done]"
-difficulty: "{complexity}"
-estimated_time: "{estimated_time}"
+difficulty: "{{{{complexity}}}}"
+estimated_time: "{{{{estimated_time}}}}"
 energy_cost: "medium"
 ---
 
@@ -568,7 +593,7 @@ energy_cost: "medium"
 5. The Full Guide (## The Complete Guide)
    - Phase 1: [Name]
    - Phase 2: [Name]
-   - ... (all {num_phases} phases)
+   - ... (all {{{{num_phases}}}} phases)
 6. Complete Prompt Kit (## AI Prompts for This System)
 7. Before & After (## How This Changes Things)
 8. Troubleshooting (## Troubleshooting Checklist)
@@ -582,9 +607,9 @@ Return ONLY the markdown."""
     ]
 
     result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
+        context={"system": system, "complexity": complexity, "estimated_time": estimated_time, "additional_context": additional_context, "num_phases": num_phases},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=prompts
     )
@@ -599,7 +624,7 @@ Return ONLY the markdown."""
         'estimated_time': estimated_time,
         'generated_at': datetime.now().isoformat(),
         'token_usage': usage,
-        'validation': validate_content(final_content, 'guide')
+        'validation': validate_content(final_content, 'guide', complete=trace.get("completion_complete", True))
     }
 
     MinimalChainable.log_to_markdown(
@@ -637,9 +662,9 @@ def expand_content_idea(
 
     prompts = [
         # Step 1: Analyze the seed idea
-        f"""Analyze this content seed idea: "{seed}"
+        f"""Analyze this content seed idea: "{{{{seed}}}}"
 
-Content pillar focus: {pillar}
+Content pillar focus: {{{{pillar}}}}
 
 Understand:
 1. Core topic: What's the main subject?
@@ -654,7 +679,7 @@ Format as JSON.""",
         f"""Based on this analysis:
 {{{{output[-1]}}}}
 
-Seed: "{seed}"
+Seed: "{{{{seed}}}}"
 
 Generate 5 prompt card ideas. Each should:
 - Solve a specific MS-related problem
@@ -678,7 +703,7 @@ Format as JSON with key 'prompt_cards' as list.""",
         f"""Using the analysis:
 {{{{output[-2]}}}}
 
-Seed: "{seed}"
+Seed: "{{{{seed}}}}"
 
 Generate 3 shortcut spotlight ideas - tools/techniques/automations.
 Focus on accessibility wins and energy savings.
@@ -700,7 +725,7 @@ Format as JSON with key 'shortcuts' as list.""",
         f"""Using the analysis:
 {{{{output[-3]}}}}
 
-Seed: "{seed}"
+Seed: "{{{{seed}}}}"
 
 Generate 2 multi-phase guide ideas - comprehensive system setups.
 These should be more involved than shortcuts but high-value.
@@ -725,7 +750,7 @@ Prompt cards: {{{{output[-3]}}}}
 Shortcuts: {{{{output[-2]}}}}
 Guides: {{{{output[-1]}}}}
 
-Seed: "{seed}"
+Seed: "{{{{seed}}}}"
 
 Generate 1 blog post idea that could tie these together or explore the topic differently.
 Format: Listicle, how-to, or thought leadership
@@ -753,8 +778,8 @@ Blog post: {{{{output[-1]}}}}
 Create final JSON output with:
 {{
   "summary": {{
-    "seed_idea": "{seed}",
-    "total_ideas": {count},
+    "seed_idea": "{{{{seed}}}}",
+    "total_ideas": {{{{count}}}},
     "top_priority": "...",  // Highest scoring idea overall
     "quick_wins": [...]  // 3 easiest/highest impact ideas
   }},
@@ -769,9 +794,9 @@ Return ONLY valid JSON."""
     ]
 
     result, filled_prompts, usage, trace = MinimalChainable.run(
-        context={},
+        context={"seed": seed, "pillar": pillar, "count": count},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=prompts
     )
@@ -846,10 +871,20 @@ def batch_generate_content(
     Returns:
         Summary of generated content
     """
+    if mix is None and (type(count) is not int or not 1 <= count <= 20):
+        raise InputError("Choose a batch size from 1 to 20.")
+    if mix is not None and (
+        not isinstance(mix, dict) or any(
+            kind not in {"prompt", "shortcut", "guide"} or type(size) is not int or size < 0
+            for kind, size in mix.items()
+        ) or not 1 <= sum(mix.values()) <= 20
+    ):
+        raise InputError("Choose 1–20 total drafts using prompt, shortcut or guide counts.")
+
     print(f"🚀 Starting batch generation for: {topic_area}")
     
     # Default mix if not provided
-    if not mix:
+    if mix is None:
         n_prompts = int(count * BATCH_MIX_PROMPT)
         n_shortcuts = int(count * BATCH_MIX_SHORTCUT)
         # Ensure at least one of each if count allows, otherwise fill remainder with guides
@@ -862,16 +897,19 @@ def batch_generate_content(
             "guide": n_guides
         }
 
+    requested = sum(mix.values())
+    call_limit = 6 + 5 * mix.get("prompt", 0) + 5 * mix.get("shortcut", 0) + 6 * mix.get("guide", 0)
+    print(f"Up to {call_limit} provider requests for {requested} drafts.")
     results = {
         "generated": [],
         "errors": [],
-        "summary": {"topic": topic_area, "total": 0}
+        "summary": {"topic": topic_area, "total": 0, "requested": requested}
     }
 
     # Step 1: Generate ideas first to ensure coherence
     print("  🧠 Brainstorming batch ideas...")
     # Generate extra ideas to ensure we have enough valid ones
-    ideas, _ = expand_content_idea(topic_area, count=sum(mix.values()) + 3)
+    ideas, _ = expand_content_idea(topic_area, count=requested + 3)
     
     # Process each type
     for content_type, num in mix.items():
@@ -932,8 +970,7 @@ def batch_generate_content(
                     # Use shared sanitization utility
                     filename = sanitize_filename(title, prefix=content_type)
                     save_path = os.path.join(output_dir, filename)
-                    save_markdown(content, save_path)
-                    metadata['saved_to'] = save_path
+                    metadata['saved_to'] = save_markdown(content, save_path)
                 
                 results["generated"].append({
                     "title": title,
@@ -942,11 +979,12 @@ def batch_generate_content(
                 })
                 
             except Exception as e:
-                print(f"    ❌ Error: {e}")
-                results["errors"].append({"title": title, "error": str(e)})
+                message = user_error(e)
+                print(f"    ❌ Error: {message}")
+                results["errors"].append({"title": title, "error": message})
 
     results["summary"]["total"] = len(results["generated"])
-    print(f"✅ Batch complete! Generated {results['summary']['total']} items.")
+    print(f"Generated {results['summary']['total']} of {requested} requested drafts.")
     
     return results
 
@@ -980,10 +1018,10 @@ def generate_content_calendar(
         f"""You are a content strategist for an MS blog.
         
 Create a content calendar.
-Topic: {topic}
-Duration: {duration}
-Frequency: {frequency}
-Start Date: {start_date}
+Topic: {{{{topic}}}}
+Duration: {{{{duration}}}}
+Frequency: {{{{frequency}}}}
+Start Date: {{{{start_date}}}}
 
 Content types available:
 - Prompt Cards (quick wins)
@@ -1017,9 +1055,9 @@ Respond in JSON:
     ]
 
     result, _, usage, _ = MinimalChainable.run(
-        context={},
+        context={"topic": topic, "duration": duration, "frequency": frequency, "start_date": start_date},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=prompts
     )
@@ -1065,10 +1103,10 @@ def optimize_content_seo(content: str, keywords: List[str] = None) -> str:
     prompts = [
         f"""You are an SEO expert. Optimize this markdown content.
 
-Target Keywords: {keywords_str}
+Target Keywords: {{{{keywords_str}}}}
 
 Content:
-{content_preview}{truncation_note}
+{{{{content_preview}}}}{{{{truncation_note}}}}
 
 Tasks:
 1. Improve title for CTR and keywords (keep it under 60 chars)
@@ -1084,9 +1122,9 @@ Return the optimized markdown content. Do not include explanations or commentary
     ]
 
     result, filled_prompts, usage, _ = MinimalChainable.run(
-        context={},
+        context={"keywords_str": keywords_str, "content_preview": content_preview, "truncation_note": truncation_note},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=prompts
     )
@@ -1134,16 +1172,18 @@ def low_energy_pipeline(
             - validation: Validation results
             - review_checklist: What to check before publishing
     """
-    model_info = get_model()
-
     if output_dir is None:
         output_dir = os.path.join(project_root, "output", "ms_blog")
 
+    if energy_level not in {"low", "medium", "high"}:
+        raise InputError("Choose low, medium or high for energy level.")
+    model_info = get_model()
+
     # Step 1: Analyze input and choose format
     format_selector_prompts = [
-        f"""Analyze this user input: "{input_text}"
+        f"""Analyze this user input: "{{{{input_text}}}}"
 
-User's current energy level: {energy_level}
+User's current energy level: {{{{energy_level}}}}
 
 Determine:
 1. What type of content would best address this?
@@ -1168,38 +1208,23 @@ Return JSON with:
 }}"""
     ]
 
-    format_result, _, _, _ = MinimalChainable.run(
-        context={},
+    format_result, _, _, format_trace = MinimalChainable.run(
+        context={"input_text": input_text, "energy_level": energy_level},
         model=model_info,
-        llm_callable=prompt,
+        llm_callable=request_completion,
         return_trace=True,
         prompts=format_selector_prompts
     )
 
-    # Get the final output (format_result is a list of all outputs from each step)
-    format_decision = format_result[-1]
-
-    # Parse format decision (handle both string and dict responses)
-    if isinstance(format_decision, dict):
-        # Already parsed
-        decision = format_decision
-    elif isinstance(format_decision, str):
-        try:
-            decision = json.loads(format_decision)
-        except:
-            # Try to extract JSON from markdown
-            import re
-            json_match = re.search(r'```json\s*(\{.*?\})\s*```', format_decision, re.DOTALL)
-            if json_match:
-                decision = json.loads(json_match.group(1))
-            else:
-                decision = {"format": "prompt_card", "reasoning": "default", "parameters": {}}
-    else:
-        # Fallback
-        decision = {"format": "prompt_card", "reasoning": "default", "parameters": {}}
-
-    chosen_format = decision.get('format', 'prompt_card')
+    decision = format_result[-1]
+    if not format_trace.get("completion_complete", True) or not isinstance(decision, dict):
+        raise InputError("The model returned an invalid format proposal. No draft generator was started.")
+    chosen_format = decision.get('format')
+    if chosen_format not in ("prompt_card", "shortcut", "guide", "blog"):
+        raise InputError("The model proposed an unknown draft format. No draft generator was started.")
     params = decision.get('parameters', {})
+    if not isinstance(params, dict):
+        raise InputError("The model returned invalid draft parameters. No draft generator was started.")
 
     # Step 2: Generate content using appropriate generator
     print(f"\n🎯 Generating {chosen_format} content...")
@@ -1217,7 +1242,7 @@ Return JSON with:
     elif chosen_format == "shortcut":
         content, metadata = generate_shortcut_spotlight(
             tool=params.get('tool', input_text),
-            ms_benefit=params.get('ms_benefit', "Reduces cognitive load and saves energy"),
+            ms_benefit=params.get('ms_benefit', "May reduce repeated input. Verify whether it helps in practice."),
             category=params.get('category', 'automation'),
             additional_context=params.get('context', '')
         )
@@ -1239,26 +1264,15 @@ Return JSON with:
         )
 
     # Step 3: Validate content
-    validation = validate_content(content, chosen_format)
+    validation = metadata["validation"]
 
     # Step 4: Save if requested
     file_path = None
     if auto_save:
-        # Generate filename from title or input
-        import re
-        # Try to extract title from front matter
-        title_match = re.search(r'title:\s*["\']?([^"\'\n]+)["\']?', content)
-        if title_match:
-            filename = title_match.group(1).lower()
-            filename = re.sub(r'[^\w\s-]', '', filename)
-            filename = re.sub(r'[-\s]+', '-', filename)
-        else:
-            filename = re.sub(r'[^\w\s-]', '', input_text[:50].lower())
-            filename = re.sub(r'[-\s]+', '-', filename)
-
-        file_path = os.path.join(output_dir, f"{filename}.md")
-        save_markdown(content, file_path)
-        print(f"✅ Saved to: {file_path}")
+        title_match = re.search(r'^title:\s*["\']?([^"\'\n]+)', content, re.MULTILINE)
+        title = title_match.group(1) if title_match else input_text
+        file_path = save_markdown(content, os.path.join(output_dir, sanitize_filename(title, "draft")))
+        print(f"Saved draft for review: {file_path}")
 
     # Step 5: Generate review checklist
     review_checklist = [
@@ -1292,8 +1306,7 @@ Return JSON with:
         'next_steps': [
             f"Review content at: {file_path}" if file_path else "Review generated content",
             "Test any prompts or instructions",
-            "Preview with Hugo: hugo server",
-            "Commit to git when ready"
+            "Move only the reviewed draft into your publication workflow when ready",
         ]
     }
 
@@ -1347,7 +1360,8 @@ if __name__ == "__main__":
             )
         elif args.format == "shortcut":
             content, metadata = generate_shortcut_spotlight(
-                tool=args.input
+                tool=args.input,
+                ms_benefit="Describe the possible assistance and mark unsupported claims for review.",
             )
         elif args.format == "guide":
             content, metadata = generate_guide(
@@ -1358,5 +1372,5 @@ if __name__ == "__main__":
 
         if not args.no_save:
             output_path = os.path.join(project_root, "output", "ms_blog", "content.md")
-            save_markdown(content, output_path)
+            output_path = save_markdown(content, output_path)
             print(f"\n✅ Saved to: {output_path}")

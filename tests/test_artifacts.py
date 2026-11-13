@@ -166,6 +166,19 @@ def test_metadata():
     print()
 
 
+def test_unicode_topic_reloads_and_a_deleted_file_is_no_longer_resolved(tmp_path):
+    store = ArtifactStore(base_dir=str(tmp_path))
+    store.save("教育", "answer", "one")
+    store.save("設計", "answer", "two")
+
+    fresh = ArtifactStore(base_dir=str(tmp_path))
+    assert fresh.get("教育", "answer") == "one"
+    assert fresh.get("設計", "answer") == "two"
+    (tmp_path / fresh._normalize_key("教育") / "answer.json").unlink()
+    assert fresh.get("教育", "answer") is None
+    assert list(fresh.query("*:answer").values()) == ["two"]
+
+
 if __name__ == "__main__":
     print("=" * 70)
     print("🧪 ARTIFACT SYSTEM TEST SUITE")
