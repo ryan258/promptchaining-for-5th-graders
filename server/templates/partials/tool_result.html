@@ -2,6 +2,7 @@
 
 {% if result.status == "success" %}
   <article class="result-shell swap-rise" data-copy-scope>
+    {% if result.partial %}<p class="notice" role="status">The provider returned an incomplete answer. Review the saved output before using it.</p>{% endif %}
     <header class="result-banner">
       <div>
         <p class="eyebrow">Tool Run</p>

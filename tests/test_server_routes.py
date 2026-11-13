@@ -27,7 +27,7 @@ def test_ui_index_renders():
     assert response.status_code == 200
     assert "Prompt Chaining Studio" in response.text
     assert "/studio/recipes" in response.text
-    assert "Big ideas." in response.text
+    assert "Try a classroom challenge" in response.text
 
 
 def test_studio_pages_render():
@@ -277,3 +277,29 @@ def test_ui_meta_design_accepts_plain_text_context(monkeypatch):
     }
     assert captured["constraints"] == ["Keep it visual", "Use familiar language"]
     assert "Execute This Chain" in response.text
+
+
+def test_emergence_rejects_malformed_or_mismatched_task_before_dispatch(monkeypatch):
+    monkeypatch.setattr(server_main, "measure_emergence", lambda **_: pytest.fail("Invalid comparison dispatched"))
+    for data in [
+        {"topic": "original", "chain_kwargs": ["wrong"]},
+        {"topic": "original", "chain_name": {}},
+        {"topic": "original", "chain_kwargs": {"hypothesis": "different"}},
+        {"topic": "original", "baseline_prompt": "   "},
+    ]:
+        assert 400 <= client.post("/emergence/compare", json=data).status_code < 500
+
+
+def test_artifacts_refuse_symlink_aliases_and_bound_reads(tmp_path, monkeypatch):
+    internal = tmp_path / "_chroma"
+    internal.mkdir()
+    (internal / "secret.json").write_text('{"private": true}')
+    (tmp_path / "alias").symlink_to(internal, target_is_directory=True)
+    topic = tmp_path / "topic"
+    topic.mkdir()
+    (topic / "large.json").write_text('"fixture"')
+    monkeypatch.setattr(server_main, "ARTIFACTS_ROOT", tmp_path)
+    monkeypatch.setattr(server_main, "MAX_ARTIFACT_BYTES", 8)
+    assert client.get("/artifacts/alias/secret.json").status_code == 400
+    assert client.get("/artifacts/topic/large.json").status_code == 413
+    assert {row["topic"] for row in client.get("/artifacts").json()} == {"topic"}

@@ -2,6 +2,7 @@
 {% set trace = result.execution_trace or {} %}
 
 <article class="result-shell swap-rise" data-copy-scope>
+  {% if result.partial %}<p class="notice" role="status">Execution stopped at an incomplete answer. Review the trace before running again.</p>{% endif %}
   <header class="result-banner">
     <div>
       <p class="eyebrow">Meta-chain Execution</p>
@@ -10,7 +11,7 @@
     </div>
     <div class="banner-actions">
       {% if trace.total_tokens %}
-        {{ ui.chip(trace.total_tokens ~ " total tokens", "accent") }}
+        {{ ui.chip(trace.total_tokens ~ " reported tokens", "accent") }}
       {% endif %}
       <button type="button" class="secondary compact-button" data-copy-nearest=".raw-json">Copy raw</button>
     </div>

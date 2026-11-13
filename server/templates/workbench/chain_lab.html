@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% set title = "Prompt Chain Lab" %}
+
+{% macro saved_work() %}
+  <details class="classroom-saved">
+    <summary>Saved work and downloads</summary>
+    <div class="button-row">
+      <a class="text-link" href="/studio/library">My library</a>
+      <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=trace">Download prompts and answers</a>
+      {% if not run.archived %}
+        <form method="post" action="/studio/runs/{{ run.id }}/organize">
+          <input type="hidden" name="revision" value="{{ run.revision }}">
+          <button class="secondary" type="submit" name="action" value="archive">Move to archive</button>
+        </form>
+      {% endif %}
+    </div>
+  </details>
+{% endmacro %}
+
+{% macro mission_card(slug, mission, heading="h2") %}
+  <article class="recipe-card">
+    <{{ heading }} id="lab-mission-{{ slug }}">{{ mission.recipe.title }}</{{ heading }}>
+    <p>{{ mission.recipe.description }}</p>
+    <form method="post" action="/studio/lab">
+      <button type="submit" name="mission" value="{{ slug }}" aria-label="Start mission · {{ mission.recipe.title }}">Start mission</button>
+    </form>
+  </article>
+{% endmacro %}
+
+{% block content %}
+{% if phase == "choose" %}
+  <header class="page-intro">
+    <div>
+      <h1>Prompt Chain Lab</h1>
+      <p class="hero-text">Make your own prompt chain. Give each step a job and choose which answers it can use. Then take turns playing the AI.</p>
+      <p>Pick a mission or bring an idea. The lab works offline and saves on this computer.</p>
+      <a class="text-link" href="#insight-missions">Try a discovery mission <span aria-hidden="true">↓</span></a>
+    </div>
+  </header>
+  {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+  <div class="recipe-grid practice-grid">
+    {% for slug, mission in missions.items() %}
+      {{ mission_card(slug, mission) }}
+    {% endfor %}
+    <article class="recipe-card">
+      <h2>Make my own chain</h2>
+      <p>Bring a riddle, an invention, or anything you’re curious about.</p>
+      <form method="post" action="/studio/lab">
+        <button class="secondary" type="submit" name="mission" value="">Start my own chain</button>
+      </form>
+    </article>
+  </div>
+  <section class="work-section" id="insight-missions" aria-labelledby="insight-missions-title" tabindex="-1">
+    <div class="section-heading"><div><h2 id="insight-missions-title">Find something surprising</h2><p>Pick a question, follow the clues, and come up with a way to test what you think.</p></div></div>
+    <div class="recipe-grid recipes-full practice-grid">
+      {% for slug, mission in insight_missions.items() %}{{ mission_card(slug, mission, "h3") }}{% endfor %}
+    </div>
+  </section>
+{% else %}
+  <div class="{{ 'chain-editor' if phase == 'design' else 'classroom-lesson' }}">
+    <header class="page-intro">
+      <div>
+        <a class="text-link" href="/studio/lab">← Prompt Chain Lab</a>
+        <h1>{{ run.recipe.title }}</h1>
+        {% if phase == "play" %}<p class="hero-text">{{ run.topic }}</p>{% endif %}
+      </div>
+    </header>
+    {% if error %}<p class="notice error" role="alert">{{ error }}</p>{% endif %}
+    {% if plan_saved %}<p class="notice" role="status">Your plan is saved. Find it in My library.</p>{% endif %}
+    {% if run.archived %}
+      <section class="classroom-panel" aria-labelledby="lab-archived">
+        <h2 id="lab-archived">This chain is in your archive</h2>
+        <form method="post" action="/studio/runs/{{ run.id }}/organize">
+          <input type="hidden" name="revision" value="{{ run.revision }}">
+          <button type="submit" name="action" value="unarchive">Bring it back</button>
+        </form>
+      </section>
+    {% endif %}
+    {% if phase == "design" and (not run.archived or values) %}
+      <form method="post" action="/studio/lab/{{ run.id }}/plan" data-lab-plan>
+        <input type="hidden" name="revision" value="{{ run.revision }}">
+        <section class="editor-intention" aria-labelledby="lab-plan-title">
+          <div class="editor-section-title"><h2 id="lab-plan-title">Plan your chain</h2></div>
+          {% if source_run %}
+            <p class="notice">This is a new copy. Change one prompt or which answer it uses, then see how the chain turns out. <a href="/studio/runs/{{ source_run.id }}">See the original chain</a></p>
+          {% elif run.recipe.description %}
+            <p class="notice">{{ run.recipe.description }}</p>
+          {% endif %}
+          <div class="field-group">
+            <label for="lab-topic">What’s your goal?</label>
+            <textarea id="lab-topic" name="topic" rows="2" maxlength="3000" required placeholder="Make up a mystery for my family to solve.">{{ values.topic if values else run.topic }}</textarea>
+          </div>
+          <div class="field-group">
+            <label for="lab-context">Clues or rules <span class="optional">Optional</span></label>
+            <textarea id="lab-context" name="context" rows="3" maxlength="{{ context_limit }}">{{ values.context if values else run.context }}</textarea>
+          </div>
+        </section>
+        <section class="editor-recipe" aria-labelledby="lab-prompt-title">
+          <div class="editor-section-title">
+            <div>
+              <h2 id="lab-prompt-title">Give each prompt a job</h2>
+              <p>Write two to five prompts in order. An answer only moves forward when you ask for it.</p>
+            </div>
+          </div>
+          <div id="lab-prompt-help" class="notice">
+            <strong>How to pass an answer forward</strong>
+            <p>Put <code>[Answer 1]</code> in a later prompt to bring in the first answer. For step 3, try <code>Use [Answer 1] and [Answer 2] to make one plan.</code> Use <code>[Goal]</code> or <code>[Clues]</code> to bring in your notes from above.</p>
+          </div>
+          {% for index in range(5) %}
+            {% set step = run.recipe.steps[index] if index < run.recipe.steps | length else none %}
+            {% set name = (values.step_name[index] if index < values.step_name | length else '') if values else (step.name if step else '') %}
+            {% set prompt = plan_prompts[index] if index < plan_prompts | length else '' %}
+            <details class="editable-step"{% if index < 2 or prompt or (values and name) %} open{% endif %}>
+              <summary>
+                <span class="step-number" aria-hidden="true">{{ index + 1 }}</span>
+                <span><strong>{{ name or 'Step ' ~ (index + 1) }}</strong>{% if not prompt and index >= 2 %}<span class="step-purpose">Optional</span>{% endif %}</span>
+                <span class="step-edit-cue" aria-hidden="true">Edit</span>
+              </summary>
+              <div class="step-editor-body" data-lab-step>
+                {% if step and step.purpose %}<p class="field-note">{{ step.purpose }}</p>{% endif %}
+                <label for="lab-step-name-{{ index }}">Step {{ index + 1 }} name <span class="optional">Optional</span></label>
+                <input id="lab-step-name-{{ index }}" name="step_name" value="{{ name }}" maxlength="100" />
+                <label for="lab-step-prompt-{{ index }}">Prompt {{ index + 1 }}</label>
+                <textarea id="lab-step-prompt-{{ index }}" name="step_prompt" rows="4" maxlength="{{ prompt_limit }}" aria-describedby="lab-prompt-help" data-lab-prompt>{{ prompt }}</textarea>
+                {% if index %}<p class="field-note" data-lab-handoffs hidden></p>{% endif %}
+                <details data-lab-inserts hidden>
+                  <summary>{{ 'Add a goal, clue, or answer' if index else 'Add your goal or clues' }}</summary>
+                  <div class="step-controls">
+                    <button type="button" class="secondary" data-lab-insert="[Goal]">Add goal</button>
+                    <button type="button" class="secondary" data-lab-insert="[Clues]">Add clues</button>
+                    {% for earlier in range(1, index + 1) %}
+                      <button type="button" class="secondary" data-lab-insert="[Answer {{ earlier }}]">Add answer {{ earlier }}</button>
+                    {% endfor %}
+                  </div>
+                </details>
+              </div>
+            </details>
+          {% endfor %}
+          <p class="field-note">Leave the name and prompt blank for any extra step you don’t need.</p>
+        </section>
+        {% if conflicted_plan %}
+          <p class="notice">Your unsaved plan is here to copy. <a href="/studio/runs/{{ run.id }}">Open the saved chain</a> to make a remix.</p>
+        {% elif not run.archived %}
+          <div class="button-row">
+            <button type="submit" name="action" value="play" data-primary-action>Play step 1</button>
+            <button type="submit" name="action" value="save" class="secondary">Save plan</button>
+            {% if config.ready %}<button type="submit" name="action" value="free-ai" class="secondary">Prepare free AI run</button>{% endif %}
+          </div>
+          {% if config.ready %}
+            <p class="field-note">Free AI opens a separate run. Check the prompt before sending it to OpenRouter.</p>
+          {% else %}
+            <p class="field-note">A teacher or grown-up can <a href="/studio/guides/setup#use-openrouter-free">set up OpenRouter Free</a> with an API key.</p>
+          {% endif %}
+        {% endif %}
+      </form>
+    {% elif phase == "play" and (not run.archived or complete) %}
+      <div class="run-toolbar">
+        <div class="run-progress">
+          <span>{{ run.results | length }} of {{ run.recipe.steps | length }} answers saved</span>
+          <progress value="{{ run.results | length }}" max="{{ run.recipe.steps | length }}" aria-label="Saved answers"></progress>
+        </div>
+      </div>
+      {% if complete %}
+        <section class="classroom-panel" aria-labelledby="lab-result">
+          <h2 id="lab-result">Your chain is complete</h2>
+          <div class="classroom-draft" data-copy-scope>
+            <h3>Final answer</h3>
+            <pre class="answer-text" data-lab-final>{{ run.results[-1].output }}</pre>
+            <div class="button-row">
+              <button type="button" class="secondary" data-copy-nearest="[data-lab-final]">Copy final answer</button>
+              <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=final">Download final answer</a>
+            </div>
+          </div>
+          <p>Which earlier answer made the biggest difference? Try changing a single prompt in a new copy and see what happens.</p>
+          {% if source_run and source_run.state == 'completed' %}
+            <details>
+              <summary>Compare with the chain you remixed</summary>
+              <div class="classroom-comparison">
+                <div><h3>Original answer</h3><pre class="answer-text">{{ source_run.results[-1].output }}</pre></div>
+                <div><h3>Remix answer</h3><pre class="answer-text">{{ run.results[-1].output }}</pre></div>
+              </div>
+            </details>
+          {% endif %}
+        </section>
+      {% else %}
+        {% set step = run.recipe.steps[step_index] %}
+        <section class="classroom-panel" aria-labelledby="lab-current-prompt" data-copy-scope>
+          <h2 id="lab-current-prompt">Step {{ step_index + 1 }} · {{ step.name }}</h2>
+          {% if step.purpose %}<p>{{ step.purpose }}</p>{% endif %}
+          {% if attached_answers %}
+            <p>This prompt brings in {% for number in attached_answers %}{{ ' and ' if loop.last and not loop.first else (', ' if not loop.first else '') }}answer {{ number }}{% endfor %}.</p>
+          {% endif %}
+          <p>If someone is playing the AI, read only this box to them. Take turns or try answering it yourself.</p>
+          <pre class="answer-text classroom-prompt" data-lab-current-prompt>{{ next_prompt }}</pre>
+          {% if next_prompt %}
+            <button type="button" class="secondary" data-copy-nearest="[data-lab-current-prompt]">Copy this prompt</button>
+            <form method="post" action="/studio/lab/{{ run.id }}/answer">
+              <input type="hidden" name="revision" value="{{ run.revision }}">
+              <label for="lab-answer">Answer {{ step_index + 1 }}</label>
+              <textarea id="lab-answer" name="answer" rows="5" maxlength="{{ answer_limit }}" required>{{ answer or '' }}</textarea>
+              <div class="button-row">
+                <button type="submit" data-primary-action>{{ 'Save final answer' if step_index + 1 == run.recipe.steps | length else 'Save answer and see next prompt' }}</button>
+                {% if reusable_answer %}
+                  <button type="button" class="secondary" data-lab-reuse hidden>Reuse original answer</button>
+                  <template data-lab-previous-answer>{{ reusable_answer }}</template>
+                {% endif %}
+              </div>
+            </form>
+          {% endif %}
+        </section>
+      {% endif %}
+      {% if run.results %}
+        <details class="classroom-saved">
+          <summary>Look back at your prompts and answers</summary>
+          {% for result in run.results %}
+            <details class="answer-card step-answer">
+              <summary><span class="step-number" aria-hidden="true">{{ loop.index }}</span><span><strong>Answer {{ loop.index }} · {{ run.recipe.steps[loop.index0].name }}</strong></span></summary>
+              <div class="answer-body">
+                <h3>What you asked</h3>
+                <pre class="answer-text classroom-prompt">{{ result.prompt }}</pre>
+                <h3>What you saved</h3>
+                <pre class="answer-text">{{ result.output }}</pre>
+              </div>
+            </details>
+          {% endfor %}
+        </details>
+      {% endif %}
+      {% if not run.archived and (complete or run.state == 'paused') %}
+        <form method="post" action="/studio/lab/{{ run.id }}/remix">
+          <input type="hidden" name="revision" value="{{ run.revision }}">
+          <button type="submit" class="secondary">Remix in a new copy</button>
+        </form>
+      {% endif %}
+    {% endif %}
+    {% if unsaved_answer %}
+      <label for="lab-unsaved-answer">Copy your unsaved answer</label>
+      <textarea id="lab-unsaved-answer" rows="5" readonly>{{ unsaved_answer }}</textarea>
+    {% endif %}
+    {{ saved_work() }}
+    {% if phase == "design" or reusable_answer %}<script src="/static/chain-lab.js" defer></script>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

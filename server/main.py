@@ -13,7 +13,8 @@ from collections.abc import Mapping
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Body, Request, Form
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.concurrency import run_in_threadpool
@@ -27,7 +28,8 @@ if PROJECT_ROOT not in sys.path:
 
 from lib.core.meta_chain_generator import MetaChainGenerator
 from lib.core.chain import MinimalChainable
-from lib.core.llm_client import prompt as core_prompt
+from lib.core.artifact_store import remove_artifact_mirror
+from lib.core.llm_client import request_completion as core_prompt
 from lib.enhancements.natural_reasoning import REASONING_PATTERNS
 from lib.enhancements.adversarial_chains import ADVERSARIAL_PATTERNS
 from lib.enhancements.emergence_measurement import measure_emergence
@@ -37,9 +39,10 @@ from lib.utils.demo_examples import (
     get_reasoning_demo_examples,
     get_tool_demo_examples,
 )
-from server import workbench, guides
+from server import chain_lab, workbench, guides
 from lib import advanced
 from lib.core.errors import InputError, user_error
+from tools.tool_utils import learning_profile_fields
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -54,28 +57,41 @@ async def lifespan(_app):
         await run_in_threadpool(workbench.close_workbench)
 
 
-app = FastAPI(title="Prompt Chaining Studio", lifespan=lifespan)
+app = FastAPI(title="Prompt Chaining Studio", lifespan=lifespan, docs_url=None, redoc_url=None)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "[::1]", "testserver"])
+
+
+@app.exception_handler(RequestValidationError)
+async def invalid_request(_request: Request, exc: RequestValidationError):
+    # Validation errors can contain entire private input values.
+    return JSONResponse({"detail": [
+        {"type": error["type"], "loc": error["loc"], "msg": "Check the request value."}
+        for error in exc.errors()
+    ]}, status_code=422)
 
 
 @app.middleware("http")
 async def local_request_boundary(request: Request, call_next):
     if request.method not in {"GET", "HEAD", "OPTIONS"}:
         origin = request.headers.get("origin")
-        if origin:
+        if origin is not None:
             try:
                 parsed = urlsplit(origin)
-                same_origin = (parsed.scheme, parsed.netloc.lower()) == (request.url.scheme, request.url.netloc.lower())
+                same_origin = (
+                    (parsed.scheme, parsed.netloc.lower()) == (request.url.scheme, request.url.netloc.lower())
+                    and not (parsed.path or parsed.query or parsed.fragment)
+                )
             except ValueError:
                 same_origin = False
             if not same_origin:
                 return PlainTextResponse("Open this action from your local Studio tab.", status_code=403)
-        if request.headers.get("sec-fetch-site") == "cross-site":
+        if request.headers.get("sec-fetch-site") in {"cross-site", "same-site"}:
             return PlainTextResponse("Open this action from your local Studio tab.", status_code=403)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "no-referrer"
+    # Native form POSTs need a non-null local Origin; external referrers stay private.
+    response.headers["Referrer-Policy"] = "same-origin"
     if not request.url.path.startswith("/static/"):
         response.headers["Cache-Control"] = "no-store"
     return response
@@ -87,6 +103,7 @@ app.state.templates = templates
 templates.env.filters["local_date"] = workbench.local_date
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.include_router(workbench.router)
+app.include_router(chain_lab.router)
 app.include_router(guides.router)
 
 def _pretty_json(data: Any) -> str:
@@ -137,6 +154,8 @@ TOOLS_DIR = os.path.join(PROJECT_ROOT, 'tools')
 ARTIFACTS_DIR = os.path.join(PROJECT_ROOT, 'artifacts')
 ARTIFACTS_ROOT = Path(ARTIFACTS_DIR).resolve()
 INTERNAL_ARTIFACT_TOPICS = {"_chroma"}
+MAX_ARTIFACT_BYTES = 10_000_000
+ARTIFACT_SUFFIXES = {".json", ".txt", ".md"}
 
 # Only expose tools that match the expected CLI contract:
 #   python3 <tool_path> <topic> [--context <text>]
@@ -182,13 +201,11 @@ class MetaDesignRequest(BaseModel):
 class MetaExecuteRequest(BaseModel):
     design: Dict[str, Any]
 
-STUDIO_NAV = (
-    ("home", "Workbench", "/"),
-    ("recipes", "Recipes", "/studio/recipes"),
-    ("library", "My library", "/studio/library"),
-    ("learn", "Guides", "/studio/guides"),
-    ("advanced", "Advanced", "/studio/advanced"),
-)
+class EmergenceRequest(BaseModel):
+    topic: str = Field(min_length=1, max_length=3000)
+    chain_name: str = Field(default="scientific_method", max_length=100)
+    chain_kwargs: Dict[str, Any] = Field(default_factory=dict, max_length=30)
+    baseline_prompt: str | None = Field(default=None, max_length=16000)
 
 TEXTAREA_FIELDS = {
     "topic",
@@ -329,7 +346,7 @@ def _navigation(active_page: str) -> List[Dict[str, Any]]:
             "href": href,
             "active": slug == active_page or (slug == "advanced" and active_page in {"tools", "reasoning", "adversarial", "meta", "artifacts"}),
         }
-        for slug, label, href in STUDIO_NAV
+        for slug, label, href in workbench.NAV
     ]
 
 
@@ -488,22 +505,29 @@ def _resolve_tool_path(category: str, tool_name: str) -> Optional[str]:
 
 
 def _is_public_artifact_topic(topic: str) -> bool:
-    return bool(topic) and not topic.startswith(".") and topic not in INTERNAL_ARTIFACT_TOPICS
+    return _safe_artifact_component(topic) and topic.casefold() not in INTERNAL_ARTIFACT_TOPICS
 
 
 def _is_public_artifact_filename(filename: str) -> bool:
-    return bool(filename) and not filename.startswith(".") and not filename.endswith(".meta.json")
+    return (
+        _safe_artifact_component(filename)
+        and not filename.casefold().endswith(".meta.json")
+        and Path(filename).suffix.lower() in ARTIFACT_SUFFIXES
+    )
+
+
+def _safe_artifact_component(name: str) -> bool:
+    return bool(name) and not name.startswith(".") and not any(char in name for char in ("/", "\\", "\0"))
 
 
 def _safe_artifact_path(topic: str, filename: str) -> Path:
     """Resolve artifact path and enforce containment within artifacts root."""
     if not _is_public_artifact_topic(topic) or not _is_public_artifact_filename(filename):
         raise HTTPException(status_code=400, detail="Invalid artifact path")
-    candidate = (ARTIFACTS_ROOT / topic / filename).resolve()
-    try:
-        candidate.relative_to(ARTIFACTS_ROOT)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail="Invalid artifact path") from e
+    folder = ARTIFACTS_ROOT / topic
+    candidate = folder / filename
+    if folder.is_symlink() or candidate.is_symlink():
+        raise HTTPException(status_code=400, detail="Invalid artifact path")
     return candidate
 
 
@@ -613,36 +637,13 @@ async def execute_meta_chain(request: MetaExecuteRequest):
 
 
 @app.post("/emergence/compare")
-async def compare_emergence(payload: Dict[str, Any] = Body(...)):
+async def compare_emergence(payload: EmergenceRequest):
     """Compare chain vs baseline outputs to measure emergence."""
-    topic = payload.get("topic")
-    if not topic:
-        raise HTTPException(status_code=400, detail="topic is required for emergence comparison")
-
-    chain_name = payload.get("chain_name", "scientific_method")
-    chain_kwargs = payload.get("chain_kwargs") or {}
-    pattern = REASONING_PATTERNS.get(chain_name)
-    if not pattern or not pattern.get("supports_emergence"):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Chain '{chain_name}' not supported for emergence. Available: {', '.join(name for name, info in REASONING_PATTERNS.items() if info.get('supports_emergence'))}"
-        )
-
-    baseline_prompt = payload.get("baseline_prompt")
-    normalized_kwargs = _normalize_registry_payload(
-        REASONING_PATTERNS,
-        chain_name,
-        {"topic": topic, **chain_kwargs},
-    )
-
     try:
-        comparison, metadata = await run_in_threadpool(measure_emergence,
-            topic=topic,
-            chain_function=pattern["function"],
-            baseline_prompt=baseline_prompt,
-            chain_name=chain_name,
-            **normalized_kwargs,
+        plan = advanced.prepare_comparison(
+            REASONING_PATTERNS, payload.topic, payload.chain_name, payload.chain_kwargs, payload.baseline_prompt,
         )
+        comparison, metadata = await run_in_threadpool(measure_emergence, **plan)
     except Exception as e:
         raise _api_error(e) from None
 
@@ -654,79 +655,81 @@ async def compare_emergence(payload: Dict[str, Any] = Body(...)):
 
 @app.get("/artifacts", response_model=List[ArtifactSummary])
 async def list_artifacts():
-    """List all artifacts in the artifacts directory."""
-    if not os.path.exists(ARTIFACTS_DIR):
-        return []
+    return await run_in_threadpool(_list_artifacts)
 
+
+def _list_artifacts():
     artifacts: List[ArtifactSummary] = []
     try:
-        for topic in os.listdir(ARTIFACTS_DIR):
-            topic_path = os.path.join(ARTIFACTS_DIR, topic)
-            if not os.path.isdir(topic_path) or not _is_public_artifact_topic(topic):
+        if not ARTIFACTS_ROOT.exists():
+            return []
+        for topic_path in ARTIFACTS_ROOT.iterdir():
+            if not _is_public_artifact_topic(topic_path.name) or topic_path.is_symlink() or not topic_path.is_dir():
                 continue
-
-            for filename in os.listdir(topic_path):
-                if not _is_public_artifact_filename(filename):
+            for file_path in topic_path.iterdir():
+                if not _is_public_artifact_filename(file_path.name) or file_path.is_symlink() or not file_path.is_file():
                     continue
-
-                file_path = os.path.join(topic_path, filename)
-                if os.path.isfile(file_path):
-                    stat = os.stat(file_path)
-                    artifacts.append(
-                        ArtifactSummary(
-                            topic=topic,
-                            filename=filename,
-                            size=stat.st_size,
-                            modified=stat.st_mtime,
-                        )
-                    )
-    except Exception as e:
-        logger.error(f"Error listing artifacts: {e}")
-        raise HTTPException(status_code=500, detail="Unable to list artifacts") from e
-
+                try:
+                    stat = file_path.stat()
+                except FileNotFoundError:
+                    continue
+                artifacts.append(ArtifactSummary(topic=topic_path.name, filename=file_path.name,
+                                                 size=stat.st_size, modified=stat.st_mtime))
+    except OSError:
+        raise HTTPException(status_code=500, detail="Unable to list artifacts") from None
     artifacts.sort(key=lambda x: x.modified, reverse=True)
     return artifacts
 
 @app.get("/artifacts/{topic}/{filename}")
 async def get_artifact(topic: str, filename: str):
-    """Get the content of a specific artifact."""
+    return await run_in_threadpool(_read_artifact, topic, filename)
+
+
+def _read_artifact(topic: str, filename: str):
     file_path = _safe_artifact_path(topic, filename)
-
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail="Artifact not found")
-
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        # Try to parse as JSON
-        try:
-            content = json.loads(content)
-            return {"content": content, "type": "json"}
-        except json.JSONDecodeError:
-            return {"content": content, "type": "text"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        if not file_path.is_file():
+            raise FileNotFoundError()
+        with file_path.open("rb") as stream:
+            data = stream.read(MAX_ARTIFACT_BYTES + 1)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Artifact not found") from None
+    except OSError:
+        raise HTTPException(status_code=500, detail="Unable to read the artifact") from None
+    if len(data) > MAX_ARTIFACT_BYTES:
+        raise HTTPException(status_code=413, detail="This artifact is too large to preview. Open the saved file locally.")
+    try:
+        content = data.decode("utf-8")
+    except UnicodeError:
+        raise HTTPException(status_code=422, detail="The artifact is not readable UTF-8 text.") from None
+    try:
+        parsed = json.loads(content)
+        json.dumps(parsed, allow_nan=False)
+    except (ValueError, RecursionError):
+        return {"content": content, "type": "text"}
+    return {"content": parsed, "type": "json"}
 
 @app.delete("/artifacts/{topic}/{filename}")
 async def delete_artifact(topic: str, filename: str):
-    """Delete a specific artifact."""
+    return await run_in_threadpool(_delete_artifact, topic, filename)
+
+
+def _delete_artifact(topic: str, filename: str):
     file_path = _safe_artifact_path(topic, filename)
-
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail="Artifact not found")
-
     try:
+        if not file_path.is_file():
+            raise FileNotFoundError()
         file_path.unlink()
-
-        # Remove topic directory if empty
-        topic_path = file_path.parent
-        if topic_path.is_dir() and not any(topic_path.iterdir()):
-            topic_path.rmdir()
-
-        return {"status": "success", "message": "Artifact deleted"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        sidecar = file_path.with_suffix(".meta.json")
+        if file_path.suffix == ".json":
+            sidecar.unlink(missing_ok=True)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Artifact not found") from None
+    except OSError:
+        raise HTTPException(status_code=500, detail="Unable to finish deleting the artifact") from None
+    if file_path.suffix == ".json" and not remove_artifact_mirror(str(ARTIFACTS_ROOT), topic, file_path.stem):
+        return {"status": "success", "message": "Artifact deleted. Its local mirror could not be refreshed."}
+    return {"status": "success", "message": "Artifact deleted"}
 
 
 def _group_tools_by_category(tools: List[Tool]) -> Dict[str, List[Tool]]:
@@ -738,7 +741,9 @@ def _group_tools_by_category(tools: List[Tool]) -> Dict[str, List[Tool]]:
 
 @app.get("/studio/tools", response_class=HTMLResponse)
 async def ui_tools_page(request: Request):
-    tools = _public_tools()
+    tools = await run_in_threadpool(_public_tools)
+    profile_fields = await run_in_threadpool(learning_profile_fields, PROJECT_ROOT)
+    connector_fields = await run_in_threadpool(learning_profile_fields, PROJECT_ROOT, connector=True)
     return templates.TemplateResponse(
         request,
         "studio_tools.html",
@@ -748,6 +753,8 @@ async def ui_tools_page(request: Request):
             tools=tools,
             tools_by_category=_group_tools_by_category(tools),
             selected_tool_key=f"{tools[0].category}:{tools[0].name}" if tools else "",
+            profile_fields=profile_fields,
+            connector_fields=connector_fields,
             demo_examples=get_tool_demo_examples(
                 f"{tool.category}:{tool.name}" for tool in tools
             ),
@@ -1067,4 +1074,4 @@ async def ui_artifact_detail(request: Request, topic: str, filename: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000, access_log=False)

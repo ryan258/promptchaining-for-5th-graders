@@ -5,15 +5,15 @@
 {% macro run_row(run) -%}
 <a class="run-row" href="/studio/runs/{{ run.id }}">
   <span class="run-row-symbol" aria-hidden="true">{% if run.state == 'completed' %}✓{% elif run.state == 'running' %}↻{% else %}↗{% endif %}</span>
-  <span class="run-row-copy"><strong>{{ run.topic }}</strong><span>{{ run.recipe.title }} <span aria-hidden="true">·</span> {{ run.results | length }} of {{ run.recipe.steps | length }} steps <span aria-hidden="true">·</span> {{ run.updated_at | local_date }}</span></span>
+  <span class="run-row-copy"><strong>{{ run.topic }}</strong><span>{{ run.title }} <span aria-hidden="true">·</span> {{ run.saved_steps }} of {{ run.total_steps }} steps <span aria-hidden="true">·</span> {{ run.updated_at | local_date }}</span></span>
   {{ state(run) }}
   <span aria-hidden="true" class="row-arrow">→</span>
 </a>
 {%- endmacro %}
 
-{% macro recipe_card(key, recipe, index) -%}
+{% macro recipe_card(key, recipe, index=none) -%}
 <a class="recipe-card" href="/studio/new?recipe={{ key }}">
-  <div class="recipe-card-top"><span class="recipe-number" aria-hidden="true">{{ '%02d' | format(index) }}</span><span class="muted">{{ recipe.steps | length }} steps</span></div>
+  <div class="recipe-card-top">{% if index is not none %}<span class="recipe-number" aria-hidden="true">{{ '%02d' | format(index) }}</span>{% endif %}<span class="muted">{{ recipe.steps | length }} steps</span></div>
   <h3>{{ recipe.title }}</h3><p>{{ recipe.description }}</p>
   <div class="recipe-flow" aria-label="Steps">{% for step in recipe.steps %}<span>{{ step.name }}</span>{% if not loop.last %}<span aria-hidden="true">→</span>{% endif %}{% endfor %}</div>
   <span class="text-link">Use this recipe <span aria-hidden="true">↗</span></span>

@@ -4,17 +4,14 @@
 {% block content %}
 <section class="module-hero">
   <div>
-    <p class="eyebrow">Module 01</p>
     <h1>Run a Tool</h1>
-    <p class="hero-text">Start with a direct topic and optional context, then read the output in a result stage that is no longer squeezed next to unrelated modules.</p>
-  </div>
-  <div class="module-hero-note">
-    <p>Use tools when you want a focused transformation. The right panel is gone; the result now gets its own full-width stage below the form.</p>
+    <p class="hero-text">Simplify a concept or connect two subjects.</p>
   </div>
 </section>
 
 <form class="module-form" hx-post="/ui/run-tool" hx-target="#tool-result" hx-swap="innerHTML" hx-indicator="#tool-loading">
-  <p class="notice">Runs four model requests. Each step is attempted once. Provider charges apply; this Advanced tool has no workbench pause or resume controls.</p>
+  <p class="notice"><span data-tool-request-count>Concept Simplifier uses four model requests. Subject Connector uses three.</span>
+    Each step is attempted once. Provider charges apply. These Advanced runs continue until they finish or fail.</p>
   <div class="field-grid">
     <div class="field-group">
       <label for="tool_key">Tool</label>
@@ -22,21 +19,30 @@
         {% for category, items in tools_by_category.items() %}
           <optgroup label="{{ category | humanize }}">
             {% for tool in items %}
-              <option value="{{ category }}:{{ tool.name }}">{{ tool.name | humanize }}</option>
+              <option value="{{ category }}:{{ tool.name }}" data-requests="{{ 3 if tool.name == 'subject_connector' else 4 }}">{{ tool.name | humanize }}</option>
             {% endfor %}
           </optgroup>
         {% endfor %}
       </select>
     </div>
     <div class="field-group">
-      <label for="tool_topic">Topic</label>
-      <input type="text" name="topic" id="tool_topic" placeholder="Photosynthesis" required />
+      <label for="tool_topic" data-tool-topic-label>Topic or first subject</label>
+      <input type="text" name="topic" id="tool_topic" maxlength="3000" required />
     </div>
   </div>
   <div class="field-group">
-    <label for="tool_context">Context</label>
-    <textarea name="context" id="tool_context" placeholder="Audience: 5th graders&#10;Tone: visual and practical"></textarea>
+    <label for="tool_context" data-tool-context-label>Context or second subject</label>
+    <textarea name="context" id="tool_context" maxlength="16000"></textarea>
+    <p class="field-note" data-tool-context-help>Concept Simplifier accepts optional context. Subject Connector requires a second subject.</p>
   </div>
+  <details class="drawer">
+    <summary>Profile fields included in prompts</summary>
+    <dl class="drawer-body">
+      <dt>Concept Simplifier audience</dt><dd>{{ profile_fields.audience }}</dd>
+      <dt>Concept Simplifier tone</dt><dd>{{ profile_fields.tone }}</dd>
+      <dt>Subject Connector tone</dt><dd>{{ connector_fields.tone }}</dd>
+    </dl>
+  </details>
   <details class="drawer tool-directory">
     <summary>Available tools</summary>
     <div class="drawer-body tool-directory-list">

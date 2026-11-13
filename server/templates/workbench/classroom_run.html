@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="classroom-lesson">
+  <header class="page-intro">
+    <div>
+      <a href="/studio/practice" class="text-link">← All challenges</a>
+      <h1>{{ run.topic }}</h1>
+      {% if not run.results %}<p class="hero-text">These replies were written for practice. The challenge works offline.</p>{% endif %}
+    </div>
+  </header>
+  {% include "workbench/_classroom.html" %}
+</div>
+{% endblock %}

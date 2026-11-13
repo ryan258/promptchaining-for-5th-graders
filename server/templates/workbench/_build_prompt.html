@@ -1,0 +1,61 @@
+{% macro choose_job() %}
+  <form method="post" action="/studio/runs/{{ run.id }}/edit" class="button-row">
+    <input type="hidden" name="revision" value="{{ run.revision }}">
+    {% for choice in chain_case.choices %}
+      <button type="submit" name="output" value="{{ choice.instruction }}"{% if not loop.first %} class="secondary"{% endif %}>{{ choice.label }}</button>
+    {% endfor %}
+  </form>
+{% endmacro %}
+
+{% if finished %}
+  <h2 id="classroom-task">Same route, two answers</h2>
+  <p>We wrote both examples ahead of time. Find one detail that stayed the same and one thing your choice changed.</p>
+  <div class="classroom-comparison">
+    <div>
+      <h3>Your pick{% if prompt_choice %} · {{ prompt_choice.label }}{% endif %}</h3>
+      <pre class="answer-text">{{ run.results[-1].output }}</pre>
+    </div>
+    {% if prompt_choice %}
+      {% for choice in chain_case.choices if choice != prompt_choice %}
+        <div>
+          <h3>{{ choice.label }}</h3>
+          <pre class="answer-text">{{ choice.example }}</pre>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+  <details>
+    <summary>See the prompt you built</summary>
+    <pre class="answer-text classroom-prompt">{{ run.results[-1].prompt }}</pre>
+  </details>
+  <div class="classroom-next">
+    <h3>Try a third job at home</h3>
+    <p>{{ chain_case.try_next }}</p>
+    <pre class="answer-text">{{ run.results[0].output }}</pre>
+  </div>
+  <div class="button-row">
+    <a class="button secondary" href="/studio/lab">Build your own chain <span aria-hidden="true">→</span></a>
+    <a class="button" href="/studio/practice">Try another challenge</a>
+    <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=final">Download the example you picked</a>
+  </div>
+{% elif prompt_choice and not edit_error %}
+  {% set intro, route, rest = next_prompt.partition(run.results[0].output) %}
+  {% set transition, job, ending = rest.partition(prompt_choice.instruction) %}
+  <h2 id="classroom-task">You built the next prompt</h2>
+  <p>Find the two highlighted parts. The route came from the first answer. The job is the one you picked.</p>
+  <pre class="answer-text classroom-prompt">{{ intro }}{% if route %}<mark class="reused-answer">{{ route }}</mark>{% endif %}{{ transition }}{% if job %}<mark class="reused-answer">{{ job }}</mark>{% endif %}{{ ending }}</pre>
+  <p>Guess what will look different if you pick the other job.</p>
+  {{ continue_button("See the prepared answer") }}
+  <details>
+    <summary>Pick a different job</summary>
+    {{ choose_job() }}
+  </details>
+{% else %}
+  <h2 id="classroom-task">Give the last prompt a job</h2>
+  <div class="classroom-draft">
+    <h3>Two ways to share the route</h3>
+    <pre class="answer-text">{{ draft.original_output or draft.output }}</pre>
+  </div>
+  <p>How should Pip get the route? Pick a job to see what goes into the last prompt.</p>
+  {{ choose_job() }}
+{% endif %}

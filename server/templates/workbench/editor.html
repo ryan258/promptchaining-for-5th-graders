@@ -1,45 +1,90 @@
 {% extends "base.html" %}
 {% import "guides/_macros.html" as guides %}
 {% block content %}
-<section class="page-intro"><div><p class="eyebrow"><a href="/studio/recipes">Recipes</a> <span aria-hidden="true">/</span> Make it yours</p><h1>{{ recipe.title }}</h1><p class="hero-text">{{ recipe.description }}</p></div><span class="recipe-step-count">{{ recipe.steps | length }} steps to something useful</span></section>
+<section class="page-intro"><div><p class="eyebrow"><a href="/studio/recipes">Recipes</a></p><h1>{{ recipe.title }}</h1>{% if recipe.description %}<p class="hero-text">{{ recipe.description }}</p>{% endif %}</div><span class="recipe-step-count">{{ recipe.steps | length }} {{ 'step' if recipe.steps | length == 1 else 'steps' }}</span></section>
+{% if form_error %}<p class="notice error" id="editor-error" role="alert" {% if not error_field %}tabindex="-1" autofocus{% endif %}>{{ form_error }}</p>{% endif %}
 {% if saved_notice %}<p class="notice success" role="status">Recipe saved on this computer. You can find it under Recipes.</p>{% endif %}
-{{ guides.help("Connect your prompts, carry answers forward, and shape a useful result.", "building-chains", "Read the prompt guide") }}
-<noscript><p class="notice">You can save and prepare chains without JavaScript. Automatic browser drafts and adding or reordering steps need JavaScript.</p></noscript>
-<form method="post" action="/studio/prepare" class="chain-editor" data-chain-editor data-draft-key="{{ source }}">
+{{ guides.help("Want to write your own steps? See a chain you can copy and change.", "building-chains", "Read the prompt guide") }}
+{% if starter_prompt %}
+<details class="prompt-help" data-copy-scope>
+  <summary>Use this starter in another AI chat</summary>
+  <p>Paste the starter into a chat you use. Add your notes there and check each answer before asking for the next step.</p>
+  <button class="secondary" type="button" data-copy-nearest="[data-starter-prompt]">Copy starter chain</button>
+  <pre class="answer-text classroom-prompt" data-starter-prompt>{{ starter_prompt }}</pre>
+</details>
+{% endif %}
+<noscript><p class="notice">Use Save recipe to keep your work. Adding or moving steps and saving drafts as you type require JavaScript.</p></noscript>
+<form method="post" action="/studio/prepare" class="chain-editor" data-chain-editor data-draft-key="{{ source }}"{% if form_error %} data-form-error{% endif %}>
+  <input type="hidden" name="source" value="{{ source }}" />
+  <input type="hidden" name="custom" value="{{ '1' if is_custom else '0' }}" />
   <section class="editor-intention">
-    <div class="editor-section-title"><span class="section-number" aria-hidden="true">01</span><div><h2>Give it a direction.</h2><p>A sentence is enough. Dictation works here, too.</p></div></div>
-    <div class="field-group"><label for="chain-topic">What would you like to work on?</label><textarea id="chain-topic" name="topic" maxlength="3000" rows="3" placeholder="Something I want to understand, make, or work through…" data-intention>{{ topic }}</textarea></div>
-    <div class="example-row"><span class="muted">Try a thought:</span><button type="button" class="example-chip" data-topic-example="Why does the Moon change shape?">The Moon’s phases</button><button type="button" class="example-chip" data-topic-example="Help me make a weekly plan I can change when my energy changes.">A gentler weekly plan</button><button type="button" class="example-chip" data-topic-example="How are cooking and computer programming connected?">Cooking + code</button></div>
-    <div class="editor-details"><div class="field-group"><label for="chain-audience">Who is it for?</label><input id="chain-audience" name="audience" value="{{ recipe.audience }}" maxlength="200" /></div><div class="field-group"><label for="chain-context">Anything it should know? <span class="optional">Optional</span></label><textarea id="chain-context" name="context" maxlength="16000" rows="3" placeholder="What I already know, constraints, a note or a piece of source material…">{{ context }}</textarea><p class="field-note">A live run sends this text and previous answers to your chosen model through OpenRouter.</p></div></div>
+    <div class="editor-section-title"><span class="section-number" aria-hidden="true">01</span><div><h2>Give your chain a job</h2><p>{{ input_hint or 'Type one sentence or use your device’s dictation.' }}</p></div></div>
+    <div class="field-group"><label for="chain-topic">{{ 'Notes for this chain' if input_hint else 'What would you like to work on?' }}</label><textarea id="chain-topic" name="topic" maxlength="3000" rows="3" placeholder="{{ 'Dictate or paste a few notes here.' if input_hint else ('Describe what you want to make.' if topic_example else 'Why can I see the Moon during the day?') }}" data-intention{% if error_field == "topic" %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %}>{{ topic }}</textarea></div>
+    <div class="example-row">
+      <span class="muted">{{ 'Try a fictional example.' if input_hint else 'Pick an example to fill the box.' }}</span>
+      {% if topic_example %}
+      <button type="button" class="example-chip" data-topic-example="{{ topic_example[1] }}">{{ topic_example[0] }}</button>
+      {% else %}
+      <button type="button" class="example-chip" data-topic-example="Why does the Moon look like a different shape?">Why does the Moon look different?</button>
+      <button type="button" class="example-chip" data-topic-example="Help me write a mystery story that starts with a wet footprint in the library.">Write a library mystery</button>
+      <button type="button" class="example-chip" data-topic-example="Help us pick a recess game that twenty kids can play with one ball.">Pick a recess game</button>
+      {% endif %}
+    </div>
+    <div class="editor-details"><div class="field-group"><label for="chain-audience">Who is it for?</label><input id="chain-audience" name="audience"{% if error_field == "audience" %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} value="{{ recipe.audience }}" maxlength="200" /></div><div class="field-group"><label for="chain-context">{{ 'Longer notes or details' if input_hint else 'Anything it should know?' }} <span class="optional">Optional</span></label><textarea id="chain-context" name="context"{% if error_field == "context" %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} maxlength="16000" rows="3" placeholder="{{ 'Paste longer notes or add details here.' if input_hint else 'Add a clue, a rule, or something you’ve already tried.' }}">{{ context }}</textarea><p class="field-note">When you run a step, Studio sends its prompt to your chosen AI model through OpenRouter. Use only details you’re comfortable sharing.</p></div></div>
   </section>
   <section class="editor-recipe">
-    <div class="editor-section-title"><span class="section-number" aria-hidden="true">02</span><div><h2>See the way through.</h2><p>Each step uses what came before it. Open a step to edit its prompt.</p></div></div>
+    <div class="editor-section-title"><span class="section-number" aria-hidden="true">02</span><div><h2>See what each step asks</h2><p>Open a step to read or change what it asks the AI to do.</p></div></div>
     <div class="step-editor-list" data-step-list>
       {% for step in recipe.steps %}
-      <details class="editable-step" data-step>
+      <details class="editable-step" data-step{% if error_field and error_field.startswith('step-' ~ loop.index0 ~ '-') %} open{% endif %}>
         <summary><span class="step-number" data-step-number>{{ '%02d' | format(loop.index) }}</span><span><strong data-step-label>{{ step.name }}</strong><span class="step-purpose" data-purpose-label>{{ step.purpose }}</span></span><span class="step-edit-cue">Edit <span aria-hidden="true">↗</span></span></summary>
         <div class="step-editor-body">
-          <label>Step name<input name="step_name" value="{{ step.name }}" maxlength="100" required /></label>
-          <label>Why this step?<input name="step_purpose" value="{{ step.purpose }}" maxlength="400" /></label>
-          <label>Prompt<textarea name="step_prompt" rows="6" maxlength="8000" required spellcheck="false">{{ step.prompt }}</textarea></label>
+          <label>Step name<input name="step_name"{% if error_field == 'step-' ~ loop.index0 ~ '-name' %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} value="{{ step.name }}" maxlength="100" required /></label>
+          <label>Why this step?<input name="step_purpose"{% if error_field == 'step-' ~ loop.index0 ~ '-purpose' %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} value="{{ step.purpose }}" maxlength="400" /></label>
+          <label>Prompt for the AI<textarea name="step_prompt"{% if error_field == 'step-' ~ loop.index0 ~ '-prompt' %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} rows="6" maxlength="8000" required spellcheck="false">{{ step.prompt }}</textarea></label>
           <div class="step-controls"><button type="button" class="secondary compact-button" data-step-up>Move up</button><button type="button" class="secondary compact-button" data-step-down>Move down</button><button type="button" class="quiet-button danger-text" data-step-remove>Remove step</button></div>
         </div>
       </details>
       {% endfor %}
     </div>
     <button type="button" class="button secondary add-step" data-add-step>＋ Add a step</button>
-    <details class="prompt-help"><summary>How do prompts carry answers forward?</summary><p>Use <code>{% raw %}{{topic}}{% endraw %}</code>, <code>{% raw %}{{audience}}{% endraw %}</code>, and <code>{% raw %}{{context}}{% endraw %}</code> for your inputs. <code>{% raw %}{{output[-1]}}{% endraw %}</code> is the answer from one step ago. <code>{% raw %}{{output[-2]}}{% endraw %}</code> reaches back two steps. Moving or removing a step changes those references, so review its prompts. A first step cannot use a previous answer.</p></details>
-    <div class="recipe-save-fields"><label for="recipe-title">Recipe name</label><input id="recipe-title" name="title" value="{{ recipe.title }}" maxlength="120" required /><label for="recipe-description">A note about this recipe <span class="optional">Optional</span></label><input id="recipe-description" name="description" value="{{ recipe.description }}" maxlength="600" /></div>
+    <details class="prompt-help">
+      <summary>What do the curly braces do?</summary>
+      <p>They mark a spot for Studio to fill in. If you type “the Moon” as your topic, <code>{% raw %}Explain {{topic}}.{% endraw %}</code> becomes “Explain the Moon.”</p>
+      <ul>
+        <li><code>{% raw %}{{audience}}{% endraw %}</code> fills in who it’s for.</li>
+        <li><code>{% raw %}{{context}}{% endraw %}</code> fills in the extra details you gave.</li>
+        <li><code>{% raw %}{{output[-1]}}{% endraw %}</code> fills in the last step’s answer. Use <code>{% raw %}{{output[-2]}}{% endraw %}</code> for the answer from two steps back.</li>
+      </ul>
+      <p>Use earlier answers from step two onward. Studio blocks a move or removal if another step still needs that answer.</p>
+    </details>
+    <div class="recipe-save-fields"><label for="recipe-title">Recipe name</label><input id="recipe-title" name="title"{% if error_field == "title" %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} value="{{ recipe.title }}" maxlength="120" required /><label for="recipe-description">A note about this recipe <span class="optional">Optional</span></label><input id="recipe-description" name="description"{% if error_field == "description" %} aria-invalid="true" aria-describedby="editor-error" autofocus{% endif %} value="{{ recipe.description }}" maxlength="600" /></div>
   </section>
   <section class="editor-launch">
-    <div><p class="eyebrow">Your pace, your call</p><h2>Ready when you are.</h2><p>Prepare a saved run, then preview its first prompt before sending it.</p></div>
-    {% if config.ready %}<div class="field-group"><label for="chain-model">Model</label><select id="chain-model" name="model">{% for model in config.models %}<option value="{{ model }}">{{ model }}</option>{% endfor %}</select><p class="field-note">{{ config.max_tokens }} output tokens maximum per step. Provider charges depend on the selected model.</p></div>{% else %}<div class="notice"><strong>Set up live generation when you’re ready.</strong><p>{{ config.error or 'Add OPENROUTER_API_KEY and OPENROUTER_MODELS to .env, then restart. Recipes and the worked example work without a key.' }}</p><a class="text-link" href="/studio/learn#setup">Setup instructions →</a></div>{% endif %}
-    <label class="checkbox-field"><input type="checkbox" name="review_each"{% if review_each %} checked{% endif %} /><span>Pause after each step so I can review or edit the answer.<small>Uncheck to run the whole chain. You can still request a pause.</small></span></label>
+    <div><h2>Check your first prompt</h2><p>Choose Prepare chain to save your work and see the first prompt. You decide when to send it.</p></div>
+    {% if config.ready %}
+    <div class="field-group">
+      <label for="chain-model">AI model</label>
+      <select id="chain-model" name="model" aria-describedby="chain-model-note">
+        {% for model in config.models %}
+        <option value="{{ model }}"{% if selected_model == model %} selected{% endif %}>{{ 'OpenRouter Free (' ~ model ~ ')' if model == config.free_model else model }}</option>
+        {% endfor %}
+      </select>
+      <p class="field-note" id="chain-model-note">OpenRouter Free has $0 token pricing and request limits. {% if config.models | length > 1 %}Other models may cost money. {% endif %}Each answer is limited to {{ config.max_tokens }} tokens.</p>
+    </div>
+    {% else %}
+    <div class="notice"><strong>Live AI needs setup.</strong><p>{{ config.error or ('You can save this recipe or use the copy option above to run it in another AI chat.' if input_hint else 'You can save your recipe now. A teacher or grown-up can set up live AI using the guide.') }}</p>{% if not input_hint %}<a class="text-link" href="/studio/practice">Try a classroom challenge</a> {% endif %}<a class="text-link" href="/studio/guides/setup#use-openrouter-free">Set up OpenRouter Free <span aria-hidden="true">→</span></a></div>
+    {% endif %}
+    <label class="checkbox-field"><input type="checkbox" name="review_each"{% if review_each %} checked{% endif %} /><span>Pause after each answer so I can check it.<small>Clear the box to keep going automatically. You can still pause the chain.</small></span></label>
     <div class="button-row"><button type="submit" name="action" value="run" data-prepare-run{% if not config.ready %} disabled{% endif %}>Prepare chain <span aria-hidden="true">→</span></button><button type="submit" name="action" value="save" class="secondary" data-save-recipe>{% if is_custom %}Save a new copy{% else %}Save recipe{% endif %}</button></div>
-    <div class="draft-row"><p class="field-note" data-draft-status role="status">Draft recovery is available in this browser.</p><button type="button" class="quiet-button" data-discard-draft hidden>Discard recovered draft</button></div>
+    <div class="button-row" data-draft-conflict hidden>
+      <button type="button" class="secondary" data-load-other-draft>Use the draft from the other tab</button>
+      <button type="button" class="secondary" data-keep-this-draft>Keep what I wrote here</button>
+    </div>
+    <div class="draft-row"><p class="field-note" data-draft-status role="status">This browser can save a draft while you work.</p><button type="button" class="quiet-button" data-discard-draft hidden>Discard this draft</button></div>
   </section>
 </form>
-<template id="new-step-template"><details class="editable-step" data-step open><summary><span class="step-number" data-step-number></span><span><strong data-step-label>New step</strong><span class="step-purpose" data-purpose-label>Build on the previous answer.</span></span><span class="step-edit-cue">Edit ↗</span></summary><div class="step-editor-body"><label>Step name<input name="step_name" value="New step" maxlength="100" required /></label><label>Why this step?<input name="step_purpose" value="Build on the previous answer." maxlength="400" /></label><label>Prompt<textarea name="step_prompt" rows="6" maxlength="8000" required spellcheck="false">{% raw %}Use this previous answer:
+<template id="new-step-template"><details class="editable-step" data-step open><summary><span class="step-number" data-step-number></span><span><strong data-step-label>New step</strong><span class="step-purpose" data-purpose-label>Build on the last answer.</span></span><span class="step-edit-cue">Edit ↗</span></summary><div class="step-editor-body"><label>Step name<input name="step_name" value="New step" maxlength="100" required /></label><label>Why this step?<input name="step_purpose" value="Build on the last answer." maxlength="400" /></label><label>Prompt for the AI<textarea name="step_prompt" rows="6" maxlength="8000" required spellcheck="false">{% raw %}Use the last answer:
 {{output[-1]}}
-To help {{audience}} with {{topic}}. Context: {{context}}.{% endraw %}</textarea></label><div class="step-controls"><button type="button" class="secondary compact-button" data-step-up>Move up</button><button type="button" class="secondary compact-button" data-step-down>Move down</button><button type="button" class="quiet-button danger-text" data-step-remove>Remove step</button></div></div></details></template>
+Help {{audience}} with {{topic}}. Use these extra details if they help: {{context}}.{% endraw %}</textarea></label><div class="step-controls"><button type="button" class="secondary compact-button" data-step-up>Move up</button><button type="button" class="secondary compact-button" data-step-down>Move down</button><button type="button" class="quiet-button danger-text" data-step-remove>Remove step</button></div></div></details></template>
 {% endblock %}

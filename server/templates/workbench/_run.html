@@ -1,37 +1,209 @@
 {% import "workbench/_macros.html" as wb %}
-<div id="run-workspace" data-run-state="{{ run.state }}"{% if run.state == 'running' %} hx-get="/studio/runs/{{ run.id }}/status" hx-trigger="every 2s" hx-swap="outerHTML" hx-target="this"{% endif %}>
+<div id="run-workspace" data-run-state="{{ 'save-pending' if pending_save else run.state }}"
+     {% if run.state == 'running' and not pending_save %}hx-get="/studio/runs/{{ run.id }}/status?revision={{ run.revision }}"
+     hx-trigger="every 2s" hx-swap="outerHTML" hx-target="this"{% endif %}>
   <div class="run-toolbar">
-    <div class="run-progress"><span>{{ run.results | length }} of {{ run.recipe.steps | length }} steps saved</span><progress value="{{ run.results | length }}" max="{{ run.recipe.steps | length }}" aria-label="Saved chain progress"></progress>{{ wb.state(run) }}</div>
-    <div class="run-tools"><a class="text-link" href="/studio/runs/{{ run.id }}/export">Export Markdown ↓</a><a class="text-link" href="/studio/runs/{{ run.id }}/export?format=json">Export JSON ↓</a></div>
+    <div class="run-progress">
+      <span>{{ run.results | length }} of {{ run.recipe.steps | length }} steps saved</span>
+      <progress value="{{ run.results | length }}" max="{{ run.recipe.steps | length }}" aria-label="Saved chain progress"></progress>
+      {{ wb.state(run) }}
+    </div>
+    <div class="run-tools">
+      <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=trace">Download trace ↓</a>
+      <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=json">Download run JSON ↓</a>
+    </div>
   </div>
   <div class="run-layout">
     <aside class="chain-sidebar" aria-label="Chain overview">
-      <p class="eyebrow">The way through</p>
-      <ol class="run-step-list">{% for step in run.recipe.steps %}<li class="{% if loop.index <= run.results | length %}step-done{% elif loop.index == (run.results | length) + 1 %}step-next{% endif %}"><span class="step-marker" aria-hidden="true">{% if loop.index <= run.results | length %}✓{% else %}{{ '%02d' | format(loop.index) }}{% endif %}</span><div>{% if loop.index <= run.results | length %}<a href="#answer-{{ loop.index }}">{{ step.name }}</a>{% else %}<strong>{{ step.name }}</strong>{% endif %}<p>{% if loop.index <= run.results | length %}Saved{% elif loop.index == (run.results | length) + 1 and run.state == 'running' %}Working on this{% else %}{{ step.purpose }}{% endif %}</p></div></li>{% endfor %}</ol>
-      <div class="run-meta"><p><span class="eyebrow">{% if run.mode == 'example' %}About this example{% else %}This run{% endif %}</span></p>{% if run.mode == 'example' %}<p>This is an authored walkthrough. It shows the handoffs using fixed answers. No AI requests were made.</p>{% else %}<p>{{ run.model }}</p><p>{{ run.total_tokens }} reported tokens<br>{{ 'Review each step' if run.review_each else 'Run all steps' }}</p><p>AI answers may contain errors. Review factual claims before relying on them.</p>{% endif %}</div>
+      <ol class="run-step-list">
+        {% for step in run.recipe.steps %}
+          {% set saved = loop.index <= run.results | length %}
+          {% set next_step = loop.index == (run.results | length) + 1 %}
+          <li class="{% if saved %}step-done{% elif next_step %}step-next{% endif %}">
+            <span class="step-marker" aria-hidden="true">{{ '✓' if saved else '%02d' | format(loop.index) }}</span>
+            <div>
+              {% if saved %}<a href="#answer-{{ loop.index }}" id="step-link-{{ loop.index }}">{{ step.name }}</a>
+              {% else %}<strong>{{ step.name }}</strong>{% endif %}
+              <p>{{ 'Saved' if saved else step.purpose }}</p>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+      <div class="run-meta">
+        {% if run.mode == 'example' %}
+          <p>This is an authored walkthrough. It shows the handoffs using fixed answers. No AI requests were made.</p>
+        {% elif run.mode == 'practice' %}
+          <p>Offline practice. Each answer is an authored sample. Your edit changes the next prompt preview, and the final answer shows a fixed reference deliverable.</p>
+        {% else %}
+          <p>{{ run.model }}</p>
+          <p>
+            {% if run.total_tokens is none %}Token usage unavailable
+            {% elif run.usage_complete %}{{ run.total_tokens }} reported tokens
+            {% else %}{{ run.total_tokens }} reported tokens so far. Some usage is unavailable.{% endif %}
+            <br>{{ 'Review each step' if run.review_each else 'Run all steps' }}
+          </p>
+          <p>AI answers may contain errors. Review factual claims before relying on them.</p>
+        {% endif %}
+      </div>
     </aside>
     <div class="chain-answers">
       {% if run.error %}<div class="notice error" role="alert"><strong>{{ 'Interrupted' if run.state == 'interrupted' else 'A step needs attention' }}</strong><p>{{ run.error }}</p></div>{% endif %}
-      {% if run.state == 'running' %}
-      <section class="run-action-card" aria-live="polite"><span class="working-dot" aria-hidden="true"></span><div><h2>{{ run.recipe.steps[run.results | length].name }}…</h2><p>{% if run.pause_requested %}Pause requested. The current request will finish and save its answer.{% else %}This step is working. You can leave this page; progress is saved on this computer.{% endif %}</p></div>{% if not run.pause_requested %}<form method="post" action="/studio/runs/{{ run.id }}/pause"><button type="submit" class="secondary">Pause after this step</button></form>{% endif %}<a class="text-link" href="/studio/runs/{{ run.id }}">Refresh progress</a></section>
+      {% if run.review_notice %}<p class="notice" role="status">{{ run.review_notice }}</p>{% endif %}
+      {% if edit_error %}
+        <p class="notice error" role="alert">{{ edit_error }}</p>
+        {% if run.state not in ['paused', 'failed', 'interrupted'] %}
+          <label for="edit-copy">Copy your unsaved revision</label>
+          <textarea id="edit-copy" rows="8" readonly>{{ submitted_edit }}</textarea>
+        {% endif %}
+      {% endif %}
+      {% if run.archived and run.state != 'completed' %}
+        <p class="notice">This run is archived. Move it back to My library to continue.</p>
+      {% elif pending_save %}
+        <section class="run-action-card">
+          <div><h2 id="run-action-heading" tabindex="-1">An answer is waiting to be saved</h2>
+          <p>Studio could not checkpoint the latest answer. Retry saving it on this computer.</p></div>
+          <form method="post" action="/studio/runs/{{ run.id }}/retry-save">
+            <button type="submit" id="retry-save" data-primary-action>Retry saving this answer</button>
+          </form>
+        </section>
+      {% elif run.state == 'running' %}
+        <section class="run-action-card">
+          <span class="working-dot" aria-hidden="true"></span>
+          <div>
+            <h2 id="run-action-heading" tabindex="-1">{{ run.recipe.steps[run.results | length].name }}…</h2>
+            <p>{% if run.pause_requested %}Pause requested. A claimed request can finish and save its answer.
+            {% elif run.active_attempt_id %}This request is working. You can leave this page.
+            {% else %}Studio is preparing this step. You can still request a pause.{% endif %}</p>
+          </div>
+          {% if not run.pause_requested %}
+            <form method="post" action="/studio/runs/{{ run.id }}/pause">
+              <input type="hidden" name="execution_id" value="{{ run.execution_id or '' }}" />
+              <button type="submit" id="pause-run" class="secondary">Pause after this step</button>
+            </form>
+          {% endif %}
+          <a class="text-link" id="refresh-progress" href="/studio/runs/{{ run.id }}">Refresh progress</a>
+        </section>
       {% elif run.state != 'completed' %}
-      <section class="run-action-card"><div><p class="eyebrow">{% if run.state == 'ready' %}Ready to begin{% else %}Next up{% endif %}</p><h2>{{ run.recipe.steps[run.results | length].name }}</h2><p>{{ run.recipe.steps[run.results | length].purpose }}</p><p class="field-note">{% if run.review_each %}Sends one request, then pauses for review.{% else %}Sends up to {{ (run.recipe.steps | length) - (run.results | length) }} requests, saving each answer. You can request a pause.{% endif %} Provider charges apply.</p></div>
-        {% if preview_error %}<p class="notice error">{{ preview_error }}</p>{% else %}<form method="post" action="/studio/runs/{{ run.id }}/continue"><input type="hidden" name="revision" value="{{ run.revision }}" /><button type="submit" data-primary-action>{% if run.state in ['failed', 'interrupted'] %}Retry this step{% elif run.state == 'ready' %}{{ 'Run first step' if run.review_each else 'Run chain' }}{% else %}Continue chain{% endif %} <span aria-hidden="true">→</span></button></form>{% endif %}
-        <details class="next-prompt"><summary>Preview the exact next prompt</summary><pre>{{ next_prompt }}</pre></details>
-      </section>
+        <section class="run-action-card">
+          <div>
+            <h2 id="run-action-heading" tabindex="-1">{{ run.recipe.steps[run.results | length].name }}</h2>
+            <p>{{ run.recipe.steps[run.results | length].purpose }}</p>
+            {% if run.mode == 'practice' %}
+              <p class="field-note">Saves the next authored answer on this computer. No provider requests.</p>
+            {% else %}
+              <p class="field-note">
+                {% if run.review_each %}Sends one request, then pauses for review.
+                {% else %}Sends up to {{ (run.recipe.steps | length) - (run.results | length) }} requests, saving each answer. You can request a pause.{% endif %}
+                Provider charges apply.
+              </p>
+            {% endif %}
+          </div>
+          {% if preview_error %}
+            <p class="notice error">{{ preview_error }}</p>
+          {% else %}
+            <form method="post" action="/studio/runs/{{ run.id }}/continue">
+              <input type="hidden" name="revision" value="{{ run.revision }}" />
+              <button type="submit" id="continue-run" data-primary-action>
+                {% if run.mode == 'practice' %}Show the next authored answer
+                {% elif run.state in ['failed', 'interrupted'] %}Retry this step
+                {% elif run.state == 'ready' %}{{ 'Run first step' if run.review_each else 'Run chain' }}
+                {% else %}Continue chain{% endif %}
+              </button>
+            </form>
+          {% endif %}
+          <details class="next-prompt" id="next-prompt"><summary>{{ 'Preview the next practice prompt' if run.mode == 'practice' else 'Preview the exact next prompt' }}</summary><pre>{{ next_prompt }}</pre></details>
+        </section>
       {% endif %}
 
       {% if run.state == 'completed' %}
-      <section class="answer-card final-answer" id="final-answer" data-copy-scope><div class="answer-heading"><div><p class="eyebrow">{% if run.mode == 'example' %}The worked example{% else %}Something to take with you{% endif %}</p><h2>{{ run.recipe.steps[-1].name }}</h2></div><span class="completion-mark" aria-label="Complete">✓</span></div><pre class="answer-text" data-final-output>{{ run.results[-1].output }}</pre><div class="answer-actions"><button type="button" class="secondary" data-copy-nearest="[data-final-output]">Copy final answer</button><a class="button secondary" href="/studio/runs/{{ run.id }}/export">Download chain ↓</a><form method="post" action="/studio/runs/{{ run.id }}/artifact"><button class="quiet-button" type="submit">Save final to artifacts</button></form></div><p class="field-note">{% if run.mode == 'example' %}Authored sample. Use this recipe with your own topic when you’re ready.{% else %}Saved automatically. This is an AI-generated draft; check any facts you plan to use.{% endif %}</p></section>
-      <div class="section-heading compact-heading"><h2>How it got there</h2><span class="muted">Every prompt. Every answer.</span></div>
+        <section class="answer-card final-answer" id="final-answer" data-copy-scope>
+          <div class="answer-heading">
+            <div>
+              {% if run.mode != 'live' %}<p class="eyebrow">{{ 'The worked example' if run.mode == 'example' else 'Authored reference deliverable' }}</p>{% endif %}
+              <h2 id="run-action-heading" tabindex="-1">{{ run.recipe.steps[-1].name }}</h2>
+            </div>
+            <span class="completion-mark" aria-label="Complete">✓</span>
+          </div>
+          <pre class="answer-text" data-final-output>{{ run.results[-1].output }}</pre>
+          <div class="answer-actions">
+            <button type="button" class="secondary" data-copy-nearest="[data-final-output]">Copy final answer</button>
+            <a class="button secondary" href="/studio/runs/{{ run.id }}/export?format=final">Download final answer ↓</a>
+            <form method="post" action="/studio/runs/{{ run.id }}/artifact"><button class="quiet-button" type="submit">Save final to artifacts</button></form>
+          </div>
+          {% if run.mode == 'live' %}<p class="field-note">AI-generated draft. Review factual claims before using it.</p>{% endif %}
+        </section>
+        <div class="section-heading compact-heading"><h2>Step history</h2></div>
       {% endif %}
 
       {% for result in run.results %}
-      <details class="answer-card step-answer" id="answer-{{ loop.index }}"{% if run.state != 'completed' and loop.last %} open{% endif %} data-copy-scope><summary><span class="step-number">{{ '%02d' | format(loop.index) }}</span><span><strong>{{ run.recipe.steps[loop.index0].name }}</strong><span class="step-purpose">{% if result.edited %}Edited by you · {% endif %}Saved{% if run.mode != 'example' %} · {{ '%.1f' | format(result.seconds) }}s · {{ result.prompt_tokens + result.completion_tokens }} reported tokens{% endif %}</span></span><span class="step-edit-cue">Read <span aria-hidden="true">↗</span></span></summary><div class="answer-body"><p class="step-why">{{ run.recipe.steps[loop.index0].purpose }}</p><pre class="answer-text" data-step-output>{{ result.output }}</pre><button type="button" class="quiet-button" data-copy-nearest="[data-step-output]">Copy this answer</button>{% if result.original_output is not none %}<details class="sent-prompt"><summary>Original model answer before your edits</summary><pre>{{ result.original_output }}</pre></details>{% endif %}<details class="sent-prompt"><summary>Prompt that produced this answer</summary><pre>{{ result.prompt }}</pre></details>
-        {% if loop.last and run.state in ['paused', 'failed', 'interrupted'] %}<details class="edit-output"><summary>Edit this answer before continuing</summary><p class="field-note">The next step will use your revised answer. The original sent prompt and token counts stay in the trace.</p><form method="post" action="/studio/runs/{{ run.id }}/edit"><input type="hidden" name="revision" value="{{ run.revision }}" /><label for="edited-output">Your revised answer</label><textarea id="edited-output" name="output" maxlength="60000" rows="12" required>{{ result.output }}</textarea><button type="submit" class="secondary">Save revised answer</button></form></details>{% endif %}
-      </div></details>
+        {% set can_edit = loop.last and not run.archived and run.state in ['paused', 'failed', 'interrupted'] %}
+        <details class="answer-card step-answer" id="answer-{{ loop.index }}" {% if run.state != 'completed' and loop.last %}open{% endif %} data-copy-scope>
+          <summary id="answer-summary-{{ loop.index }}">
+            <span class="step-number">{{ '%02d' | format(loop.index) }}</span>
+            <span>
+              <strong>{{ run.recipe.steps[loop.index0].name }}</strong>
+              <span class="step-purpose">
+                {% if result.edited %}Edited by you · {% endif %}Saved
+                {% if run.mode == 'live' %}
+                  · {{ '%.1f' | format(result.seconds) }}s
+                  · {% if result.reported_tokens is none %}Usage unavailable{% else %}{{ result.reported_tokens }} reported tokens{% endif %}
+                {% endif %}
+              </span>
+            </span>
+            <span class="step-edit-cue">Read <span aria-hidden="true">↗</span></span>
+          </summary>
+          <div class="answer-body">
+            <p class="step-why">{{ run.recipe.steps[loop.index0].purpose }}</p>
+            <pre class="answer-text" data-step-output>{{ result.output }}</pre>
+            <button type="button" class="quiet-button" id="copy-answer-{{ loop.index }}" data-copy-nearest="[data-step-output]">Copy this answer</button>
+            {% if result.original_output is not none %}
+              <details class="sent-prompt" id="original-answer-{{ loop.index }}"><summary>Original answer before your edits</summary><pre>{{ result.original_output }}</pre></details>
+            {% endif %}
+            <details class="sent-prompt" id="sent-prompt-{{ loop.index }}">
+              <summary>{{ 'Prompt that produced this answer' if run.mode != 'practice' else 'Prompt preview for this authored answer' }}</summary>
+              <pre>{{ result.prompt }}</pre>
+            </details>
+            {% if can_edit %}
+              <details class="edit-output" id="edit-last-output"{% if edit_error %} open{% endif %}>
+                <summary>Edit this answer before continuing</summary>
+                <p class="field-note">The next prompt uses your revised answer. The original stays in the trace.</p>
+                <form method="post" action="/studio/runs/{{ run.id }}/edit">
+                  <input type="hidden" name="revision" value="{{ run.revision }}" />
+                  <label for="edited-output">Your revised answer</label>
+                  <textarea id="edited-output" name="output" maxlength="60000" rows="12" required{% if edit_error %} autofocus{% endif %}>{{ submitted_edit if edit_error else result.output }}</textarea>
+                  <button type="submit" class="secondary">Save revised answer</button>
+                </form>
+              </details>
+            {% endif %}
+            {% if run.mode == 'live' and run.state != 'running' and not run.archived and loop.index < run.recipe.steps | length %}
+              <form method="post" action="/studio/runs/{{ run.id }}/organize">
+                <input type="hidden" name="revision" value="{{ run.revision }}" />
+                <input type="hidden" name="step_count" value="{{ loop.index }}" />
+                <button type="submit" name="action" value="fork" class="quiet-button">Fork after this step</button>
+              </form>
+            {% endif %}
+          </div>
+        </details>
       {% endfor %}
-      {% if not run.results %}<div class="waiting-answer"><span class="empty-symbol" aria-hidden="true">↳</span><h3>A good answer starts here.</h3><p>Your first answer will appear here when the step finishes. Each completed step is saved before the next one begins.</p></div>{% endif %}
     </div>
   </div>
+{% if run.parent_run_id %}
+  <p class="field-note">Forked after step {{ run.forked_after_step }} of run <code>{{ run.parent_run_id }}</code>.</p>
+{% endif %}
+{% if run.state != 'running' %}
+  <section class="library-backup" aria-label="Organize this run">
+    <form method="post" action="/studio/runs/{{ run.id }}/organize">
+      <input type="hidden" name="revision" value="{{ run.revision }}" />
+      <label for="resume-note">Where I left off</label>
+      <textarea id="resume-note" name="note" rows="2" maxlength="1000">{{ run.resume_note }}</textarea>
+      <button type="submit" name="action" value="note" class="secondary">Save note</button>
+    </form>
+    <form method="post" action="/studio/runs/{{ run.id }}/organize">
+      <input type="hidden" name="revision" value="{{ run.revision }}" />
+      <button type="submit" name="action" value="{{ 'unarchive' if run.archived else 'archive' }}" class="secondary">
+        {{ 'Move back to My library' if run.archived else 'Archive this run' }}
+      </button>
+    </form>
+  </section>
+{% endif %}
 </div>

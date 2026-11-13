@@ -1,0 +1,146 @@
+{% set saved = run.results | length %}
+{% set finished = run.state == "completed" %}
+{% set draft = run.results[1] if saved >= 2 else none %}
+
+{% macro clues() %}
+  <div class="classroom-clues">
+    {% for clue in run.context.split('\n\n') %}<p>{{ clue }}</p>{% endfor %}
+  </div>
+{% endmacro %}
+
+{% macro continue_button(label) %}
+  {% if preview_error %}
+    <p class="notice error" role="alert">{{ preview_error }}</p>
+  {% else %}
+    <form method="post" action="/studio/runs/{{ run.id }}/continue">
+      <input type="hidden" name="revision" value="{{ run.revision }}">
+      <button type="submit" data-primary-action>{{ label }} <span aria-hidden="true">→</span></button>
+    </form>
+  {% endif %}
+{% endmacro %}
+
+{% macro fix_form() %}
+  <form method="post" action="/studio/runs/{{ run.id }}/edit">
+    <input type="hidden" name="revision" value="{{ run.revision }}">
+    <label for="classroom-fix">Your fix</label>
+    <textarea id="classroom-fix" name="output" rows="3" maxlength="60000" required placeholder="I’d change ___ because clue ___ says ___.">{{ submitted_edit if edit_error else draft.output if draft.edited else '' }}</textarea>
+    <button type="submit" data-primary-action>Save my fix</button>
+  </form>
+{% endmacro %}
+
+<section class="classroom-panel" aria-labelledby="classroom-task">
+  {% if edit_error %}
+    <p class="notice error" role="alert">{{ edit_error }}</p>
+    {% if not chain_case and (finished or run.archived or saved < 2) %}
+      <label for="classroom-unsaved-fix">Your unsaved fix</label>
+      <textarea id="classroom-unsaved-fix" rows="4" readonly>{{ submitted_edit }}</textarea>
+    {% endif %}
+  {% endif %}
+  {% if chain_case and saved >= 2 and (finished or not run.archived) %}
+    {% include "workbench/_build_prompt.html" %}
+  {% elif finished %}
+    <h2 id="classroom-task">How does your fix compare?</h2>
+    <p>{% if draft and draft.edited %}Could both ideas work? Find a clue that backs up each one.{% else %}Which clue backs up this answer? What would you change?{% endif %}</p>
+    <div class="classroom-comparison">
+      {% if draft and draft.edited %}
+        <div>
+          <h3>Your fix</h3>
+          <pre class="answer-text">{{ draft.output }}</pre>
+        </div>
+      {% endif %}
+      <div>
+        <h3>One way to solve it</h3>
+        <pre class="answer-text">{{ run.results[-1].output }}</pre>
+      </div>
+    </div>
+    {% if practice_case.try_next %}
+      <div class="classroom-next">
+        <h3>{{ 'Try it at home' if related_recipe else 'Try it with a partner' }}</h3>
+        <p>{{ practice_case.try_next }}</p>
+        {% if related_recipe %}<p><a class="text-link" href="/studio/new?recipe={{ related_recipe }}">Open the editable recipe</a> to make your own version with live AI.</p>{% endif %}
+      </div>
+    {% endif %}
+    {% if practice_case.last_clue %}
+      <details>
+        <summary>Open the last clue</summary>
+        <p>{{ practice_case.last_clue }}</p>
+      </details>
+    {% endif %}
+    {% if draft and draft.edited %}
+      <details>
+        <summary>What did the final prompt use from the last step?</summary>
+        <p>It used your fix and gave the AI a new job. That’s how the steps link up.</p>
+        <pre class="answer-text">{{ run.results[-1].prompt }}</pre>
+      </details>
+    {% endif %}
+    <div class="button-row">
+      <a class="button" href="/studio/practice">Try another challenge</a>
+      <a class="text-link" href="/studio/practice#build-a-chain">Build the next prompt</a>
+      <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=final">Download the example</a>
+    </div>
+  {% elif run.archived %}
+    <h2 id="classroom-task">This challenge is in your archive</h2>
+    <p>Move it back to My library to pick up where you left off.</p>
+    <form method="post" action="/studio/runs/{{ run.id }}/organize">
+      <input type="hidden" name="revision" value="{{ run.revision }}">
+      <button type="submit" name="action" value="unarchive">Bring it back</button>
+    </form>
+  {% elif saved == 0 %}
+    <h2 id="classroom-task">Read the clues</h2>
+    {{ clues() }}
+    <p>{{ run.recipe.steps[0].purpose }}</p>
+    {{ continue_button("See the route" if chain_case else "See what the AI noticed") }}
+  {% elif saved == 1 %}
+    {% set answer = run.results[0].output %}
+    {% set before, copied, after = next_prompt.partition(answer) %}
+    <h2 id="classroom-task">See the answer in the next prompt</h2>
+    <p>{% if chain_case %}The next prompt uses Pip’s route to suggest two ways to share it.{% else %}A prompt is what you ask AI to do. Find the same words in both boxes. The next prompt uses the answer and gives the AI a new job.{% endif %}</p>
+    <div class="classroom-comparison">
+      <div>
+        <h3>First answer</h3>
+        <pre class="answer-text"><mark class="reused-answer">{{ answer }}</mark></pre>
+      </div>
+      <div>
+        <h3>Next prompt</h3>
+        <pre class="answer-text">{{ before }}{% if copied %}<mark class="reused-answer">{{ copied }}</mark>{% endif %}{{ after }}</pre>
+      </div>
+    </div>
+    {{ continue_button("See the two choices" if chain_case else "Read the draft") }}
+  {% elif draft.edited and not edit_error %}
+    <h2 id="classroom-task">Your fix goes into the next prompt</h2>
+    <p>Find your words below. Each answer can help shape the next request. That’s a prompt chain.</p>
+    <pre class="answer-text classroom-prompt">{{ next_prompt }}</pre>
+    <p>We wrote an example answer ahead of time. Compare it with your fix.</p>
+    {{ continue_button("See the example answer") }}
+    <details>
+      <summary>Change my fix</summary>
+      {{ fix_form() }}
+    </details>
+  {% else %}
+    <h2 id="classroom-task">Spot the mistake</h2>
+    <div class="classroom-draft">
+      <h3>The draft</h3>
+      <pre class="answer-text">{{ draft.original_output if draft.edited else draft.output }}</pre>
+    </div>
+    <p>{{ run.recipe.steps[1].purpose }} One sentence is enough.</p>
+    <details>
+      <summary>Read the clues again</summary>
+      {{ clues() }}
+    </details>
+    {{ fix_form() }}
+    <details>
+      <summary>Need a hint?</summary>
+      <ul>{% for hint in practice_case.rubric %}<li>{{ hint }}</li>{% endfor %}</ul>
+    </details>
+  {% endif %}
+</section>
+
+<details class="classroom-saved">
+  <summary>Saved work and downloads</summary>
+  <p>Find this challenge in <a href="/studio/library">My library</a>.</p>
+  {% if run.resume_note %}<p>{{ run.resume_note }}</p>{% endif %}
+  <div class="button-row">
+    <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=trace">Download prompts and answers</a>
+    <a class="text-link" href="/studio/runs/{{ run.id }}/export?format=json">Download backup file</a>
+  </div>
+</details>

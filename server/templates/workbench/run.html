@@ -3,6 +3,14 @@
 {% block content %}
 <section class="page-intro run-intro"><div><p class="eyebrow"><a href="/studio/library">My library</a> <span aria-hidden="true">/</span> {{ run.recipe.title }}</p><h1>{{ run.topic }}</h1><p class="hero-text">For {{ run.recipe.audience }}.</p></div><a class="text-link" href="/studio/new?reuse={{ run.id }}">Use this recipe again <span aria-hidden="true">↗</span></a></section>
 {% if request.query_params.get('artifact_saved') == '1' %}<p class="notice success" role="status">Final answer saved to the <a href="/studio/artifacts">artifacts library</a>.</p>{% endif %}
+{% if practice_case %}
+  <details class="notice">
+    <summary>Read the source packet and review rubric</summary>
+    <pre class="answer-text">{{ run.context }}</pre>
+    <ul>{% for criterion in practice_case.rubric %}<li>{{ criterion }}</li>{% endfor %}</ul>
+    <p>After step two, edit the draft handoff using the packet. The next prompt preview will show your revision.</p>
+  </details>
+{% endif %}
 <noscript><p class="notice">Progress is saved while the chain runs. <a href="/studio/runs/{{ run.id }}">Refresh this page</a> to see the latest answers.</p></noscript>
 {% if run.state in ['failed', 'interrupted'] %}{{ guides.help("Your saved steps are still here. Find the next useful check before retrying.", "troubleshooting", "Help with this run") }}{% else %}{{ guides.help("Keep the right record and pick up where you stopped.", "saving-and-recovery", "Help saving or resuming") }}{% endif %}
 {% include "workbench/_run.html" %}

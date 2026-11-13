@@ -37,6 +37,8 @@
     const draftStatus = editor.querySelector("[data-draft-status]");
     const discard = editor.querySelector("[data-discard-draft]");
     const key = "prompt-studio:draft:v1:" + editor.dataset.draftKey;
+    const draftConflict = editor.querySelector("[data-draft-conflict]");
+    let lastSavedDraft = null;
     let storageWorks = true;
     let lastRemoved = null;
     const undo = document.createElement("button");
@@ -99,29 +101,102 @@
       return true;
     }
 
-    function saveDraft() {
+    function setDraftStatus(message) {
+      if (draftStatus.textContent !== message) draftStatus.textContent = message;
+    }
+
+    function showDraftConflict() {
+      draftConflict.hidden = false;
+      setDraftStatus("Another tab changed this draft. Choose which version to keep.");
+    }
+
+    function saveDraft(force = false) {
       renumber();
       try {
-        localStorage.setItem(key, JSON.stringify({ ...readEditor(), saved_at: new Date().toISOString() }));
+        if (force !== true && localStorage.getItem(key) !== lastSavedDraft) {
+          showDraftConflict();
+          return;
+        }
+        const draft = JSON.stringify({ ...readEditor(), saved_at: new Date().toISOString() });
+        localStorage.setItem(key, draft);
+        lastSavedDraft = draft;
+        draftConflict.hidden = true;
         storageWorks = true;
-        draftStatus.textContent = "Draft saved in this browser. Save the recipe or prepare a chain to keep it in workspace backups.";
+        setDraftStatus("Draft saved in this browser. Save the recipe or prepare a chain to keep it in workspace backups.");
       } catch (_error) {
         storageWorks = false;
-        draftStatus.textContent = "Browser draft storage is unavailable. Use Save recipe to keep your changes on this computer.";
+        setDraftStatus("Browser draft storage is unavailable. Use Save recipe to keep your changes on this computer.");
       }
     }
 
     try {
-      const raw = localStorage.getItem(key);
-      if (raw && raw.length <= 300000 && applyDraft(JSON.parse(raw))) {
-        draftStatus.textContent = "Recovered your draft from this browser. Nothing has been sent to a model.";
+      lastSavedDraft = localStorage.getItem(key);
+      if (!editor.hasAttribute("data-form-error") && lastSavedDraft && lastSavedDraft.length <= 300000
+          && applyDraft(JSON.parse(lastSavedDraft))) {
+        setDraftStatus("Recovered your draft from this browser. Nothing has been sent to a model.");
         discard.hidden = false;
       }
     } catch (_error) {
       storageWorks = false;
-      draftStatus.textContent = "Browser draft recovery is unavailable. Use Save recipe to keep your work.";
+      setDraftStatus("Browser draft recovery is unavailable. Use Save recipe to keep your work.");
     }
     renumber();
+
+    window.addEventListener("storage", (event) => {
+      if (event.storageArea === localStorage && (event.key === key || event.key === null) && event.newValue !== lastSavedDraft) {
+        showDraftConflict();
+      }
+    });
+    editor.querySelector("[data-keep-this-draft]").addEventListener("click", () => {
+      saveDraft(true);
+      editor.querySelector("[data-intention]").focus();
+    });
+    editor.querySelector("[data-load-other-draft]").addEventListener("click", () => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!(raw ? raw.length <= 300000 && applyDraft(JSON.parse(raw)) : applyDraft(original))) {
+          setDraftStatus("The other draft could not be loaded. Your visible text is still here.");
+          return;
+        }
+        lastSavedDraft = raw;
+        lastRemoved = null;
+        undo.hidden = true;
+        discard.hidden = !raw;
+        draftConflict.hidden = true;
+        setDraftStatus(raw ? "Loaded the other tab’s draft." : "The other tab discarded its draft. The saved recipe is open.");
+        editor.querySelector("[data-intention]").focus();
+      } catch (_error) {
+        setDraftStatus("The other draft could not be loaded. Your visible text is still here.");
+      }
+    });
+
+    function reorderSteps(before, after, restoredStep = null) {
+      const changes = new Map();
+      for (const [index, node] of after.entries()) {
+        const sourceOrder = node === restoredStep ? lastRemoved.order : before;
+        const sourceIndex = sourceOrder.indexOf(node);
+        const prompt = node.querySelector('[name="step_prompt"]');
+        let broken = false;
+        const remapped = prompt.value.replace(/\{\{\s*output\[-([1-8])\](\.[A-Za-z_][A-Za-z0-9_]*)?\s*\}\}/g,
+          (reference, offset, field = "") => {
+            const original = sourceOrder[sourceIndex - Number(offset)];
+            const targetIndex = after.indexOf(original);
+            if (targetIndex < 0 || targetIndex >= index) {
+              broken = true;
+              return reference;
+            }
+            return `{{output[-${index - targetIndex}]${field}}}`;
+          });
+        if (broken) {
+          window.studioMessage(`This change would break a handoff in “${node.querySelector('[name="step_name"]').value}”. Edit that prompt first.`);
+          return false;
+        }
+        changes.set(prompt, remapped);
+      }
+      for (const [prompt, remapped] of changes) prompt.value = remapped;
+      list.replaceChildren(...after);
+      return true;
+    }
 
     editor.addEventListener("input", saveDraft);
     editor.addEventListener("change", saveDraft);
@@ -157,34 +232,45 @@
       }
       const node = event.target.closest("[data-step]");
       if (!node) return;
+      const order = Array.from(list.children);
+      const index = order.indexOf(node);
       if (event.target.closest("[data-step-remove]") && list.children.length > 1) {
-        lastRemoved = { node, next: node.nextElementSibling };
-        node.remove();
+        if (!reorderSteps(order, order.filter((step) => step !== node))) return;
+        lastRemoved = { node, next: order[index + 1], order };
         undo.hidden = false;
         undo.focus();
-        window.studioMessage("Step removed. Undo is available beside Add a step. Review any output references.");
+        window.studioMessage("Step removed. Undo is available beside Add a step.");
         saveDraft();
-      } else if (event.target.closest("[data-step-up]") && node.previousElementSibling) {
-        list.insertBefore(node, node.previousElementSibling);
-        saveDraft();
-        node.querySelector("summary").focus();
-      } else if (event.target.closest("[data-step-down]") && node.nextElementSibling) {
-        list.insertBefore(node.nextElementSibling, node);
+      } else {
+        const direction = event.target.closest("[data-step-up]") ? -1 : event.target.closest("[data-step-down]") ? 1 : 0;
+        const neighbor = index + direction;
+        if (!direction || neighbor < 0 || neighbor >= order.length) return;
+        const moved = [...order];
+        [moved[index], moved[neighbor]] = [moved[neighbor], moved[index]];
+        if (!reorderSteps(order, moved)) return;
         saveDraft();
         node.querySelector("summary").focus();
       }
     });
     undo.addEventListener("click", () => {
       if (!lastRemoved || list.children.length >= 8) return;
-      list.insertBefore(lastRemoved.node, lastRemoved.next && lastRemoved.next.parentNode === list ? lastRemoved.next : null);
+      const order = Array.from(list.children);
+      const restored = [...order];
+      const nextIndex = order.indexOf(lastRemoved.next);
+      restored.splice(nextIndex === -1 ? order.length : nextIndex, 0, lastRemoved.node);
+      if (!reorderSteps(order, restored, lastRemoved.node)) return;
       lastRemoved.node.querySelector("summary").focus();
       lastRemoved = null;
       undo.hidden = true;
       saveDraft();
     });
     discard.addEventListener("click", () => {
+      if (!draftConflict.hidden) {
+        showDraftConflict();
+        return;
+      }
       applyDraft(original);
-      try { localStorage.removeItem(key); } catch (_error) { storageWorks = false; }
+      try { localStorage.removeItem(key); lastSavedDraft = null; } catch (_error) { storageWorks = false; }
       discard.hidden = true;
       draftStatus.textContent = storageWorks ? "Recovered draft discarded. The saved recipe is restored." : "The saved recipe is restored. Browser storage is unavailable.";
       editor.querySelector("[data-intention]").focus();
@@ -201,7 +287,9 @@
     } else if ((event.metaKey || event.ctrlKey) && !event.altKey && event.code === "KeyS" && editor) {
       event.preventDefault(); editor.requestSubmit(editor.querySelector("[data-save-recipe]"));
     } else if ((event.metaKey || event.ctrlKey) && !event.altKey && event.code === "Enter") {
-      const button = editor ? editor.querySelector("[data-prepare-run]") : document.querySelector("[data-primary-action]");
+      const activeForm = event.target.closest?.("form");
+      const button = editor ? editor.querySelector("[data-prepare-run]")
+        : activeForm?.querySelector("[data-primary-action]") || document.querySelector("[data-primary-action]");
       if (button && !button.disabled) { event.preventDefault(); button.form.requestSubmit(button); }
     }
   });
@@ -231,11 +319,39 @@
       form.querySelectorAll('button[type="submit"]').forEach((b) => { b.disabled = b.hasAttribute("data-prepare-run") && !form.querySelector('[name="model"]'); });
     });
   });
+  let runView;
+  document.addEventListener("htmx:beforeSwap", (event) => {
+    const target = event.detail.target;
+    if (!event.detail.shouldSwap || target.id !== "run-workspace") return;
+    const focus = document.activeElement;
+    runView = {
+      details: Array.from(target.querySelectorAll("details[id]"), (panel) => [panel.id, panel.open]),
+      focus: target.contains(focus) ? { id: focus.id, detailsId: focus.closest("details[id]")?.id } : null,
+      state: target.dataset.runState,
+    };
+  });
   document.addEventListener("htmx:afterSwap", (event) => {
     const workspace = document.getElementById("run-workspace");
-    if (workspace && workspace.dataset.runState !== "running" && event.detail.target.id === "run-workspace") {
-      window.studioMessage(workspace.dataset.runState === "completed" ? "Chain complete. Every answer is saved." : "Progress saved. The chain is ready for your review.");
+    if (!workspace || !runView || event.detail.target.id !== "run-workspace") return;
+    for (const [id, open] of runView.details) {
+      const panel = document.getElementById(id);
+      if (panel) panel.open = open;
     }
+    if (runView.focus) {
+      const { id, detailsId } = runView.focus;
+      const control = document.getElementById(id) || document.getElementById(detailsId)?.querySelector("summary");
+      (control || document.getElementById("run-action-heading"))?.focus();
+    }
+    const messages = {
+      completed: "Chain complete. Every answer is saved.",
+      paused: "Progress saved. The chain is ready for your review.",
+      failed: "A step needs attention. Open the run message for details.",
+      interrupted: "This run was interrupted. Open the run message for details.",
+      "save-pending": "An answer is waiting to be saved on this computer.",
+    };
+    const state = workspace.dataset.runState;
+    if (state !== runView.state && messages[state]) window.studioMessage(messages[state]);
+    runView = null;
   });
   document.addEventListener("htmx:sendError", () => {
     window.studioMessage("Progress could not refresh. Your completed steps are saved. Use Refresh progress when the connection returns.");

@@ -2,11 +2,32 @@
 {% import "workbench/_macros.html" as wb %}
 {% import "guides/_macros.html" as guides %}
 {% block content %}
-<section class="page-intro"><div><p class="eyebrow">A starting point, not a blank page</p><h1>Find your next thought.</h1><p class="hero-text">Six small ways to make progress. Pick one, give it a topic, and make it yours.</p></div><a class="button secondary" href="/studio/new?recipe=blank">Build my own <span aria-hidden="true">＋</span></a></section>
-{{ guides.help("Choose by the result you want to leave with.", "recipes", "Help choosing a recipe") }}
+<section class="page-intro"><div><h1>Pick a recipe</h1><p class="hero-text">A recipe is a set of steps you can use again. Pick one that fits what you want to find out or make.</p></div><a class="button secondary" href="/studio/new?recipe=blank">Build my own <span aria-hidden="true">＋</span></a></section>
+{{ guides.help("Trying to explain something tricky? Start with Make it click.", "recipes", "See what each recipe does") }}
+<p><a class="text-link" href="/studio/practice">Try a classroom challenge first <span aria-hidden="true">→</span></a></p>
 <div class="recipe-grid recipes-full">{% for key, recipe in recipes.items() %}{{ wb.recipe_card(key, recipe, loop.index) }}{% endfor %}</div>
-<section class="work-section"><div class="section-heading"><div><p class="eyebrow">Methods worth keeping</p><h2>Your recipes</h2></div></div>
-  {% if saved %}<div class="recipe-grid">{% for item in saved %}<a class="recipe-card" href="/studio/new?saved={{ item.id }}"><span class="eyebrow">Saved {{ item.created_at | local_date }}</span><h3>{{ item.recipe.title }}</h3><p>{{ item.recipe.description or 'Your own way through an idea.' }}</p><span class="text-link">{{ item.recipe.steps | length }} steps <span aria-hidden="true">↗</span></span></a>{% endfor %}</div>
-  {% else %}<div class="empty-work"><div><h3>Keep the methods that work for you.</h3><p>Open any recipe and choose “Save recipe” to keep your own version. Starting a chain also saves a snapshot of its recipe with the run.</p></div></div>{% endif %}
+<section class="work-section" id="make-at-home" aria-labelledby="at-home-title">
+  <div class="section-heading"><h2 id="at-home-title">Make something to show at home</h2><a class="text-link" href="/studio/practice#make-at-home">Try the offline challenges <span aria-hidden="true">→</span></a></div>
+  <div class="recipe-grid recipes-full">{% for key, recipe in parent_recipes.items() %}{{ wb.recipe_card(key, recipe) }}{% endfor %}</div>
+</section>
+<section class="work-section" id="for-parents" aria-labelledby="for-parents-title" tabindex="-1">
+  <div class="section-heading"><div><h2 id="for-parents-title">For parents and caregivers</h2><p>Start with a few notes. Leave with a checklist, a plan, or a message you can use.</p></div><a class="text-link" href="#parent-insights">Find a better way at home <span aria-hidden="true">↓</span></a></div>
+  <div class="recipe-grid recipes-full">{% for key, recipe in everyday_recipes.items() %}{{ wb.recipe_card(key, recipe) }}{% endfor %}</div>
+</section>
+<section class="work-section" id="parent-insights" aria-labelledby="parent-insights-title" tabindex="-1">
+  <div class="section-heading"><div><h2 id="parent-insights-title">Find a better way at home</h2><p>Spot what’s making a family routine harder and choose one change to try.</p></div></div>
+  <div class="recipe-grid recipes-full">{% for key, recipe in parent_insight_recipes.items() %}{{ wb.recipe_card(key, recipe) }}{% endfor %}</div>
+</section>
+<section class="work-section" id="for-teachers" aria-labelledby="for-teachers-title" tabindex="-1">
+  <div class="section-heading"><div><h2 id="for-teachers-title">For teachers</h2><p>Plan a lesson, adapt an activity, or turn student work into feedback and a next step.</p></div><a class="text-link" href="#teacher-insights">Look closer at student learning <span aria-hidden="true">↓</span></a></div>
+  <div class="recipe-grid recipes-full">{% for key, recipe in teacher_recipes.items() %}{{ wb.recipe_card(key, recipe) }}{% endfor %}</div>
+</section>
+<section class="work-section" id="teacher-insights" aria-labelledby="teacher-insights-title" tabindex="-1">
+  <div class="section-heading"><div><h2 id="teacher-insights-title">Look closer at student learning</h2><p>Use student work and classroom observations to decide what to ask, change, or teach next.</p></div></div>
+  <div class="recipe-grid recipes-full">{% for key, recipe in teacher_insight_recipes.items() %}{{ wb.recipe_card(key, recipe) }}{% endfor %}</div>
+</section>
+<section class="work-section"><div class="section-heading"><h2>Your recipes</h2></div>
+  {% if saved %}<div class="recipe-grid">{% for item in saved %}<a class="recipe-card" href="/studio/new?saved={{ item.id }}"><span class="eyebrow">Saved {{ item.created_at | local_date }}</span><h3>{{ item.recipe.title }}</h3>{% if item.recipe.description %}<p>{{ item.recipe.description }}</p>{% endif %}<span class="text-link">{{ item.recipe.steps | length }} steps <span aria-hidden="true">↗</span></span></a>{% endfor %}</div>
+  {% else %}<div class="empty-work"><p>Find steps you like? Open a recipe and choose <strong>Save recipe</strong> to keep your own copy here.</p></div>{% endif %}
 </section>
 {% endblock %}

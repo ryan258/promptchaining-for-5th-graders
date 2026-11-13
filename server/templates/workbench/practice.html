@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% macro practice_grid(cases, heading="h2") %}
+<div class="recipe-grid practice-grid">
+  {% for slug, case in cases.items() %}
+  <article id="{{ slug }}" class="recipe-card">
+    <{{ heading }}>{{ case.title }}</{{ heading }}>
+    <p>{{ case.description }}</p>
+    <form method="post" action="/studio/practice/{{ slug }}">
+      <button type="submit" aria-label="Start challenge: {{ case.title }}">Start challenge <span aria-hidden="true">→</span></button>
+    </form>
+  </article>
+  {% endfor %}
+</div>
+{% endmacro %}
+{% block content %}
+<section class="page-intro">
+  <div>
+    {% if professional %}
+      <h1>Practice for work</h1>
+      <p class="hero-text">Read a short case, fix a draft with the facts you have, and compare your work with a finished example.</p>
+    {% else %}
+      <h1>Pick a challenge</h1>
+      <p class="hero-text">Read the clues. Fix the draft. See your words in the next prompt.</p>
+      <a class="text-link" href="/studio/lab">Ready to build your own chain? <span aria-hidden="true">→</span></a>
+    {% endif %}
+  </div>
+</section>
+{{ practice_grid(cases) }}
+{% if professional %}
+  <p class="practice-links"><a href="/studio/practice" class="text-link">Classroom challenges</a><a href="/studio/guides/professional-cases" class="text-link">Read the case guide</a></p>
+{% else %}
+  <section class="work-section" id="build-a-chain" aria-labelledby="build-a-chain-title">
+    <div class="section-heading"><h2 id="build-a-chain-title">Build the next prompt</h2></div>
+    {{ practice_grid(chain_building_cases, "h3") }}
+  </section>
+  <section class="work-section" id="make-at-home" aria-labelledby="at-home-title">
+    <div class="section-heading"><div><h2 id="at-home-title">Make something to show at home</h2><p class="hero-text">Try an example offline. Then make a version to share with a parent or caregiver.</p></div></div>
+    {{ practice_grid(parent_cases, "h3") }}
+  </section>
+  <p class="practice-links"><a href="/studio/guides/demos#try-it-with-a-class" class="text-link">Teach with these challenges</a><a href="/studio/recipes#for-teachers" class="text-link">Recipes for teachers</a><a href="/studio/recipes#for-parents" class="text-link">Recipes for parents and caregivers</a><a href="/studio/practice/professional" class="text-link">Looking for work examples?</a></p>
+{% endif %}
+{% endblock %}
