@@ -56,7 +56,7 @@ Setup:
 - `python3 -m venv venv`
 - `source venv/bin/activate`
 - `pip install -r requirements.txt`
-- `cp .env.example .env`
+- `test -e .env || test -L .env || cp -n .env.example .env`
 
 Run:
 - `python server/main.py`
@@ -65,7 +65,7 @@ Run:
 
 Validate:
 - `.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py`
-- Full suites and `./verify_demos.sh` are owner-run; demos can make live provider requests. Ask before browser checks.
+- Full suites are owner-run. `./verify_demos.sh` uses offline fixtures. Ask before browser checks or live demos.
 
 ## Interaction Protocols
 

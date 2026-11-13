@@ -6,6 +6,9 @@ backups/
 logs/
 output/guides
 output/research
+output/ms_blog/
+output/emergence/
+output/emergence_report.md
 # ============================================================================
 # SECRETS & CREDENTIALS - Guard the Keys to the Kingdom
 # ============================================================================
@@ -122,6 +125,7 @@ temp/
 .spyproject
 .claude/settings.local.json
 .claude/*.local.json
+.claude/skills/
 
 # Code formatting and linting
 .black/
