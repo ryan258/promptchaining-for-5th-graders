@@ -10,7 +10,7 @@ Use saved methods to reduce the amount you have to enter. A productive session c
 2. If unfinished work is offered on the workbench, choose **Pick it back up**. Otherwise open a saved recipe.
 3. Dictate the new topic. Keep existing audience and context when they still apply.
 4. Prepare the chain and inspect the next prompt.
-5. Run what you need. Leave an unfinished run saved when you reach a useful stopping point.
+5. Run what you need. At a stopping point, save a short **Where I left off** note so you can pick up the next action in another session.
 
 You do not have to finish every chain in one sitting. Closing the page does not pause a running chain, so request a pause when you want generation to stop after the current step.
 

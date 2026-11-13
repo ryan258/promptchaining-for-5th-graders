@@ -5,10 +5,10 @@ Run focused checks from the repository root, using the environment that runs the
 ## Workbench and harmony repair group
 
 ```bash
-.venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py tests/test_chain.py tests/test_chain_composer.py tests/test_meta_chain.py tests/test_enhancements.py
+.venv/bin/python -m pytest -q tests/test_local_request_boundary.py tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py
 ```
 
-This covers prompt handoffs, bad references, one-pass substitution, saved inputs, durable checkpoints, explicit retries, output edits, original answer retention, stale tabs, overlapping starts, runtime lock ownership, abrupt-stop recovery, complete-file restore validation, additive restore, backup round trips, authored example behavior, HTML escaping and local-origin restrictions. Route tests use temporary databases and substitute model callables.
+This covers the real app's request boundary, saved inputs, dispatch and pause ordering, local checkpoint retries, output edits, archive and fork actions, stale tabs, restore validation, backup round trips, all three offline practice cases, and both Markdown exports. Route tests use temporary databases and substitute model callables.
 
 `./pc doctor` checks installed modules and local configuration. It does not test provider credentials or availability. `bash -n pc start_app.sh` checks launcher syntax. JavaScript syntax can be checked using a local JavaScript runtime when available; the app itself has no JavaScript build dependency.
 
@@ -53,7 +53,7 @@ The full suite is separate and may include legacy tests outside the current chan
 .venv/bin/python -m pytest -q
 ```
 
-Do not run all demos as an offline test. `verify_demos.sh` and many demos make live OpenRouter calls and may incur charges. Inspect the chosen demo and authorize those requests first.
+Run `./verify_demos.sh` to exercise the authored example handoffs and a fixed callable for the portable framework. The script is offline and leaves the workspace alone. Individual live demo scripts remain separate. Read the request scope before running one. [Demo guide](DEMOS.md)
 
 ## Acceptance boundaries
 

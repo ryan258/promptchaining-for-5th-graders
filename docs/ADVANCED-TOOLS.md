@@ -14,7 +14,7 @@ Advanced tools have their own forms, provider calls, logs and artifact flows. Ea
 | One explicitly dispatched call per step, no automatic retries. | A function can make several explicit steps; each is attempted once. |
 | SQLite checkpoint after every completed answer. | Outputs/logs/artifacts depend on the particular function. |
 | Pause, review and edit the latest answer of an unfinished run. | The workbench's review and pause controls do not govern these executions. |
-| Versioned workspace JSON and single-run exports. | Other JSON shapes are not automatically accepted as workspace backups. |
+| ZIP workspace backups and single-run JSON exports. | Advanced designs and artifact JSON have their own formats. |
 
 The workbench's one-active-run claim covers its own executor. It is not a global spending or concurrency limit across Advanced tools and separate CLI scripts. Keep those requests deliberate.
 
@@ -40,7 +40,7 @@ The forms use plain text. **Autofill Demo** loads example inputs; the separate R
 | Socratic dialogue | Questions about a belief and its assumptions | Which answers actually match your situation |
 | Design thinking | A problem, user needs, possibilities and proposed prototypes | Whether those needs and constraints come from real observations |
 | Judicial reasoning | Facts, principles, precedent-like comparisons and a proposed judgment | The accuracy and applicability of any cited facts or authorities |
-| Five whys | A sequence of possible explanations for a recurring problem | Which causes are supported by observation rather than a persuasive story |
+| Five whys | Possible root cause hypotheses for a recurring problem | Which causes are supported by observation and could be tested |
 
 An evidence-source field is input text, not a browser or a document-fetch service. Providing a URL or source title does not mean the app retrieved its contents. Supply relevant material deliberately and check important claims outside the generated analysis.
 
@@ -82,16 +82,18 @@ Artifacts persist as JSON files. Chroma holds a local mirror using deterministic
 
 ## Use the Python framework when you need code
 
-This example makes live provider requests when you run it. It uses the framework API with one attempt per step. It does not use the workbench's checkpoint executor.
+Run `./verify_demos.sh` for an offline demonstration of `MinimalChainable` with a fixed callable. This uses the same handoff syntax as a live script. [Demo guide](DEMOS.md)
+
+The Python example below sends two live provider requests when run with a configured model. The portable API returns the answers, rendered prompts, and usage. Keep checkpointed work in the main workbench.
 
 ```python
 from lib.core.chain import MinimalChainable
-from lib.core.llm_client import get_model, prompt
+from lib.core.llm_client import get_model, request_completion
 
 outputs, sent_prompts, usage = MinimalChainable.run(
     context={"topic": "Python dictionaries"},
     model=get_model(),
-    llm_callable=prompt,
+    llm_callable=request_completion,
     prompts=[
         "Identify three essential ideas in {{topic}} for someone who knows lists.",
         "Using {{output[-1]}}, give a short worked example and a practice question.",
@@ -105,7 +107,7 @@ Core modules live in `lib/core/`: `chain.py`, `artifact_store.py`, `chain_compos
 
 `FusionChain` supports comparing configured models with a supplied evaluator. The emergence-measurement module can ask a model to compare outputs. Such scores reflect their evaluator; they do not establish truth or prove that every chain outperforms a single prompt.
 
-Inspect the actual script and arguments before running a [legacy demo](DEMOS.md). Many make live calls. Use [Testing](TESTING.md) to distinguish offline checks from demos, provider evaluation and human acceptance.
+Inspect the script and arguments before choosing a live demo. [Demo guide](DEMOS.md) · [Verification](TESTING.md)
 
 ## Execution limits and comparison records
 

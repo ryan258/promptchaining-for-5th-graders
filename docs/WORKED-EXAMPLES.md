@@ -8,7 +8,7 @@ These walkthroughs show how to use the app, what to enter, and where to apply yo
 
 **Leave with:** an understanding of how a prompt carries an earlier answer into the next step.
 
-Start the app with `./pc`, open the workbench, and choose **Walk through an example**. You will see the Moon question as a completed, authored run. Opening it makes no provider request.
+Start the app with `./pc`, open the workbench, and choose **Explore the Moon example**. You will see the Moon question as a completed, authored run. Opening it makes no provider request.
 
 Read the final explanation, then open the four saved steps under **How it got there**:
 
@@ -21,7 +21,7 @@ Read the final explanation, then open the four saved steps under **How it got th
 
 Inside each step, open **Prompt that produced this answer**. These are rendered prompts, so you can inspect what was carried forward without decoding placeholders.
 
-Choose **Copy final answer** if you want the explanation alone. **Export Markdown** saves a readable record of the answers; **Export JSON** includes the fuller trace. Opening the example again reuses an existing example run rather than deliberately creating another one each time.
+Choose **Copy final answer** or **Download final answer** to take the explanation. **Download trace** includes the prompts and answers in Markdown. **Download run JSON** saves the record for restore. Opening the Moon example again reuses the existing sample run.
 
 **Use this recipe again** opens an editable recipe with the topic and context. A live version needs configured credentials and an explicit start. It will not reproduce the authored text exactly.
 
@@ -64,7 +64,7 @@ Prepare the chain and preview its first prompt. Then run the first step.
 | **Read it critically** | Check whether the critique proposes useful structural changes and catches unsupported claims. Correct misleading advice before continuing. |
 | **Make it ready to review** | Read the complete result and the remaining fact-check notes. Choose what you want to keep. |
 
-The final revision references the draft and critique. Correcting the draft before the critique helps keep the later work focused. Once later steps exist, you cannot edit an arbitrary older answer in place.
+The final revision references the draft and critique. Correcting the draft before the critique helps keep later work focused. If the run already continued, use **Fork after this step** at the draft checkpoint to try another revision and keep the original run.
 
 Use **Copy final answer** to move the result into your writing tool. This chain does not publish it, edit another repository, or independently verify the facts. Save a new recipe copy when a change to the method makes the next writing session easier.
 
@@ -143,3 +143,5 @@ After any of these examples:
 Saving makes a copy and keeps its starting inputs. It does not create an automation or schedule future provider requests.
 
 For a complete custom method you can paste into three steps, use [Build your own chains](CHAIN-BUILDING.md).
+
+To practice correcting a saved answer without a provider key, use the [professional practice cases](PROFESSIONAL-CASES.md).

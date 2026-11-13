@@ -29,7 +29,15 @@ python3 -m venv .venv
 
 Installation downloads dependencies. The app's pages, fonts and HTMX asset are local after setup. Live model calls still require network access.
 
-On a system without Bash, activate the environment and run `python -m tools.studio start` from the repository folder. The primary local verification was performed on macOS with Python 3.12; a portable command is not evidence of acceptance on another operating system.
+On a system without Bash, activate the environment and run `python -m tools.studio start` from the repository folder.
+
+The targeted checks used an existing macOS arm64 environment with Python 3.12.14. For that version baseline, add `-c constraints.txt` to the install command:
+
+```bash
+.venv/bin/python -m pip install -r requirements.txt -c constraints.txt
+```
+
+The constraints record the installed versions of direct dependencies and Starlette. Pip still resolves the other transitive dependencies. Fresh installation and other platforms remain separate checks.
 
 ## Try it before configuring a provider
 
@@ -39,20 +47,33 @@ You can browse and edit recipes, save them, and inspect the authored Moon walkth
 
 Keep an existing `.env`. If you do not have one, copy `.env.example` to `.env` once and edit the copy. Do not copy the template over an existing key file.
 
-The minimum live settings are:
+Studio needs a private API key. Create one in your OpenRouter account and enter it in `.env`. [OpenRouter API keys](https://openrouter.ai/keys)
 
 ```dotenv
 OPENROUTER_API_KEY="your-private-key"
-OPENROUTER_MODELS="your-chosen-model-id"
 ```
-
-Those values are placeholders, not working credentials or a model recommendation. Use actual OpenRouter model IDs you have deliberately chosen. Several IDs can be separated by commas; the editor exposes them in its model selector. The code accepts 1–30 configured model names.
-
-`OPENROUTER_MODELS` takes precedence over `DEFAULT_MODEL`. When both are absent or empty, the core library has legacy fallback IDs. Configure explicit model IDs for live work rather than assuming those historical defaults are available.
 
 Restart after changing settings. Already-exported shell environment variables take precedence over `.env`, which can explain why an edited file appears to have no effect.
 
-The page's ready state means a key value and local settings are present. It does not contact OpenRouter to validate the key, provider access, model availability or credit balance. `./pc doctor` has the same local-only boundary.
+The page's ready state checks the key value and local configuration. OpenRouter validates the key and checks provider access when you send a step. `./pc doctor` checks local configuration without sending requests.
+
+## Use OpenRouter Free
+
+1. In a recipe, choose **OpenRouter Free (openrouter/free)** as the **AI model**.
+2. Choose **Prepare chain** to save a run and preview the first prompt.
+3. Choose **Run first step** when you're ready to send it. Review the answer before continuing.
+
+In Chain Lab, choose **Prepare free AI run** on the design page. This saves your lab plan and opens a separate live run with review after each step. Your first prompt appears for review before you choose **Run first step**.
+
+OpenRouter Free uses your API key and routes each request to an available free model. The actual model may vary from step to step. Each dispatched step uses one request from your OpenRouter quota, so a three-step run uses three requests when all three steps are sent. Check OpenRouter for the current limits. [Free router](https://openrouter.ai/docs/guides/routing/routers/free-router) · [OpenRouter limits](https://openrouter.ai/docs/api_reference/limits)
+
+When `OPENROUTER_MODELS` and `DEFAULT_MODEL` are unset or blank, Free is Studio's only model choice. The example configuration sets that choice explicitly.
+
+```dotenv
+OPENROUTER_MODELS="openrouter/free"
+```
+
+For more choices, enter 1–30 comma-separated OpenRouter model IDs in `OPENROUTER_MODELS`. This takes precedence over `DEFAULT_MODEL`. Studio shows the configured models in order and includes Free. Legacy core callers use their own defaults when both model settings are blank.
 
 ## Set limits you understand
 
@@ -69,9 +90,9 @@ REQUEST_TIMEOUT_SECONDS=30
 | `MAX_TOKENS` | Integer, 64–12000 | Maximum output tokens requested for each response |
 | `DEFAULT_TEMPERATURE` | Finite number, 0–2 | The sampling setting sent to the selected provider |
 | `REQUEST_TIMEOUT_SECONDS` | Finite number, 1–120 | The timeout value supplied to the SDK request |
-| `OPENROUTER_MODELS` | 1–30 names, each at most 200 characters | Choices in the editor's model selector |
+| `OPENROUTER_MODELS` | 1–30 configured IDs, each at most 200 characters | Configured choices in the recipe editor |
 
-A provider can impose stricter settings, output limits or context limits. Token counts differ from character counts. A response that stops at the output limit is saved with a note asking you to review it; the workbench does not make another request automatically to extend it.
+A provider can impose stricter settings, output limits or context limits. Token counts differ from character counts. If a response reaches the output limit, the workbench saves and flags the partial answer, then pauses for review before any following step.
 
 The temperature setting is not a factual-accuracy control. The SDK timeout is not a guaranteed total wall-clock duration for a whole chain. Keep output form and scope clear in the prompts as well as choosing a token limit.
 
@@ -87,7 +108,9 @@ The app reports usage returned for saved answers. It does not show live prices, 
 
 ## Choose and compare deliberately
 
-The workbench uses one selected model for a run. Its model, recipe and inputs are snapshots; there is no per-step model switch in that run.
+The workbench saves the selected model ID, recipe and inputs with the run. With the Free router selected, each step requests `openrouter/free` and the actual model is recorded when OpenRouter reports it.
+
+Each saved live attempt records the requested token limit, temperature, and timeout. When reported by the provider, the trace also records the returned model, response ID, finish reason, and token counts. A later attempt after restarting with new settings can differ from earlier steps in the same run.
 
 To compare two of your configured models manually:
 

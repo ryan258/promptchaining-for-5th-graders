@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Review the identity, classroom campaign, and Workbench positioning for Prompt Chaining Studio.">
+<title>Prompt Chaining Studio | Brand and marketing review</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --night: #121212; --raised: #1a1a1a; --panel: #242424;
+    --warm: #ebd2be; --accent: #a6accd; --bright: #d9dcf2;
+    --paper: #f8f1e8; --ink: #242424; --paper-action: #4c548c;
+    --sans: Manrope, "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --display: Fraunces, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --gutter: clamp(1.1rem, 5vw, 4rem);
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--night); color: var(--warm); margin: 0; font: 1rem/1.55 var(--sans); }
+  h1, h2, h3, p, ol, ul { margin: 0; }
+  h1, h2 { font-family: var(--display); font-weight: 600; line-height: 1.03; }
+  h1 { font-size: 5.5rem; letter-spacing: -.055em; max-width: 11ch; }
+  h2 { font-size: 3.1rem; letter-spacing: -.036em; }
+  h3 { font-size: 1.02rem; line-height: 1.25; }
+  a { color: inherit; text-underline-offset: .2em; }
+  a:hover { text-decoration-thickness: .14em; }
+  :focus-visible { outline: 3px solid var(--bright); outline-offset: 4px; }
+  .skip { position: absolute; left: 1rem; top: .5rem; z-index: 1; background: var(--night); padding: .75rem; }
+  .skip:not(:focus) { transform: translateY(-200%); }
+  .wrap { margin: 0 auto; max-width: 90rem; padding-inline: var(--gutter); }
+  .mast { border-bottom: 1px solid #433934; }
+  .mast > div { display: flex; gap: .8rem 2rem; align-items: center; justify-content: space-between; flex-wrap: wrap; padding-block: 1rem; }
+  .mast img { display: block; width: 14.5rem; max-width: 100%; }
+  .mast a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+  .hero {
+    padding-block: clamp(2.5rem, 7vw, 7rem);
+    display: grid; grid-template-columns: 1.07fr 1fr; gap: clamp(1.5rem, 5vw, 6rem);
+    align-items: center;
+  }
+  .path { font-size: .875rem; font-weight: 700; letter-spacing: .055em; color: var(--accent); }
+  .hero h1 { margin: .18em 0 .23em; }
+  .lead { max-width: 34rem; font-size: 1.2rem; }
+  .demo { list-style: none; padding: 0 0 0 .6rem; max-width: 35rem; margin: 0 0 0 auto; border-left: 2px solid var(--accent); }
+  .demo li {
+    display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: 0 .7rem;
+    padding: .85rem 1rem .85rem .55rem;
+    background: var(--raised); border: 1px solid #504541; border-radius: 12px;
+  }
+  .demo .step {
+    display: grid; align-items: center; justify-items: center; align-self: start; width: 1.8rem; height: 1.8rem;
+    border: 1px solid var(--accent); border-radius: .42rem; color: var(--bright);
+    font: 700 .875rem/1 var(--sans);
+  }
+  .demo li:nth-child(2) .step { background: var(--accent); color: var(--night); }
+  .demo li + li { margin-top: .7rem; }
+  .demo h3 { align-self: center; margin-block: .15rem; color: var(--bright); }
+  .demo p { grid-column: 2; }
+  mark { background: var(--accent); color: var(--night); border-radius: .2em; padding: .01em .16em; box-decoration-break: clone; }
+  .cases { display: grid; grid-template-columns: 1fr 1fr; border-block: 1px solid #433934; }
+  .case { display: grid; align-content: start; gap: .8rem; padding: clamp(1.5rem, 5vw, 4.4rem) var(--gutter); }
+  .case p { max-width: 38rem; }
+  .case p + p { margin-top: -.25rem; }
+  .case.classroom { background: var(--paper); color: var(--ink); color-scheme: light; }
+  .classroom .path { color: var(--paper-action); }
+  .classroom :focus-visible { outline-color: var(--paper-action); }
+  .workbench { background: var(--panel); }
+  .action {
+    display: inline-flex; align-items: center; justify-self: start; gap: .65rem;
+    margin-top: .35rem; padding: .72rem 1rem; min-height: 2.75rem; border-radius: .5rem;
+    background: var(--accent); color: var(--night); font-weight: 700;
+  }
+  .classroom .action { color: var(--paper); background: var(--paper-action); }
+  .detail { font-size: .9rem; }
+  .workbench .detail { color: var(--bright); }
+  .classroom .detail { color: #594e47; }
+  .kit { padding-block: clamp(2.5rem, 6vw, 5rem); }
+  .kit ul { list-style: none; padding: 0; margin-top: 1.25rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+  .kit li { display: grid; align-content: start; border: 1px solid #504541; border-radius: .7rem; padding: .9rem 1rem; }
+  .kit a { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 700; color: var(--bright); }
+  .kit p { font-size: .91rem; }
+  footer { border-top: 1px solid #433934; padding-block: 1rem; color: var(--bright); }
+  @media (max-width: 70rem) {
+    h1 { font-size: 4.5rem; }
+    h2 { font-size: 2.65rem; }
+  }
+  @media (max-width: 52rem) {
+    .hero, .cases { grid-template-columns: 1fr; }
+    .demo { margin-left: 0; max-width: 34rem; }
+    .kit ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 34rem) {
+    h1 { font-size: 3.15rem; }
+    h2 { font-size: 2.15rem; }
+    .lead { font-size: 1.05rem; }
+    .kit ul { grid-template-columns: 1fr; }
+  }
+  @media print {
+    :root { color-scheme: light; }
+    body, .workbench, .case.classroom, .demo li { background: white; color: black; }
+    .hero, .case, .kit { padding-block: 1rem; }
+    .mast img { display: none; }
+    .mast::before { content: "Prompt Chaining Studio"; display: block; font-weight: bold; }
+    a, .action, .classroom .action, footer, .path, .demo h3, .workbench .detail, .kit a { background: none; color: black; }
+    .demo .step, .demo li:nth-child(2) .step, mark { color: black; background: white; }
+    mark { font-weight: 700; text-decoration: underline; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="mast">
+  <div class="wrap">
+    <img src="assets/studio-wordmark-dark.svg" alt="Prompt Chaining Studio">
+    <a href="#guides">Brand and marketing guides</a>
+  </div>
+</header>
+<main id="main">
+  <section class="hero wrap" aria-labelledby="promise">
+    <div>
+      <p class="path">Brand and campaign review</p>
+      <h1 id="promise">Make the next step better.</h1>
+      <p class="lead">See what carries forward. Check it against what you know. Keep useful work where you can find it again.</p>
+    </div>
+    <ol class="demo" role="list" aria-label="Rainy recess sample handoff">
+      <li><span class="step" aria-hidden="true">1</span><h3>Read the clue</h3><p>Everyone stays at their desk. No throwing.</p></li>
+      <li><span class="step" aria-hidden="true">2</span><h3>Fix the draft</h3><p><mark>Let’s draw robots at our desks.</mark></p></li>
+      <li><span class="step" aria-hidden="true">3</span><h3>See the next prompt</h3><p><mark>Let’s draw robots at our desks.</mark> Write a quick announcement with simple directions.</p></li>
+    </ol>
+  </section>
+  <div class="cases">
+    <section class="case classroom" aria-labelledby="classroom">
+      <p class="path">Classroom Challenges</p>
+      <h2 id="classroom">Find the clue. Fix the draft.</h2>
+      <p>Recess moved indoors. The draft tells the class to throw paper balls. What would you change? Have students choose a fix and find their words in the next prompt.</p>
+      <p class="detail">For a teacher-led fifth-grade activity. Prepared answers work offline after setup.</p>
+      <a class="action" href="creative/rainy-recess.html">Read the teacher handout <span aria-hidden="true">→</span></a>
+    </section>
+    <section class="case workbench" aria-labelledby="workbench">
+      <p class="path">Workbench</p>
+      <h2 id="workbench">Pick up where you left off.</h2>
+      <p>Save a method you can use again. Review an answer, revise it if needed, and come back to the next prompt when you’re ready.</p>
+      <p class="detail">Runs save on the computer running Studio. Live generation uses a configured model through OpenRouter.</p>
+      <a class="action" href="../DEMOS.md#a-walkthrough-with-no-provider-key">Read the Moon walkthrough <span aria-hidden="true">→</span></a>
+    </section>
+  </div>
+  <section class="kit wrap" id="guides" aria-labelledby="kit-title">
+    <h2 id="kit-title">Brand and marketing guides</h2>
+    <ul>
+      <li><a href="BRAND-STRATEGY.md">Brand strategy</a><p>Positioning, audience, promise, and naming.</p></li>
+      <li><a href="VISUAL-IDENTITY.md">Visual identity</a><p>Logo files, typography, color, and examples.</p></li>
+      <li><a href="VOICE-AND-EXPERIENCE.md">Voice and product experience</a><p>Writing rules, interface patterns, and claims.</p></li>
+      <li><a href="MARKET-AND-SWOT.md">Market and SWOT</a><p>Alternatives, risks, and decisions to test.</p></li>
+      <li><a href="COPY-KIT.md">Campaign copy</a><p>Landing pages, search copy, messages, and demos.</p></li>
+      <li><a href="LAUNCH-PLAN.md">Launch and pilot plan</a><p>Distribution, handoff, and pilot measures.</p></li>
+      <li><a href="PRESS-AND-PARTNER-KIT.md">Press and partner kit</a><p>Facts, FAQ, outreach, and media guidance.</p></li>
+      <li><a href="creative/README.md">Creative files</a><p>Teacher handout and campaign artwork.</p></li>
+    </ul>
+  </section>
+</main>
+<footer><div class="wrap">Prompt Chaining Studio · Proposed brand and campaign · November 2026</div></footer>
+</body>
+</html>

@@ -52,7 +52,7 @@ If the latest answer needs a correction, open **Edit this answer before continui
 
 The original model answer remains available in the trace. Editing changes the next step's input; it does not erase the history or automatically fact-check the correction.
 
-If an earlier answer needs changing after later steps have already run, use **Use this recipe again**, revise the method or context, and prepare a new run. The editor cannot rewind or branch a finished run, or rerun only an arbitrary selection of steps.
+If an earlier answer needs changing after later steps have run, choose **Fork after this step** on that saved answer in a stopped live run. The fork opens paused so you can revise the answer before continuing. Use **Use this recipe again** when you want to change the method, inputs, or model.
 
 ## Learn from the first answer
 
@@ -95,12 +95,13 @@ Each recipe save creates a copy. Add a short note about when it helps. Open your
 | What you need | Use |
 | --- | --- |
 | Just the result to paste elsewhere | **Copy final answer** |
-| A readable record of every completed answer | **Export Markdown** or **Download chain** |
-| The recipe, inputs, exact sent prompts and complete saved trace | **Export JSON** |
+| A Markdown copy of the result for handoff | **Download final answer** |
+| Readable context, prompts, answers, and recorded attempt details | **Download trace** |
+| A machine-readable run you can restore | **Download run JSON** |
 | A separate framework copy of the finished answer | **Save final to artifacts** |
 | Your saved recipes and runs together | **My library → Download workspace backup** (Studio ZIP) |
 
-Markdown contains the step answers and run information; it does not contain the full prompt trace. JSON keeps the fuller record. The [saving guide](SAVING-EXPORT-AND-RECOVERY.md) explains these differences.
+Check the trace for source material and original answers before sharing it. [Saving, export and recovery](SAVING-EXPORT-AND-RECOVERY.md)
 
 ## Give yourself a clear stopping point
 

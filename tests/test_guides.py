@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from markdown_it import MarkdownIt
 
 from lib.core import llm_client
 from lib.workbench.guides import GUIDES, GuideBook, GuideUnavailable
@@ -48,7 +49,13 @@ def test_every_installed_document_has_a_safe_reader_and_working_internal_links()
     book = GuideBook(ROOT)
     assert len(book.available()) == len(GUIDES)
     documents = {guide.href: book.read(guide.slug) for guide in GUIDES}
+    parser = MarkdownIt("commonmark").enable("table")
     for document in documents.values():
+        for token in parser.parse(document.source):
+            for child in token.children or []:
+                if child.type == "link_open":
+                    source_link = child.attrGet("href")
+                    assert book.href(document.guide, source_link)[0] is not None, (document.guide.source, source_link)
         page = Page(document.html)
         assert len(page.ids) == len(set(page.ids)), document.guide.slug
         for link in page.links:
@@ -76,6 +83,12 @@ def test_markdown_tables_code_and_duplicate_section_links_render(book):
     assert [s.anchor for s in document.sections if s.anchor] == ["try-it", "try-it-1"]
 
 
+def test_heading_ids_stay_unique_with_suffixed_titles_and_reserved_landmarks(book):
+    write_guide(book, "# Start\n\n## Review\n\n## Review\n\n## Review-1\n\n## Main\n\n## Guide title\n")
+    page = Page(book.read("quick-start").html)
+    assert page.ids == ["review", "review-1", "review-1-1", "main-1", "guide-title-1"]
+
+
 def test_raw_html_unsafe_links_and_images_never_become_executable_markup(book):
     write_guide(book, '# Unsafe input\n\n<script>steal()</script>\n\n[bad](javascript:alert(1))\n\n[private](../.env)\n\n[local](file:///private/secret)\n\n![remote](https://example.com/tracking.png)\n\n```html\n<img src=x onerror="steal()">\n```\n')
     document = book.read("quick-start")
@@ -98,6 +111,12 @@ def test_cross_guide_links_stay_inside_app_and_remote_links_are_deliberate(book)
     assert page.links[3]["rel"] == "noopener noreferrer"
 
 
+def test_loopback_rewrite_blocks_cross_host_paths_and_keeps_studio_routes(book):
+    write_guide(book, "# Start\n\n[Unsafe](http://localhost//example.com/a) [Unsafe too](///studio/guides) [Guide](http://localhost/studio/guides)")
+    page = Page(book.read("quick-start").html)
+    assert [link["href"] for link in page.links] == ["/studio/guides"]
+
+
 def test_search_finds_body_text_and_a_matching_section_without_provider_calls(book):
     write_guide(book, '# Start\n\nIntro.\n\n## Recovery\n\nThe unique albatross checkpoint is saved here.\n')
     hits = book.search("ALBATROSS checkpoint")
@@ -106,6 +125,15 @@ def test_search_finds_body_text_and_a_matching_section_without_provider_calls(bo
     assert "albatross checkpoint" in hits[0].excerpt
     assert book.search("doesnotexist") == []
     assert book.search("??") == []
+
+
+def test_search_prioritizes_relevant_sections_and_keeps_earlier_notes_browsable(book):
+    write_guide(book, "# Start\n\n## Daily dictation\n\nUse system dictation for text fields.\n")
+    write_guide(book, "# Old demos\n\n## Dictation commands\n\nhistoricalmarker\n", "LEGACY-DEMOS.md")
+    hits = book.search("voice")
+    assert [hit.href for hit in hits] == ["/studio/guides/quick-start#daily-dictation"]
+    assert "historicalmarker" in book.read("legacy-demos").html
+    assert not book.search("historicalmarker")
 
 
 def test_reader_and_search_see_updated_markdown_without_a_rebuild(book):

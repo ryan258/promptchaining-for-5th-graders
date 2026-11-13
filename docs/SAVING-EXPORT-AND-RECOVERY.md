@@ -12,6 +12,7 @@ Save the method when you want to repeat it. Keep the run when you want its reaso
 | **Save recipe** / **Save a new copy** | A new recipe copy, audience, prompts, description, starting topic/context and review pace | **Recipes → Your recipes** |
 | **Prepare chain** | A new ready run with its recipe snapshot, inputs, model and pace | **My library** |
 | A step succeeds | Its sent prompt, answer, reported tokens and elapsed time | The saved run |
+| **Retry saving this answer** | A received answer waiting for its local checkpoint to succeed | The affected run |
 | **Save revised answer** | The revised latest answer and a retained original model answer | That step in the run |
 | **Save final to artifacts** | A separate copy of a completed run's final answer and provenance metadata | **Advanced → Artifacts library** |
 
@@ -27,16 +28,21 @@ Search matches the topic, recipe title or saved state, ignoring case. It does no
 
 Saved recipe copies are listed under **Recipes**, separate from the run list. An old run still contains its recipe even if you never saved that method separately: open the run, choose **Use this recipe again**, then save the recipe if you want it in that list.
 
+Use **Where I left off** to save a short note for your next session. **Archive this run** moves a stopped run into **Archived runs**, where its answers and exports remain available. Use **Move back to My library** before continuing an unfinished archived run.
+
+To try a different handoff without losing the original, open an earlier saved answer in a stopped live run and choose **Fork after this step**. The new run opens paused with the copied answers and their original settings. Edit the latest copied answer before continuing. Forking itself makes no model request.
+
 ## Choose the export you need
 
 | Option | Includes | Use it for |
 | --- | --- | --- |
 | **Copy final answer** | The final answer's text | Paste a result into another tool. |
-| **Export Markdown** / **Download chain** | Run information, context and all completed step answers, including edit labels | A readable document to keep or review outside the app. |
-| **Export JSON** on a run | The run snapshot, recipe, inputs, prompts, answers, retained originals, usage, timing and progress | Preserve or restore a particular run with its trace. |
+| **Download final answer** | The final answer with its topic and draft or authored-sample label | Hand off the result without the prompt history. |
+| **Download trace** | Supplied context, prompt templates, rendered prompts, saved and original answers, and recorded attempt metadata | Inspect or explain how the result was produced. |
+| **Download run JSON** | The complete saved run record | Preserve or restore a particular run with its trace. |
 | **Download workspace backup** | Saved recipes and runs together, in a Studio ZIP archive | Bring workspace records back into this app. |
 
-Markdown does not contain the exact sent prompt trace, the retained original versions of edited answers, or the full usage/timing record. Copying the final answer provides an even smaller piece. JSON is the fuller record.
+Trace Markdown includes source material and saved answers. Use final-answer Markdown or Copy when you intend to share just the deliverable. JSON is the full machine-readable backup record.
 
 Exports can be made before a run finishes. They contain only the answers completed at the time of export; an unfinished provider request cannot be recovered from an answer that was never saved.
 
@@ -44,7 +50,7 @@ The single-run JSON export uses the same versioned backup format as a workspace 
 
 ## Make a workspace backup
 
-In the app, open **My library** and choose **Download workspace backup**. The browser downloads a JSON file; its actual destination depends on the browser's download settings.
+In the app, open **My library** and choose **Download workspace backup**. The browser downloads `prompt-studio-backup.zip` to the location set in your browser.
 
 Or use:
 
@@ -61,6 +67,8 @@ The command writes a timestamped `.zip` archive under the repository's `backups/
 The CLI refuses to overwrite an existing filename. Choose a new filename for a later backup. Keep a copy outside this project if you want it to survive loss of the project folder; a copy on the same disk does not protect against losing that disk.
 
 The workspace archive captures a consistent database snapshot. Its manifest checksums every JSON part. A chosen `.json` filename still exports the legacy format when it fits the importer limits; an oversized JSON export is refused before a file is published. You can make it while the app is running. A currently running record will be restored as interrupted; the backup does not create a job that resumes on its own.
+
+When a run shows a pending local save, resolve it before making a new archive. The archive includes committed database records. An answer waiting in the recovery file or process memory is outside that snapshot.
 
 ## Restore without replacing newer work
 
@@ -118,11 +126,14 @@ A raw SQLite folder is not a JSON upload. Do not replace database files while a 
 | --- | --- |
 | **Ready to start** | Preview the first prompt, then choose **Run first step** or **Run chain**. |
 | **Running** | Let it finish, request a pause, or use **Refresh progress** if the display is stale. |
+| **Local save pending** | Resolve the disk or permission error, then choose **Retry saving this answer**. The answer is saved without a provider request and the run pauses before the next step. |
 | **Ready for review** (`paused`) | Read the latest answer, optionally revise it, then choose **Continue chain**. |
 | **Failed** | Read the error and resolve its cause before **Retry this step**. Completed answers remain saved. |
 | **Interrupted** | Check whether the provider processed the unfinished request before retrying. Earlier completed answers are preserved. |
 | **Completed** | Copy/export the result, inspect the trace, or reuse the recipe for another run. |
 
-The UI permits edits only to the last completed answer of a stopped, unfinished run. There is no rewind of arbitrary older steps. With review pauses disabled, a successful Continue or Retry action can proceed through later steps as well.
+The UI permits edits to the last completed answer of a stopped, unfinished run. Fork a stopped live run when you need to revise an earlier handoff and preserve the original. With review pauses disabled, a successful Continue or Retry action can proceed through later steps as well.
 
 Normal shutdown requests a pause, finishes the current workbench request, saves its answer and stops. An abrupt stop can lose the answer to an in-flight request, even when the provider already processed it. On the next startup, the app marks that unfinished run interrupted and waits for you.
+
+If SQLite cannot save a received answer, the workbench attempts to keep a private `pending-step.json` recovery copy in the workspace. Normal shutdown and startup also try to save that pending answer. If the recovery copy fails too, keep the process open while you fix local storage, then retry the local save.

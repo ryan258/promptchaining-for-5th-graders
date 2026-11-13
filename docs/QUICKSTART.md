@@ -16,7 +16,9 @@ python3 -m venv .venv
 ./pc
 ```
 
-Open [the local app](http://127.0.0.1:8000). Select **Walk through an example** to see an authored Moon explanation built in four steps. The example needs no key and makes no requests. Open the saved answers and **Prompt that produced this answer** to see the handoffs.
+Open [the local app](http://127.0.0.1:8000). Select **Explore the Moon example** to see an authored Moon explanation built in four steps. The example needs no key and makes no requests. Open the saved answers and **Prompt that produced this answer** to see the handoffs.
+
+Choose **Try a classroom challenge** to catch a mistake in a written example. Save your fix and look for it in the next prompt. [Classroom walkthrough](DEMOS.md#try-it-with-a-class)
 
 To use your own topics with a live model, copy `.env.example` to `.env` only if you do not already have a key file. Set `OPENROUTER_API_KEY` and `OPENROUTER_MODELS` to your chosen key and model IDs. Restart with `./pc`. Never put credentials in a topic, context field, or recipe.
 
@@ -31,11 +33,11 @@ Useful commands:
 ```bash
 ./pc doctor
 ./pc backup
-./pc restore /path/to/prompt-studio-backup.json
+./pc restore /path/to/prompt-studio-backup.zip
 ```
 
-These commands do not call a provider. `doctor` checks configuration, not API access. Workspace backups include recipes and runs; browser drafts, credentials, and legacy artifacts are excluded. Keep the separate `artifacts/` folder if you need framework outputs. See the [README](../README.md) for limits and recovery behavior.
+These commands make no provider requests. `doctor` checks local configuration. Workspace backups include recipes and runs. Keep important browser drafts with an explicit save and preserve credentials and legacy artifacts separately. See [Saving, export and recovery](SAVING-EXPORT-AND-RECOVERY.md) for formats and limits.
 
 Stop with `Ctrl+C`. Normal shutdown finishes the current workbench request and pauses; an abrupt stop is marked interrupted at the next startup and never automatically retried. Provider charges can still apply to a request whose answer was not recovered.
 
-Choose a [recipe](RECIPE-GUIDE.md), follow a [worked example](WORKED-EXAMPLES.md), or read [Saving, export and recovery](SAVING-EXPORT-AND-RECOVERY.md) when you want the full record to survive a move or interruption.
+Choose a [recipe](RECIPE-GUIDE.md), follow a [worked example](WORKED-EXAMPLES.md), or [practice a professional workflow](PROFESSIONAL-CASES.md) with a fixed source packet.

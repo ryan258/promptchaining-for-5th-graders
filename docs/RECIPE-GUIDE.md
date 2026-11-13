@@ -14,6 +14,13 @@ Pick the method by the result you want. Each recipe is editable, and **Who is it
 | A complete draft plus facts still needing review | **From thought to draft** | 4 |
 | A plausible cause to investigate and one reversible experiment | **Untangle a problem** | 3 |
 | A short learning sequence with its first lesson ready | **Build a learning path** | 3 |
+| A game I can teach at the kitchen table | **Make a game for family night** | 3 |
+| A four-panel storyboard I can draw | **Turn a memory into a comic** | 3 |
+| A sketch, prototype plan, and short pitch for an invention | **Invent a fix for home** | 3 |
+
+For school notices, pickups, dinner, or a school message, see [For parents and caregivers](#for-parents-and-caregivers).
+
+For lesson planning, activity adaptations, student feedback, or exit tickets, see [For teachers](#for-teachers).
 
 The inputs below are author-written examples you can adapt. They have not been run against a live model as part of this documentation.
 
@@ -170,6 +177,66 @@ a time. Keep the first practice task small. Do not invent links or sources.
 Review the assumed prerequisites before accepting the plan. Check that the first lesson teaches the stated objective rather than expanding into a complete curriculum.
 
 A useful stopping point is completing the first practice task and knowing the next lesson. The app does not track course completion or automatically teach later lessons; start another run with the next objective when you want one.
+
+## Make something to show a parent or caregiver
+
+Keep **Pause after each answer** checked. Use **Edit this answer before continuing** to add your own twist, pick a design, or fix a detail. Your next step uses your saved edit.
+
+### Make a game for family night
+
+Try making a five-minute game where two people draw silly animals with paper and pencils. For your own game, name a theme, say how many people will play, and list what you have on hand. Change one rule after you see the draft. The chain walks through a pretend turn and gives you a rules card you can read aloud.
+
+### Turn a memory into a comic
+
+Try a made-up picnic where a squirrel grabs the napkin instead of the sandwich. For a real memory, share a few details you’re comfortable showing and use roles such as “my grown-up.” Pick one detail you want to draw. The chain gives you four panels you can copy onto paper and fill with your own words.
+
+### Invent a fix for home
+
+Try designing a cardboard holder that keeps pencils from rolling off a table. For your own invention, describe a small problem and list the paper or cardboard you have. Choose a design and change one part. The chain gives you sketch labels, a test to try, and a short pitch to say out loud. Fill in the result after you try the test.
+
+## For parents and caregivers
+
+On Home, choose a chain under **Parents and caregivers** or open **All parent recipes**. Each recipe takes three steps. Dictate a few notes, paste longer material into **Longer notes or details**, or choose the fictional example to see what kind of notes you can start with. [Parent recipe shelf](/studio/recipes#for-parents)
+
+| Recipe | Start with | Take away |
+| --- | --- | --- |
+| [Sort the school inbox](/studio/new?recipe=school-inbox) | School notices or a quick recap of what came in | A checklist with due dates and questions to confirm unclear details |
+| [Plan the family week](/studio/new?recipe=family-week) | Fixed times, travel time, and who is available | A short day-by-day plan, open handoffs, and a draft group text |
+| [Get dinner unstuck](/studio/new?recipe=weeknight-dinner) | What’s on hand, how many people are eating, and how much time you have | One dinner, a fallback, a cooking order, and a list of missing items |
+| [Write a clear school note](/studio/new?recipe=school-note) | What happened, who should hear about it, and what you’re asking for | A subject line, a short draft, and details to check before sending |
+
+With a model configured in Studio, choose **Prepare chain** to see the first prompt. Keep **Pause after each answer** checked so you can use **Edit this answer before continuing** to fix a date, add a travel buffer, or clarify a request. The next step uses the answer you saved.
+
+To use an AI chat you already have, open **Use this starter in another AI chat** in the recipe editor and choose **Copy starter chain**. Paste it into your chat and give it your notes there. The starter asks the chat to work one step at a time so you can correct each answer before asking it to continue.
+
+### Try it with two school notices
+
+Suppose a teacher’s note says the field trip permission slip is due Tuesday and a class reminder says Wednesday. Paste both notices into **Sort the school inbox**. When you review the extracted dates, keep both dates and add “Permission slip deadline needs confirmation.” That correction gives the final step a specific question for your checklist. You could ask the school, “Could you confirm whether the field trip permission slip is due Tuesday or Wednesday?”
+
+## For teachers
+
+On Home, choose a chain under **Teachers** or open **All teacher recipes**. Each recipe takes three steps and has a fictional example. Dictate a few notes or paste in the materials you want the chain to use. For feedback and exit tickets, use anonymous excerpts and leave out names and identifying details. [Teacher recipe shelf](/studio/recipes#for-teachers)
+
+| Recipe | Start with | Take away |
+| --- | --- | --- |
+| [Plan tomorrow’s lesson](/studio/new?recipe=lesson-plan) | Your learning goal, available time, and materials | A timed lesson plan with a quick check for understanding |
+| [Adapt a classroom activity](/studio/new?recipe=adapt-activity) | The activity, its learning goal, and the barrier you want to remove | Directions and supports that fit your classroom and keep the learning goal |
+| [Give feedback students can use](/studio/new?recipe=student-feedback) | The assignment, your criteria, and an anonymous excerpt | A draft that points to a specific strength and gives the student one revision to try |
+| [Turn exit tickets into a next lesson](/studio/new?recipe=exit-ticket) | The question, its learning goal, and anonymous responses | Patterns grounded in the responses and a follow-up plan with another quick check |
+
+With a model configured in Studio, choose **Prepare chain** and keep **Pause after each answer** checked. Use **Edit this answer before continuing** to correct what the chain picked up. For another AI chat, open **Use this starter in another AI chat** and choose **Copy starter chain**. The starter asks the chat to wait for your review between steps.
+
+### Adapt a task while keeping the goal
+
+Suppose you have 15 minutes and no copies for an activity where students explain how a food chain changes when one organism disappears. Give **Adapt a classroom activity** those constraints. In the first answer, write “Each student explains one change and why it happens” as the goal. At the end, check that the directions fit 15 minutes and include a way for each student to give that explanation.
+
+## Find an insight you can use
+
+Choose [Find a better way at home](/studio/recipes#parent-insights) for ten chains about patterns in family life. In **Find what slows the morning**, compare a rushed morning with a smoother one. If breakfast ended at the same time on both days, check what people were still waiting for. Pick one setup change and record when you leave on three mornings.
+
+Choose [Look closer at student learning](/studio/recipes#teacher-insights) for ten chains that turn classroom observations into a question or a small trial. In **Catch a shortcut that only looks right**, a student multiplies 3 × 6 and gets 18 for the perimeter. Try a 4-by-5 rectangle and ask them to show what they count. The area is 20 square units and the perimeter is 18 units, so this problem helps you tell which method the student is using.
+
+Start with a fictional example or paste a few observations of your own. Check the first answer for anything the notes leave open, then carry your corrections into the next prompt. Use **Copy starter chain** if you already work in another AI chat.
 
 ## When to make your own copy
 

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Prompt Chaining Studio mark</title>
+  <desc id="desc">Three connected stages rise from left to right.</desc>
+  <g fill="#A6ACCD">
+    <path d="M20.5 43.75h1.75l5.5-5.5 2.48 2.48-6.52 6.52H20.5Z"/>
+    <path d="M20.5 43.75h1.75l5.5-5.5 2.48 2.48-6.52 6.52H20.5Z" transform="translate(20 -14)"/>
+    <path d="M8 35.25h9Q22.75 35.25 22.75 41v9Q22.75 55.75 17 55.75H8Q2.25 55.75 2.25 50v-9Q2.25 35.25 8 35.25Z M8 38.75Q5.75 38.75 5.75 41v9Q5.75 52.25 8 52.25h9Q19.25 52.25 19.25 50v-9Q19.25 38.75 17 38.75Z"/>
+    <path d="M8 35.25h9Q22.75 35.25 22.75 41v9Q22.75 55.75 17 55.75H8Q2.25 55.75 2.25 50v-9Q2.25 35.25 8 35.25Z M8 38.75Q5.75 38.75 5.75 41v9Q5.75 52.25 8 52.25h9Q19.25 52.25 19.25 50v-9Q19.25 38.75 17 38.75Z" transform="translate(40 -28)"/>
+  </g>
+  <rect x="24" y="23" width="17" height="17" rx="4" fill="#EBD2BE"/>
+</svg>

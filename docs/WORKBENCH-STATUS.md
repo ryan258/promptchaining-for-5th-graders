@@ -1,14 +1,19 @@
-# Workbench status — October 25, 2026
+# Workbench status
 
 The implemented local workflow is recipe → intention → saved run → reviewed steps → reusable output. The original framework remains available through Advanced. This status distinguishes implementation and offline checks from owner acceptance.
 
 ## Implemented
 
-- Six editable recipes, a blank-chain editor and a four-step authored Moon example requiring no model requests.
+- Nine editable recipes, including three take-home projects, and a blank-chain editor. A four-step authored Moon example works offline.
+- Six classroom challenges and three professional practice cases with authored answers and editable handoffs. [Classroom challenges](DEMOS.md#try-it-with-a-class) · [Professional practice](PROFESSIONAL-CASES.md)
+- A saved offline dragon challenge lets students choose a job, see two earlier answers in the final prompt, and compare prepared answers for the two choices. [Dragon challenge walkthrough](DEMOS.md#build-the-next-prompt)
+- Chain Lab offers four offline missions and a build-your-own option. Students write prompts, choose handoffs, save human answers, and remix a saved chain while keeping the original. [Chain Lab walkthrough](DEMOS.md#build-your-own-chain-in-chain-lab)
 - Saved inputs, browser draft recovery, review pace, 1–8 named steps, keyboard shortcuts and ordinary dictation-compatible fields.
 - SQLite checkpoints, one runtime owner, stale-tab checks, explicit starts/retries, pause after the active step, original-answer retention and interruption recovery.
-- Run search, reuse, Markdown and single-run JSON export, explicit final-artifact handoff, and additive workspace backups.
-- Twenty in-app Guides sourced from the existing Markdown, with local search, section links, copyable blocks, downloads and contextual help.
+- Paged run search, current and archived views, resume notes, checkpoint forks, and reusable recipe snapshots.
+- Final-answer Markdown, inspection trace Markdown, single-run JSON, explicit final-artifact handoff, and additive workspace backups. Restore bounds the upload before parsing the archive.
+- Live answer checkpoints include model settings per attempt and provider usage and provenance where available. A failed checkpoint can be retried as a local save without requesting another answer.
+- In-app Guides sourced from the existing Markdown, with local section search, copyable blocks, downloads, and contextual help.
 - Loopback startup through `./pc`, vendored HTMX, local fonts, escaped text, origin checks, focus and reduced-motion rules.
 
 ## Harmony repairs
@@ -24,7 +29,9 @@ The implemented local workflow is recipe → intention → saved run → reviewe
 
 ## Local verification
 
-The final repair group passed **129 targeted offline tests** across the repair regressions, workbench, routes, Guides, provider client, chain engine, composer, meta-chain and enhancement modules. `./pc doctor` passed without provider requests; shell and JavaScript syntax, local documentation links and Git whitespace checks passed. See [Testing](TESTING.md) for the exact scoped command.
+The November 11 harmony pass exercised the workbench, request boundary, Guides, portable framework, artifact library and MS draft tools in targeted offline test groups. The offline demo smoke check completed the Moon walkthrough, all three professional cases and a portable chain. The local setup diagnostic and syntax checks passed. [Verification commands](TESTING.md)
+
+On October 25, 2026, the repair group passed **129 targeted offline tests** across the workbench, routes, Guides, provider client, chain engine, composer, meta-chain and enhancement modules. `./pc doctor`, shell and JavaScript syntax, local documentation links, and Git whitespace checks also passed for that snapshot. See [Testing](TESTING.md) for current scoped commands.
 
 Historical pre-repair groups reported 54 workbench/framework checks and 44 Guides/route checks; those counts describe earlier snapshots rather than current whole-project acceptance.
 
@@ -38,7 +45,7 @@ Archives accept at most 128 JSON parts, 128 MB compressed and 256 MB expanded. E
 
 ## Review and policy evidence
 
-The owner supplied an index at commit `65cfd55`; pre-edit impact analysis identified broad logging, design and content-generator dependencies. Graph gaps in dynamic route and runner calls were checked directly. That index becomes stale as this repair changes source; it does not establish final graph clearance. No new analysis/reindex was run.
+The October review used the index at `65cfd55`. The November review opened the owner-supplied index at `675857d` for a bounded look at the request boundary and backup flow. Current worktree changes were verified through source and offline tests.
 
 Shared human policy remains canonical. Generated GitNexus directives were removed from active agent guidance, and the six supplied skill copies were preserved outside active skills under `.claude/retired-gitnexus/`. The owner index was preserved. This is a local policy alignment, not a change to shared Cyborg policy or global integrations.
 

@@ -23,7 +23,7 @@ Jinja editor → validated recipe and intention → ready run in SQLite
 | File | Responsibility |
 | --- | --- |
 | `lib/workbench/models.py` | Bounded typed recipes, run snapshots, results and versioned backups |
-| `lib/workbench/recipes.py` | Six starter methods and the fixed, authored Moon walkthrough |
+| `lib/workbench/recipes.py` | Editable starter and take-home recipes, plus the authored Moon walkthrough |
 | `lib/workbench/store.py` | SQLite transactions, revision checks, claims, recovery and additive restore |
 | `lib/workbench/runner.py` | Prompt reference validation, single-request steps, checkpoints, pause, output review and Markdown export |
 | `tools/studio.py` | Local startup, configuration checks, atomic backup files and restore |
@@ -39,7 +39,7 @@ The worker pool has one thread. A SQLite write transaction checks for any runnin
 
 `prompt_once` performs one request with the SDK's retries disabled at client construction. A failure stops the run and keeps prior answers. The framework also makes one callable invocation per step, without automatic transport or JSON-format retries. Advanced operations do not acquire the workbench runtime claim and do not gain its resumable-run contract.
 
-At each successful response, the worker saves the exact sent prompt, answer, reported tokens and duration in one checkpoint. With review enabled, it then pauses. Explicit output edits preserve the original model answer and change the answer the next step receives. Finished runs are immutable through the run editor; reusing a recipe creates another run.
+At each successful response, the worker saves the sent prompt, answer, reported usage, and duration in one checkpoint. With review enabled, it then pauses. If the response reaches the output limit, the saved answer is flagged and the run pauses before sending that partial answer forward. An explicit output edit preserves the original model answer and changes what the next step receives. Finished runs remain available for inspection and reuse.
 
 ## State and recovery
 
@@ -53,7 +53,7 @@ ready ──Start──> running ──checkpoint──> paused ──Continue�
 
 Every saved answer commits before another request begins. Pause finishes the dispatched request and stops at the next checkpoint. Normal shutdown requests pause, waits for the worker and releases its runtime lock. On startup, the new lock owner marks saved `running` records interrupted. It never automatically repeats unfinished work.
 
-A process can die after a provider accepts a request and before its answer is committed. Local storage cannot establish whether that provider charged for it. The interruption/timeout messages make that ambiguity explicit before an optional retry. A failing disk cannot guarantee a fresh checkpoint; earlier committed transactions remain the recovery boundary.
+A process can die after a provider accepts a request and before its answer is committed. The interruption and timeout messages explain how to check the provider before retrying. If the worker has the answer and cannot commit it, it holds the checkpoint in memory and attempts an atomic private recovery file. A retry of that local save can recover the answer and pause the run without dispatching another model request.
 
 ## Persistence and portability
 
@@ -83,7 +83,7 @@ HTMX is vendored with its license. It cannot evaluate scripts or issue cross-ori
 
 The library uses `markdown-it-py` with raw HTML disabled. It rewrites known documentation links to app routes, adds stable section anchors, and renders copyable code blocks and keyboard-scrollable tables. Images do not load remote resources automatically. Unknown file links and unsafe URL schemes are not rendered as clickable file access. File access is catalog-only, bounded in size, and rejects source-path symlink substitutions.
 
-Search scans the installed guide text locally and can link directly to matching sections. It does not read recipes, runs, `.env` or artifacts, and it makes no provider requests. Files are reread on a request so a guide refresh reflects saved documentation changes. Existing render/navigation helper functions keep their interfaces; the shared navigation label now leads to Guides. Contextual guide links open another tab to preserve the current workflow.
+Search scans current installed guides and ranks matching sections. Earlier notes remain available from their catalog group. Files are reread on request so a guide refresh reflects saved documentation changes. Contextual guide links open another tab to preserve the current workflow.
 
 ## Advanced execution and evidence
 

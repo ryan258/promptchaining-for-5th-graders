@@ -17,8 +17,13 @@ The workbench implementation runs on local Python; acceptance is recorded separa
 - **Core Workbench Engine (`lib/workbench/`)**:
   - Typed models (`models.py`), curated recipe templates (`recipes.py`), step runner with pause/retry mechanics (`runner.py`), and SQLite WAL transactional persistence with runtime locking (`store.py`).
   - Zero-credential authored Moon walkthrough for immediate offline exploration.
-  - 6 initial recipes: *Make it click*, *Connect two ideas*, *Think a decision through*, *From thought to draft*, *Untangle a problem*, and *Build a learning path*.
+  - 6 initial general recipes, plus dedicated suites for kids, parents/caregivers, and teachers.
+  - Offline Chain Lab (`lib/workbench/chain_lab.py`): prompt builder with human answers, starter missions, beginner token attachments (`[Goal]`, `[Clues]`, `[Answer N]`), and remixing.
+  - Classroom challenges and dragon prompt-building case (`lib/workbench/classroom_cases.py`) with prepared handoff comparisons.
   - Strict step-by-step execution: each answer is committed before the next request starts. No silent retries.
+  - A durable per-attempt claim governs pause and shutdown. A failed checkpoint can be retried as a local save.
+  - Resume notes, archived runs, and checkpoint forks preserve the context for returning to work.
+  - Three offline professional practice cases with editable handoffs, source packets, rubrics, and separate final and trace exports.
 
 - **FastAPI + Jinja2 + HTMX Interface (`server/`)**:
   - Full Candlelight theme compliance (`server/static/candlelight.css`).
@@ -53,8 +58,8 @@ Focused, small iterations guided by observed usage rather than speculation:
   - Provide lightweight search by recipe tags or topic keywords.
 
 - **Phase 3: Direct Vault / Markdown Export Integrations**
-  - Streamline one-click copying and formatting into local Markdown notes or Obsidian vault folders.
-  - Support exporting full chain traces with prompt/response metadata in standard frontmatter.
+  - Test the final-answer and trace Markdown exports against a real handoff.
+  - Use that experience to choose an optional local vault destination and frontmatter fields.
 
 - **Phase 4: Selective Model Routing**
   - Enable per-step model selection in custom recipes (e.g., fast model for drafting, reasoning model for critique) via `.env` configured aliases.
@@ -64,7 +69,7 @@ Focused, small iterations guided by observed usage rather than speculation:
 ## §3 Return Point & Deferred Ideas
 
 ### Return Point
-The local workbench and Guides are implemented. The harmony repair addresses the reviewed execution, persistence, request-control, prompt-handoff and reporting defects. Full-suite compatibility, browser behavior, assistive-technology acceptance and real-provider operation remain owner acceptance gates. A passing local group does not establish those outcomes.
+Start with one of the [professional cases](docs/PROFESSIONAL-CASES.md) and correct the second handoff. Inspect the trace and use the final answer as a handoff. Full-suite compatibility, browser behavior, assistive-technology acceptance and real-provider operation remain owner acceptance gates.
 
 ### Deferred Scope (The Anti-Bloat Law)
 Explicitly deferred to keep the system simple, fast, and durable:
@@ -82,7 +87,7 @@ Before any changes are committed or released:
 
 1. **Targeted Tests**:
    ```bash
-   .venv/bin/python -m pytest -q tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py
+   .venv/bin/python -m pytest -q tests/test_local_request_boundary.py tests/test_harmony.py tests/test_workbench.py tests/test_workbench_routes.py tests/test_guides.py tests/test_llm_client.py tests/test_server_routes.py
    ```
 2. **Setup Diagnostic**:
    ```bash
@@ -96,4 +101,4 @@ Before any changes are committed or released:
 
 ## Review backlog after correctness repairs
 
-Optional enhancements remain future work: preserve form values during validation errors; search/favorite saved recipes; dismiss abandoned runs; remember the configured model when reusing a method; retain a short next-step note; warn about another tab replacing an unsaved draft; query lightweight library summaries; provide an authored example for each recipe; and add a tested dependency constraints snapshot. Checkpoint forks, richer Markdown exports, vault integration and per-step models should follow demonstrated use. These are not part of the completed correctness repairs and add no account, hosting or commercial-platform requirement.
+Use the three professional cases to test whether the exported deliverables are useful and how often you return to a saved method. Candidate follow-ups include favorites or tags for saved recipes, additional authored examples for the six starter methods, a configured vault destination, and per-step model choices. Evaluate model comparisons on the same source packet and output rubric before making claims about quality.

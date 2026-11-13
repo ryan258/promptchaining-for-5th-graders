@@ -6,6 +6,8 @@ Start with [Getting the most out of it](GETTING-THE-MOST-OUT-OF-IT.md). It expla
 
 These guides describe the current local workbench. They use the labels in the app and distinguish saved work, browser drafts, authored examples and live model output.
 
+For positioning, identity, campaign materials and the SWOT, see the brand and marketing kit in `docs/brand/README.md` (or open `docs/brand/index.html` in a browser).
+
 ## Find the guide for your next task
 
 | I want to… | Read this |
@@ -15,6 +17,8 @@ These guides describe the current local workbench. They use the labels in the ap
 | Choose among the six starting methods | [Recipe guide](RECIPE-GUIDE.md) |
 | Write my own prompts and connect their answers | [Build your own chains](CHAIN-BUILDING.md) |
 | Follow a complete example with realistic inputs | [Worked examples](WORKED-EXAMPLES.md) |
+| Try a prompt chain with a fifth-grade class | [Classroom walkthrough](DEMOS.md#try-it-with-a-class) |
+| Practice reviewing a professional handoff without a key | [Professional practice cases](PROFESSIONAL-CASES.md) |
 | Reduce typing and make sessions easier to resume | [Daily use and accessibility](DAILY-USE-AND-ACCESSIBILITY.md) |
 | Set up the app, choose a configured model, or adjust limits | [Setup and models](SETUP-AND-MODELS.md) |
 | Understand saves, exports, backups and interrupted runs | [Saving, export and recovery](SAVING-EXPORT-AND-RECOVERY.md) |
@@ -58,7 +62,8 @@ The authored Moon example has fixed answers and is labelled as an example. New l
 | [Roadmap](../ROADMAP.md) | Phased path, current foundation, and deferred scope |
 | [Testing](TESTING.md) | Focused offline checks and the boundary between tests and human acceptance |
 | [Workbench status](WORKBENCH-STATUS.md) | What was implemented and which local checks were performed |
-| [Legacy demos](DEMOS.md) | Older framework walkthroughs; inspect each script before running it, because many call providers |
+| [Demo guide](DEMOS.md) | Offline demonstrations and the scope of individual live scripts |
+| [Earlier demo notes](LEGACY-DEMOS.md) | Historical material from a previous interface |
 | [Ideas](IDEAS.md) | An older idea inventory, including proposals that may not exist |
 | [Changelog](CHANGELOG.md) and [earlier release notes](WHATS_NEW.md) | Historical development notes |
 

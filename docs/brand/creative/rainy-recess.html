@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A teacher handout for Rescue rainy recess, an offline fifth-grade Classroom Challenge in Prompt Chaining Studio.">
+<title>Rescue rainy recess | Teacher handout</title>
+<style>
+  @page { size: letter; margin: .55in .6in; }
+  * { box-sizing: border-box; }
+  body {
+    max-width: 52rem; margin: 2rem auto; padding: 0 1.25rem;
+    background: #f8f1e8; color: #242424;
+    font: 1rem/1.45 Manrope, "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  }
+  h1, h2 { font-family: Fraunces, "Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+  h1 { font-size: clamp(2.45rem, 7vw, 3.75rem); line-height: 1; margin: .25em 0 .18em; }
+  h2 { font-size: 1.46rem; line-height: 1.15; margin: 0 0 .45em; }
+  h3 { font-size: 1rem; line-height: 1.2; margin: 0 0 .25em; }
+  p, ol { margin: 0; }
+  p + p { margin-top: .5em; }
+  .mast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .7rem; }
+  .mast img { display: block; width: 14rem; max-width: 100%; }
+  .tag { font-weight: 700; color: #4c548c; }
+  .hero { padding: 1.2rem 0; border-bottom: 1px solid #96897b; }
+  .lead { max-width: 33rem; font-size: 1.12rem; }
+  section { margin-top: 1.2rem; }
+  ol { padding-left: 1.35em; }
+  li { padding-left: .25em; margin: .32em 0; }
+  .handoff {
+    display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: .7rem;
+  }
+  .card { border: 1px solid #96897b; border-top: 4px solid #4c548c; border-radius: .35rem; padding: .65rem; }
+  .card:nth-child(2) { background: #e8e9f4; }
+  .note { color: #594e47; font-size: .91rem; }
+  .check { padding: .65rem .8rem; border-left: 4px solid #4c548c; background: #e8e9f4; }
+  .worksheet { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid #96897b; font-size: 1.125rem; }
+  .worksheet .card { margin-top: .55rem; }
+  .worksheet h2 { font-size: clamp(2rem, 5vw, 3rem); margin: .2em 0; }
+  .worksheet h3 { font-size: 1em; }
+  .worksheet .lead { font-size: 1em; }
+  .write-space { margin: .4rem 0 .75rem; }
+  .write-space hr { height: 1.5rem; margin: 0; border: 0; border-bottom: 1px solid #96897b; }
+  .prompt-start { margin-top: .65rem; }
+  footer { border-top: 1px solid #96897b; margin-top: 1.2rem; padding-top: .55rem; font-size: .86rem; }
+  a { color: #4c548c; text-underline-offset: .18em; }
+  a:focus-visible { outline: 2px solid #4c548c; outline-offset: .2em; }
+  @media screen and (max-width: 38rem) { .handoff { grid-template-columns: 1fr; } }
+  @media print {
+    body { max-width: none; margin: 0; padding: 0; background: white; font-size: 11pt; }
+    h1 { font-size: 36pt; }
+    h2 { font-size: 17pt; }
+    .mast img { width: 2.3in; }
+    .hero { padding: .15in 0; }
+    section { break-inside: avoid; margin-top: .16in; }
+    .card { padding: .09in; }
+    .worksheet { break-before: page; break-inside: auto; margin: 0; padding: 0; border: 0; font-size: 13pt; }
+    .worksheet h2 { font-size: 31pt; }
+    footer { margin-top: .16in; }
+    footer a { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="mast">
+  <img src="../assets/studio-wordmark-light.svg" alt="Prompt Chaining Studio">
+  <p class="tag">Classroom Challenges · Grade 5</p>
+</header>
+<main>
+  <div class="hero">
+    <h1>Rescue rainy recess</h1>
+    <p class="lead">The class has to stay at their desks. The draft says to throw a paper ball. Which clue did it miss?</p>
+  </div>
+  <section aria-labelledby="setup">
+    <h2 id="setup">Before class</h2>
+    <p>Open an installed copy of Studio on the teacher computer. From Home, choose <strong>Try a classroom challenge</strong>, then <strong>Rescue rainy recess</strong>. Project the challenge or read it aloud.</p>
+    <p class="note">Plan for about 10-15 minutes. The answers are prepared and the app makes no model requests during this challenge.</p>
+    <p class="note"><strong>On paper.</strong> Give students page 2 and a pencil. Have partners read the clues, then cover the draft until they’ve picked a game. They can write a fix and copy it into the next prompt.</p>
+  </section>
+  <section aria-labelledby="activity">
+    <h2 id="activity">Lead the activity</h2>
+    <ol>
+      <li><strong>Pick a game.</strong> Read the clues. Ask partners which game fits the rules and why. Then reveal the first answer and find the words it passes into the next prompt.</li>
+      <li><strong>Check the draft.</strong> Show the paper basketball suggestion. Ask which clue it missed. Agree on one sentence that fixes it.</li>
+      <li><strong>Find your fix.</strong> Enter the class’s sentence and choose <strong>Save my fix</strong>. Have a student point to the exact words in the next prompt.</li>
+      <li><strong>Compare ideas.</strong> Reveal the prepared example. Ask which clues back up each version and whether both ideas could work.</li>
+    </ol>
+  </section>
+  <section aria-labelledby="show">
+    <h2 id="show">Show what carries forward</h2>
+    <p class="note">Sample wording for the teacher. Use the class’s sentence during the activity.</p>
+    <div class="handoff">
+      <div class="card"><h3>Clue</h3><p>Everyone stays at their desk. No throwing.</p></div>
+      <div class="card"><h3>Sample fix</h3><p><strong>Let’s draw robots at our desks.</strong></p></div>
+      <div class="card"><h3>Next prompt excerpt</h3><p><strong>Let’s draw robots at our desks.</strong> Write a quick announcement with simple directions.</p></div>
+    </div>
+  </section>
+  <section class="check" aria-labelledby="check">
+    <h2 id="check">Ask before you finish</h2>
+    <p>“Which words went into the next prompt? What new job did that prompt give the AI?”</p>
+  </section>
+  <section class="worksheet" aria-labelledby="student">
+    <p class="tag">Prompt Chaining Studio · Classroom Challenges · Student page</p>
+    <h2 id="student">Your class needs a game</h2>
+    <p class="lead">Rain moved recess indoors. You’re picking a game the class can play right now.</p>
+
+    <section aria-labelledby="student-clues">
+      <h3 id="student-clues">Read the clues</h3>
+      <p><strong>A.</strong> The gym is full. All 26 kids have to stay at their desks. The teacher says no throwing.</p>
+      <p><strong>B.</strong> Paper basketball got 11 votes. Robot drawing got 8. Seated charades got 7.</p>
+      <p><strong>C.</strong> Everyone has a sheet of paper and a pencil.</p>
+    </section>
+
+    <section aria-labelledby="student-draft">
+      <h3 id="student-draft">Find the mistake</h3>
+      <div class="card"><p><strong>Prepared draft</strong></p><p>“Let’s play paper basketball. It got the most votes! Crumple your paper into a ball and toss it into the recycling bin from your desk.”</p></div>
+      <p class="prompt-start">Which clue did the draft miss? Tell a partner what you’d change.</p>
+    </section>
+
+    <section aria-labelledby="student-fix">
+      <h3 id="student-fix">Write your fix</h3>
+      <p>Write one sentence that gives the class a game that fits the rules.</p>
+      <div class="write-space" aria-hidden="true"><hr><hr></div>
+    </section>
+
+    <section aria-labelledby="student-next">
+      <h3 id="student-next">Carry your answer into the next prompt</h3>
+      <p>A prompt is what you ask AI to do. Copy your sentence to finish the first line.</p>
+      <div class="card">
+        <p><strong>Use this game choice</strong></p>
+        <div class="write-space" aria-hidden="true"><hr><hr></div>
+        <p>Check it against the class rules. Write a quick announcement with simple directions.</p>
+      </div>
+      <p class="prompt-start">Point to the words that came from your answer. What new job does the prompt ask for?</p>
+    </section>
+  </section>
+</main>
+<footer>
+  <p>Make the next step better. <a href="../../DEMOS.md#try-it-with-a-class">Read the classroom walkthrough</a></p>
+</footer>
+</body>
+</html>

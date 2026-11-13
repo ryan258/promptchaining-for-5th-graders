@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Added the local workbench, saved recipes, checkpointed runs, review pauses, and the authored Moon walkthrough.
+- Added in-app Guides, Markdown and JSON exports, and additive ZIP workspace backups.
+- Added offline practice for decision memos, evidence briefs, and document reviews, with a fixed source packet and editable handoffs.
+- Added Chain Lab with offline starter missions, interactive token attachments (`[Goal]`, `[Clues]`, `[Answer N]`), human-answered runs, and remixing.
+- Added Classroom Challenges (Rainy Recess, Missing Mascot, Paper Bridge) and Dragon Challenge ("Build the next prompt") with prepared comparisons.
+- Added dedicated everyday recipes and discovery paths for kids, parents/caregivers, and teachers.
+- Added strict same-origin request boundary protection and origin-checking on local mutations.
+
 ## [0.2.0] - 2025-12-05
 
 ### Phase 4: Polish

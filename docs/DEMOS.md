@@ -1,566 +1,93 @@
-# Prompt Chaining Demos
+# Demonstrate the workbench
 
-> Legacy framework reference. Some walkthroughs predate the current workbench, and many scripts make provider calls. Start with the [current documentation index](README.md) for app usage; inspect an actual demo script before running it.
+[Documentation index](README.md) · [Professional practice cases](PROFESSIONAL-CASES.md) · [Verification](TESTING.md)
 
-This guide contains scripts and walkthroughs for demonstrating the Prompt Chaining framework. It is divided into two parts:
-1.  **The Full Experience**: A detailed 15-20 minute walkthrough for parents or deep-dives.
-2.  **The "Bar" Demo**: A quick, punchy 2-5 minute showcase for casual settings.
+## A walkthrough with no provider key
 
----
+Start with `./pc`. Open the local app and choose **Explore the Moon example**. The Moon example uses four authored answers. Open **Prompt that produced this answer** after each step to see what material was carried forward. The prompts and responses show the visible handoffs of the workflow.
 
-## Part 1: The Full Experience (Detailed Walkthrough)
+## Try it with a class
 
-**Purpose:** Show off the impressive capabilities of your AI reasoning lab
-**Audience:** Parents, friends, or anyone who wants to see it in action
-**Time:** 15-20 minutes for full demo
+Open [Classroom challenges](/studio/practice) on the classroom screen and choose a problem together. Try [rainy recess](/studio/practice#rainy-recess), [the missing mascot](/studio/practice#missing-mascot), or [the paper bridge](/studio/practice#paper-bridge). Each challenge uses written examples and works offline.
 
-### 🎭 Demo Philosophy
+1. From Home, choose **Try a classroom challenge**. Read the clues aloud and have students make their own pick. Then show the first answer and ask them to find the same words in the next prompt.
+2. Show the draft. Ask which clue it missed. Have the class write one sentence that fixes it.
+3. Save the class’s fix. Open the next prompt and have students point to the words they added. A prompt is an instruction. In a chain, one answer can become part of the next instruction.
+4. Compare the class’s fix and the example side by side. Ask which clues support each answer and whether both ideas could work. The example answer was written ahead of time.
 
-**What makes this impressive:**
-- Not just "ask AI a question and get an answer"
-- Shows **how the AI thinks step-by-step**
-- Demonstrates **different reasoning methods**
-- Shows **AI debating itself** and **comparing approaches**
-- Visualizes the **chain of thought** that's usually hidden
+## Build the next prompt
 
-**Parent-friendly angle:**
-- "This is like seeing the AI's homework, not just the final answer"
-- "Watch how it breaks down complex topics like a teacher would"
-- "See it use the scientific method just like you learned in school"
+From Home, open **Build the next prompt** under **Keep exploring** and start [Sneak a dragon through the library](/studio/practice#dragon-library). The challenge saves as you go and uses prepared answers offline.
 
-### 🚀 Demo Script
+1. Read the clues and see which route the dragon can take. Ask students to name the route and the library rule they’ll need to carry forward.
+2. Choose **Make a map note** or **Give spoken directions**. In the last prompt, find the route from the first answer and the job you chose in the second step.
+3. Predict what would change with the other job. Choose **See the prepared answer** and compare the two examples. Can you find the same route in both?
 
-#### DEMO 1: The "Wow" Opener - Concept Simplifier (3 minutes)
+Try a third job at home. The child gives the route to a parent or caregiver and asks for a new result, such as a two-line rhyme. The grown-up plays the AI and makes the rhyme using the route and the library rule.
 
-**What to say:**
-> "Let me show you how this breaks down complex topics. Watch how it doesn't just give me an answer - it shows each step of its thinking process."
+## Build your own chain in Chain Lab
 
-**Tab:** Tools
-**Tool:** Select "Concept Simplifier"
+Choose [Build your own chain](/studio/lab) on Home, in the classroom challenge chooser, or after the dragon challenge. Pick a mission or bring your own idea. Make a chain with two to five steps, each with a job in your words. Add `[Goal]`, `[Clues]`, or an earlier answer such as `[Answer 1]` where that step needs it. Chain Lab puts the actual text into the prompt, and a person supplies the answer. Each answer saves as you go. You can play offline.
 
-**Topic to use:**
-```
-How do mRNA vaccines work
-```
+| Mission | What the chain lets you try |
+| --- | --- |
+| **Race through the Moon Museum** | Plan a delivery route, check it when the lift breaks, and write a radio message the night crew can follow. |
+| **Meet a creature from Planet Ooze** | Give two explorers different jobs with the same clues, then combine their answers into a field guide page. |
+| **Teach the recess robot a game** | Make different cards for a new player and a referee, then check that both follow the same rules. |
+| **Build a sock arcade** | Playtest a game with a tricky toss and use what happened to write a clearer game card. |
 
-**Context:** (leave blank or add: "Explain to someone with no biology background")
+### Try one change at home
 
-**Click:** "Run Tool"
+1. Start **Meet a creature from Planet Ooze**. The child runs the chain. A parent or caregiver plays the AI. Read aloud or show only the filled-in prompt for the current step. Ask the grown-up to answer from that prompt and say when they need another clue.
+2. Save the first two answers about movement and hiding spots. For the field guide step, find the parts of the prompt that came from `[Answer 1]` and `[Answer 2]`. Save the field guide and mark where it tells readers where to look.
+3. Make a remix. The original stays saved, and the remix starts at Step 1. Remove `[Answer 2]` from the field guide prompt and take out its heading if you see one. Keep the job and the movement handoff. Choose **Reuse original answer** for the first two prompts, then give the grown-up the new field guide prompt. Which part of the page is harder to write now? What other clue would help?
 
-**What to point out while it runs:**
-- "See those steps appearing? Each one is a different thinking mode"
-- "First it decomposes - breaks it into parts"
-- "Then it creates analogies - like comparing to something familiar"
-- "Then it synthesizes - brings it all together"
+### Run the chain in a group of three
 
-**When results appear:**
-- Scroll through the results
-- Point out the analogies: "See how it compared it to [whatever analogy it made]? That's not in its training - it created that comparison on the spot"
-- "Notice how organized this is compared to just asking ChatGPT"
+The **chain designer** writes the job and chooses which clues or answers to pass along. The **answerer** plays the AI using only the filled-in prompt the designer reads aloud or copies to them. The **checker** looks at the full chain, points to the source of a detail in the answer, and asks what the answerer needed that the prompt left out. Switch roles after a round. Try comparing the two cards in **Teach the recess robot a game** and check that a new player and a referee would agree about what to do when somebody moves.
 
-**✨ Why this impresses:**
-- Visual step-by-step process
-- Smart analogies that click
-- Shows it's not just regurgitating - it's reasoning
+## Try a discovery mission
 
-#### DEMO 2: The Mind-Blower - Meta-Chain Studio (5 minutes)
+On Home, under **Kids**, choose [Try a discovery mission](/studio/lab#insight-missions). Ten offline missions give kids a question and a set of clues to investigate. Take turns reading the filled-in prompt and answering it. Change a clue in a remix and see which parts of the answer change with it.
 
-**What to say:**
-> "Okay, this next part is wild. I'm going to ask the AI to design its own thinking process for a specific goal. It's like asking a chef to design a custom recipe."
+In **Catch the sticker machine’s rule**, two rules explain the same first results. Ask the chain to find a card the rules would treat differently, then have a partner run the machine in secret. Talk about what that card tells you and what you still need to test.
 
-**Tab:** Click "Meta-Chain"
+## Make something to show at home
 
-**Goal to use:**
-```
-Teach my parents how their smartphone camera actually works
-```
+Choose [Make something to show at home](/studio/practice#make-at-home) from Home. Each challenge works offline. Fix the draft, see your words in the next prompt, and compare your idea with the example. Then make something you can share with a parent or caregiver.
 
-**Context:**
-```
-They're in their 60s, not technical, but curious. Use everyday analogies.
+| Challenge | What to try at home |
+| --- | --- |
+| [Make a game for family night](/studio/practice#family-game) | Teach a five-minute drawing game with one sheet of paper and one pencil. |
+| [Turn a memory into a comic](/studio/practice#memory-comic) | Draw four panels about a funny pancake flip or a moment of your own. |
+| [Invent a fix for home](/studio/practice#home-invention) | Sketch a paper pencil tray, pitch the idea, and test it with two pencils. |
+
+The completed challenge links to its editable recipe if you want to use live AI for a project of your own. Those recipes use the studio’s [live model setup](SETUP-AND-MODELS.md).
+
+## Try a case for adults
+
+Open [Professional practice](/studio/practice/professional) and choose a decision memo, evidence brief, or document review. These fictional source packets include a deliberately flawed second answer. Correct it using the packet, preview the next prompt, and compare your fix with the reference answer. You can export the run or return to it from **My library**.
+
+## Run the offline smoke checks
+
+From the repository folder:
+
+```bash
+./verify_demos.sh
 ```
 
-**Cognitive moves:** Click these pills:
-- decompose
-- analogize
-- exemplify
-- synthesize
+This exercises the authored Moon trace, the classroom challenges, the professional cases, and a two-step portable framework example with a fixed local callable. It checks the prompt handoffs and exits with a failure if a fixture does not complete. It starts no server, sends no requests, and does not write to the workspace. [Verification](TESTING.md) covers the separate test groups.
 
-**Click:** "Design chain"
+## Choose a live demo deliberately
 
-**What to say while waiting:**
-- "It's analyzing the goal and figuring out the best sequence of thinking steps"
-- "It's not following a template - it's creating a custom approach"
+The scripts in `demos/` show the earlier portable framework. Many examples send multiple paid requests or write logs and artifacts. Read a script’s inputs, call plan, and output paths before choosing an individual example. A timed-out or interrupted request may still appear in provider usage. The interactive scripts can save partial framework artifacts; use the workbench when you need a resumable trace.
 
-**When design appears:**
+For a bounded comparison, choose this single live case. It can send up to seven requests, five for the scientific-method pattern, one for the baseline, and one for the rubric judge.
 
-**Point out:**
-1. **Design reasoning section:**
-   - "Look at this - it's explaining WHY it chose this approach"
-   - Read the reasoning out loud
-
-2. **Scroll to the prompts:**
-   - "These are the actual prompts it wrote for itself"
-   - "See Step 1? That's what it will ask itself first"
-   - "Each step builds on the previous one"
-
-**Then execute:**
-- "Now watch it actually run the chain it just designed"
-- Click "Execute designed chain"
-- **Scroll through results as they appear**
-
-**Point out:**
-- "See how each step naturally leads to the next?"
-- "This is way more structured than just asking 'explain how cameras work'"
-- Find a good analogy in the results: "Look at this comparison - that's brilliant"
-
-**✨ Why this impresses:**
-- The AI designs its own thinking process
-- Shows metacognition (thinking about thinking)
-- Parents can relate to the topic (their phone camera)
-- Results are actually useful/interesting
-
-#### DEMO 3: The Classic - Scientific Method (4 minutes)
-
-**What to say:**
-> "Remember learning the scientific method in school? Hypothesis, experiment, conclusion? Watch the AI apply that rigorously to a real question."
-
-**Tab:** Click "Patterns"
-
-**Pattern:** "Scientific Method" (should be default)
-
-**Hypothesis to use:**
-
-**Option A (Health-related, relatable):**
-```
-Daily walking reduces the risk of cognitive decline in aging
+```bash
+.venv/bin/python demos/emergence_measurement_demo.py --demo 2 --live
 ```
 
-**Option B (Food-related, fun):**
-```
-Coffee improves focus and productivity for most people
-```
+Read the result as the judge model’s assessment of those excerpts. Collect evidence separately when you need to verify a claim. [Comparison contract](ADVANCED-TOOLS.md#execution-limits-and-comparison-records)
 
-**Option C (Tech-related):**
-```
-Using smartphones before bed disrupts sleep quality
-```
-
-**Context:**
-```
-Evaluate based on existing research and biological mechanisms
-```
-
-**Evidence sources:** (leave blank)
-
-**Click:** "Run pattern"
-
-**What to say while waiting:**
-- "This takes a minute because it's doing all 5 steps of the scientific method"
-- "Observation, hypothesis, prediction, experiment design, analysis, conclusion"
-- "Just like you learned in school, but the AI is doing it"
-
-**When results appear:**
-
-**Walk through the columns:**
-
-1. **Observations column:**
-   - "See? It's identifying what we know that led to this hypothesis"
-
-2. **Predictions column:**
-   - "Here it's saying: if this is TRUE, we'd see X, Y, Z"
-   - "And if it's FALSE, we'd see A, B, C"
-
-3. **Experimental Design column:**
-   - "Look at this - it designed an actual experiment"
-   - Read parts of it out loud
-   - "Control variables, independent variable, confounds - real science"
-
-4. **Analysis column:**
-   - "Based on existing research, here's what we'd likely find"
-
-5. **Conclusion column:**
-   - "And here's the verdict"
-   - Point out the confidence level
-   - "Notice it's not just yes/no - it explains the nuance"
-
-**Point to metadata chips below:**
-- "See the verdict chip? [Supported/Refuted/Inconclusive]"
-- "That's not a guess - it worked through the entire scientific process to get there"
-
-**✨ Why this impresses:**
-- Everyone knows the scientific method
-- Shows AI doing real reasoning, not just answering
-- The structured columns look professional
-- It's tackling real questions they might wonder about
-
-#### DEMO 4: The Debate - Red vs Blue (5 minutes)
-
-**What to say:**
-> "This one is fun. Watch the AI debate itself. One side defends a position, the other attacks it, and a judge decides who wins. It's like watching a courtroom drama."
-
-**Tab:** Click "Debates & Emergence"
-
-**Mode:** "Debate: Red vs Blue" (should be default)
-
-**Topics to use (pick one):**
-
-**Option A (Technology - impressive):**
-```
-The future of artificial intelligence
-```
-**Position to defend:**
-```
-AI will create more jobs than it destroys
-```
-
-**Option B (Health - relatable):**
-```
-Modern healthcare approaches
-```
-**Position to defend:**
-```
-Prevention should be prioritized over treatment in healthcare
-```
-
-**Option C (Education - timely):**
-```
-The role of AI in education
-```
-**Position to defend:**
-```
-AI tutors will improve education outcomes more than traditional methods
-```
-
-**Rounds:** Set to **2** (to save time)
-
-**Click:** "Run"
-
-**What to say while waiting:**
-- "This is going to take 2-3 minutes because it's simulating an entire debate"
-- "Blue team will defend the position"
-- "Red team will attack it from every angle"
-- "Then a judge evaluates both sides"
-
-**When results appear:**
-
-**A chronological feed will appear - walk through it:**
-
-1. **Blue Team Opening (top):**
-   - "Here's the opening defense"
-   - Scroll and read a compelling point
-
-2. **Rounds Feed (middle):**
-   - "Look at Round 1 - Red attacks, Blue defends"
-   - "See how they respond to each other directly?"
-   - "Red Team finds weaknesses, Blue Team counters"
-
-3. **Judge's Verdict (bottom):**
-   - **The big reveal**
-   - "The judge evaluates the entire debate"
-   - Point to the winner badge
-   - Read the verdict reasoning out loud
-   - "Look at the scores - Blue Team [X]/10, Red Team [Y]/10"
-
-**Point to metadata:**
-- "Winner: [Blue/Red]"
-- "This wasn't random - it reasoned through both positions"
-
-**What to emphasize:**
-- "This isn't ChatGPT giving one opinion"
-- "It's actively considering both sides before reaching a conclusion"
-- "The judge has to be fair - it can't favor one side"
-- "This is adversarial reasoning - how experts actually think through complex issues"
-
-**✨ Why this impresses:**
-- The debate format is inherently entertaining
-- Parents can see both sides of an issue
-- The "winner" verdict is dramatic
-- Shows AI can argue against itself (metacognition)
-- The topic is relevant and interesting
-
-#### DEMO 5 (OPTIONAL): The Emergence Test (5 minutes)
-
-**Only do this if you have time and want to show the most advanced feature**
-
-**What to say:**
-> "Last one - this is the most experimental. It compares two approaches: my multi-step chain versus a traditional single prompt. Then it measures which approach unlocked better thinking. That's what 'emergence' means - does the chain unlock insights that a single prompt can't?"
-
-**Tab:** Should already be on "Debates & Emergence"
-
-**Mode:** Click "Emergence Compare"
-
-**Topic to use:**
-
-**Option A (Philosophical):**
-```
-The nature of consciousness
-```
-
-**Option B (Practical):**
-```
-How to build lasting habits
-```
-
-**Option C (Scientific):**
-```
-Why do humans dream
-```
-
-**Chain to test:** "Scientific Method" (default is fine)
-
-**Context & Baseline:** Leave blank
-
-**Click:** "Run"
-
-**⚠️ Warning to give:**
-- "This one is the slowest - about 2-3 minutes"
-- "It has to run the topic through the chain AND through a baseline, then compare them"
-
-**What to say while waiting:**
-- "It's running the topic through the scientific method chain"
-- "Now it's running a single optimized prompt"
-- "Now it's comparing both outputs on 5 dimensions"
-
-**When results appear:**
-
-**Side-by-side comparison:**
-
-1. **Baseline Output (left):**
-   - "This is the single-prompt approach"
-   - "Notice the difference in structure?"
-
-2. **Chain Output (right):**
-   - "This is the multi-step scientific method approach"
-   - Scroll through it - should be detailed
-
-3. **Analysis & Metrics (below):**
-   - **The big reveal**
-   - Point to winner badge: "Winner: Chain" (hopefully!)
-   - "Look at these 5 metrics"
-   - Read them: "Novelty: Chain 8/10, Baseline 6/10"
-   - "Depth: Chain 9/10, Baseline 7/10"
-   - Point to the analysis text
-   - "This is quantifying which approach produced better thinking"
-
-**What to emphasize:**
-- "This is measuring whether chains actually unlock better reasoning"
-- "It's not about longer output - it's about quality"
-- "Usually chains score higher on novelty and depth"
-- "This is how I test whether my chains are actually better than just asking ChatGPT"
-
-**✨ Why this impresses:**
-- It's meta (comparing thinking methods)
-- Shows you're doing research, not just using AI
-- The scoring system is concrete and scientific
-- Parents understand the concept of "better approach"
-
-### 🎯 Demo Tips & Tricks
-
-#### Before You Start
-
-**Prep work (5 minutes before demo):**
-1. Start both servers
-2. Open http://localhost:5173
-3. Do a quick test run of Concept Simplifier to verify everything works
-4. Close any error messages
-5. Refresh the page for a clean slate
-
-**Have ready:**
-- Both terminals running (but hide them from view)
-- Browser in fullscreen or maximized
-- Maybe zoom browser to 110% so text is bigger
-
-#### During the Demo
-
-**Pacing:**
-- Don't rush - let them read results
-- Pause after each section
-- Ask "Make sense?" before moving on
-
-**Reading out loud:**
-- Pick the most impressive/interesting parts to read
-- Don't read everything - scroll and highlight
-- Use your voice: "Oh wow, look at this analogy..."
-
-**If something breaks:**
-- "Hmm, let me try that again" (refresh and retry)
-- "The AI servers might be slow right now"
-- Skip to next demo
-- Check Terminal 1 for actual error
-
-**Energy level:**
-- Start enthusiastic: "Check this out!"
-- Build excitement at key reveals (winner, verdict, clever analogies)
-- End with: "And I built this!"
-
-### 🤯 "WOW" Examples - Guaranteed Impressive
-
-These are battle-tested prompts that make people's jaws drop. Use these when you want maximum impact.
-
-**Concept Simplifier:**
-```
-Why does time slow down near a black hole
-```
-**Why it wows:** The analogies for spacetime warping are always incredible. AI explains Einstein's relativity through everyday comparisons like trampolines and bowling balls.
-
-**Concept Simplifier:**
-```
-How does anesthesia make you unconscious
-```
-**Why it wows:** Nobody actually knows for sure! Watching the AI explore competing theories and admit uncertainty is fascinating. Shows intellectual honesty.
-
-**Scientific Method:**
-```
-The placebo effect can produce measurable physiological changes
-```
-**Why it wows:** Tests whether "belief alone can heal" using rigorous science. The conclusion is usually nuanced and mind-blowing - belief DOES create real biological changes.
-
-**Meta-Chain Goal:**
-```
-Explain what would have happened if the Library of Alexandria never burned
-```
-**Context:**
-```
-Consider technology, science, culture. Use counterfactual reasoning and historical analysis.
-```
-**Why it wows:** The AI has to reason backward through history, considering butterfly effects. Results are often shocking - "we might have reached the Industrial Revolution 1000 years earlier."
-
-**Red vs Blue Debate:**
-**Topic:** "Historical turning points"
-**Position:**
-```
-The invention of the printing press had a greater impact on human civilization than the internet
-```
-**Why it wows:** The debate gets HEATED. Blue team defends printing press with Renaissance/Reformation arguments, Red team brings modern connectivity stats. Judge has to weigh 500 years vs 30 years of impact. Usually very close decision.
-
-**5 Whys:**
-```
-I feel anxious when I have nothing scheduled
-```
-**Why it wows:** Watching it dig down to root psychological causes is like therapy in real-time. Usually traces back to something deep like "fear of lack of purpose" or "avoidance of confronting difficult truths." People see themselves in it.
-
----
-
-## Part 2: The "Bar" Demo (Quick & Visual)
-
-**Purpose:** The "Napkin Demo" - showing off your AI lab in a casual, noisy setting.
-**Audience:** Friends, skeptics, or that person you just met who asked "So what do you do?"
-**Time:** 2-5 minutes (attention spans are short here).
-**Vibe:** Fun, provocative, visual.
-
-### 🍺 The "Bar Rules" for Demos
-
-1.  **Mobile First:** If you're on a phone, stick to **Concept Simplifier** or **Scientific Method**. The others need screen real estate.
-2.  **No Typing:** Use the presets or voice-to-text if you can. Typing "quantum mechanics" on a phone in a bar is a buzzkill.
-3.  **High Contrast:** Use topics that spark debate or laughter. No "optimizing spreadsheets."
-4.  **The "Hook":** "I built an AI that argues with itself so I don't have to."
-
-### 🚀 The Demos (Fast)
-
-#### DEMO 1: The "Bar Bet" Settler (Scientific Method)
-
-**The Setup:** Someone claims something dubious. You say, "Let's run it through the lab."
-
-**Topic:** "Mixing drinks causes worse hangovers"
-**Context:** "Analyze chemical compounds and biological metabolism."
-
-**Why it works:**
-*   Everyone has an opinion on this.
-*   The **5-column layout** looks serious and scientific.
-*   The **Verdict** (Supported/Refuted) settles the bet.
-*   **Bonus:** "Hair of the dog cures hangovers" (Verdict: Refuted, usually).
-
-#### DEMO 2: The "Deep Talk" Generator (Red vs Blue Debate)
-
-**The Setup:** The conversation gets philosophical. You pull out the "AI Fight Club."
-
-**Topic:** "Free will is an illusion"
-**Position:** "Our choices are determined by physics and biology."
-**Rounds:** 2 (keep it short).
-
-**Why it works:**
-*   **Visuals:** The Red vs Blue cards look cool.
-*   **Drama:** Watching the AI attack its own argument is trippy.
-*   **The Judge:** Everyone waits for the winner. "Oh snap, Blue Team got crushed!"
-
-#### DEMO 3: The "Explain Like I'm Drunk" (Concept Simplifier)
-
-**The Setup:** Someone mentions a complex buzzword (Crypto, AI, NFT, Quantum).
-
-**Topic:** "How Bitcoin actually works"
-**Context:** "Explain it using beer analogies only."
-
-**Why it works:**
-*   **Analogies:** The AI will literally explain blockchain as a "shared bar tab" or "ledger of rounds."
-*   **Speed:** It's the fastest tool.
-*   **Clarity:** It actually makes sense.
-
-#### DEMO 4: The "Party Planner" (Meta-Chain)
-
-**The Setup:** "Let's design the perfect night out."
-
-**Goal:** "Design the ultimate bachelor/bachelorette party itinerary in [City]"
-**Cognitive Moves:** `ideate`, `critique`, `synthesize`.
-
-**Why it works:**
-*   **Customization:** It feels like magic.
-*   **The "Designer" Step:** Showing the AI *thinking* about how to plan the party ("We need to balance fun with safety...") is impressive.
-*   **Result:** You get an actual plan.
-
-### 💡 "Bar Talk" Topics (Copy-Paste Ready)
-
-**Fun/Social:**
-*   "Why do we click tongs twice before using them?" (5 Whys)
-*   "Is a hotdog a sandwich?" (Judicial Reasoning)
-*   "Pineapple belongs on pizza" (Red vs Blue Debate)
-*   "Why does tequila make me crazy?" (Scientific Method)
-
-**Mind-Bending:**
-*   "Are we living in a simulation?" (Emergence Compare)
-*   "Do aliens exist?" (Scientific Method)
-*   "Is AI conscious?" (Socratic Dialogue)
-
-### 🍻 25 More "Bar-Ready" Examples
-
-**Pop Culture & Media**
-1.  **"Is Die Hard a Christmas movie?"** (Judicial Reasoning)
-2.  **"Who would win: Batman vs. Iron Man"** (Red vs Blue Debate)
-3.  **"Explain the plot of Tenet"** (Concept Simplifier)
-4.  **"Why did Game of Thrones Season 8 fail?"** (5 Whys)
-5.  **"Design the perfect sequel to The Matrix"** (Meta-Chain)
-
-**Tech & Future**
-6.  **"Will AI take my job?"** (Socratic Dialogue)
-7.  **"Crypto is a Ponzi scheme"** (Scientific Method)
-8.  **"We should ban TikTok"** (Judicial Reasoning)
-9.  **"Explain Quantum Computing"** (Concept Simplifier)
-10. **"Mars Colonization is a bad idea"** (Red vs Blue Debate)
-
-**Absurd & Funny**
-11. **"Why do cats knock things over?"** (Scientific Method)
-12. **"Is a taco a sandwich?"** (Judicial Reasoning)
-13. **"Why is printer ink so expensive?"** (5 Whys)
-14. **"Birds are not real"** (Red vs Blue Debate)
-15. **"Explain the rules of Cricket"** (Concept Simplifier)
-
-**Deep Thoughts**
-16. **"Does free will exist?"** (Scientific Method)
-17. **"Is suffering necessary for art?"** (Socratic Dialogue)
-18. **"Universal Basic Income"** (Judicial Reasoning)
-19. **"Why do we dream?"** (Scientific Method)
-20. **"The Fermi Paradox"** (Concept Simplifier)
-
-**Life Hacks**
-21. **"How to cure a hangover"** (Scientific Method)
-22. **"Why am I always tired?"** (5 Whys)
-23. **"Should I buy a house or rent?"** (Judicial Reasoning)
-24. **"Design the ultimate morning routine"** (Meta-Chain)
-25. **"Explain NFTs to my grandma"** (Concept Simplifier)
-
-**NFL Sunday Special**
-26. **"Brady vs. Mahomes: Who is the GOAT?"** (Red vs Blue Debate)
-27. **"Why do the Cowboys always choke?"** (5 Whys)
-28. **"Is it a catch? (The Dez Bryant Rule)"** (Judicial Reasoning)
-29. **"Explain the Salary Cap like I'm 5"** (Concept Simplifier)
-30. **"Design the perfect 2-minute drill"** (Meta-Chain)
+[Earlier demo notes](LEGACY-DEMOS.md) describe a previous interface and include unverified historical claims. Use this page for current steps.
