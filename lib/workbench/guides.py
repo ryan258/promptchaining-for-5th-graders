@@ -28,8 +28,9 @@ GUIDES = (
     Guide("getting-more", "docs/GETTING-THE-MOST-OUT-OF-IT.md", "Get more out of a session", "Give a thought a useful destination and improve the handoffs.", "Start here", "better results quality prompts context"),
     Guide("recipes", "docs/RECIPE-GUIDE.md", "Choose a recipe", "Find the right method for what you want to leave with.", "Start here", "explain write decide learn connect untangle"),
     Guide("examples", "docs/WORKED-EXAMPLES.md", "Follow a worked example", "Walk through learning, drafting, and finding a next action.", "Start here", "moon walkthrough tutorial"),
+    Guide("professional-cases", "docs/PROFESSIONAL-CASES.md", "Practice a professional workflow", "Review a decision memo, evidence brief, or document before handing it over.", "Make it yours", "practice decision memo evidence brief document review source packet"),
     Guide("building-chains", "docs/CHAIN-BUILDING.md", "Build your own chains", "Connect prompts and answers, with a complete three-step recipe.", "Make it yours", "placeholders variables output custom JSON"),
-    Guide("accessibility", "docs/DAILY-USE-AND-ACCESSIBILITY.md", "Less typing, easier return", "Use dictation, shortcuts, saved methods, and small sessions.", "Make it yours", "keyboard voice aliases drafts resume"),
+    Guide("accessibility", "docs/DAILY-USE-AND-ACCESSIBILITY.md", "Less typing, easier return", "Use dictation, shortcuts, saved methods, and small sessions.", "Make it yours", "keyboard dictation aliases drafts resume"),
     Guide("setup", "docs/SETUP-AND-MODELS.md", "Setup and models", "Configure generation, choose a model, and understand limits.", "Keep it working", "key OpenRouter tokens temperature timeout cost install port"),
     Guide("saving-and-recovery", "docs/SAVING-EXPORT-AND-RECOVERY.md", "Save, export, and recover", "Keep the right record, back it up, and pick up interrupted work.", "Keep it working", "backup restore library paused failed interrupted Markdown JSON"),
     Guide("troubleshooting", "docs/TROUBLESHOOTING.md", "Resolve a problem", "Find the next useful check for an error or unexpected behavior.", "Keep it working", "error failed stuck missing rejected doctor"),
@@ -40,11 +41,19 @@ GUIDES = (
     Guide("architecture", "docs/ARCHITECTURE.md", "How the app is built", "Understand the modules, persistence, and execution boundaries.", "Reference", "SQLite Chroma developer architecture"),
     Guide("testing", "docs/TESTING.md", "Verification reference", "Distinguish offline tests, provider checks, and human acceptance.", "Reference", "test pytest checks"),
     Guide("status", "docs/WORKBENCH-STATUS.md", "Implementation status", "Read what was implemented and which checks were performed.", "Reference"),
-    Guide("legacy-demos", "docs/DEMOS.md", "Earlier framework demos", "Older walkthroughs; inspect a script before making provider calls.", "Earlier notes"),
+    Guide("demos", "docs/DEMOS.md", "Teach with a classroom challenge", "Lead a class through the clues, the draft, and the next prompt.", "Reference", "classroom teacher practice offline demos"),
+    Guide("legacy-demos", "docs/LEGACY-DEMOS.md", "Earlier framework demos", "Historical walkthroughs for the previous interface.", "Earlier notes"),
     Guide("ideas", "docs/IDEAS.md", "Earlier ideas", "The historical inventory of project ideas and proposals.", "Earlier notes"),
     Guide("changelog", "docs/CHANGELOG.md", "Historical changelog", "Earlier development changes.", "Earlier notes"),
     Guide("release-notes", "docs/WHATS_NEW.md", "Earlier release notes", "Notes describing previous versions of the framework.", "Earlier notes"),
 )
+
+SEARCH_ALIASES = {
+    "placeholders": "placeholder",
+    "rca": "root cause",
+    "voice": "dictation",
+    "speech to text": "dictation",
+}
 
 
 @dataclass
@@ -90,7 +99,11 @@ class GuideBook:
         candidate = self.root / guide.source
         # A guide filename must not become an alias for credentials or another
         # file, even if a symlink stays inside the project directory.
-        if candidate.resolve() != candidate or not candidate.is_file():
+        try:
+            valid = candidate.resolve() == candidate and candidate.is_file()
+        except (OSError, RuntimeError):
+            valid = False
+        if not valid:
             raise GuideUnavailable("This guide is not available in this installation.")
         return candidate
 
@@ -112,13 +125,16 @@ class GuideBook:
                 if url.scheme.lower() not in {"http", "https"}:
                     return None, False
                 if url.hostname in {"localhost", "127.0.0.1", "::1"} and url.port in {None, 8000}:
-                    return urlunsplit(("", "", url.path or "/", url.query, url.fragment)), False
+                    path = url.path or "/"
+                    if self._app_path(path) and url.username is None and url.password is None:
+                        return urlunsplit(("", "", path, url.query, url.fragment)), False
+                    return None, False
                 return target, True
-            if url.netloc:
+            if url.netloc or target.startswith("//"):
                 return None, False
             if not url.path:
                 return ("#" + url.fragment) if url.fragment else "#main", False
-            if url.path == "/" or url.path.startswith("/studio/"):
+            if self._app_path(url.path):
                 return target, False
             path = (self.root / Path(current.source).parent / unquote(url.path)).resolve()
             guide = self.sources.get(path)
@@ -126,8 +142,12 @@ class GuideBook:
                 return None, False
             self._path(guide)
             return guide.href + ("#" + url.fragment if url.fragment else ""), False
-        except (ValueError, OSError):
+        except (ValueError, OSError, RuntimeError):
             return None, False
+
+    @staticmethod
+    def _app_path(path: str) -> bool:
+        return (path == "/" or path.startswith("/studio/")) and "\\" not in unquote(path)
 
     @staticmethod
     def _plain(inline) -> str:
@@ -169,15 +189,20 @@ class GuideBook:
             title = self._plain(tokens[1])
             tokens = tokens[3:]
         sections = [Section(title, "", 1)]
-        used_ids: dict[str, int] = {}
+        used_ids = {"main", "guide-title"}
+        suffixes: dict[str, int] = {}
 
         for index, token in enumerate(tokens):
             if token.type == "heading_open" and index + 1 < len(tokens):
                 heading = self._plain(tokens[index + 1])
                 base = re.sub(r"\s+", "-", "".join(ch for ch in heading.casefold() if ch.isalnum() or ch in " _-").strip()) or "section"
-                count = used_ids.get(base, 0)
-                used_ids[base] = count + 1
+                count = suffixes.get(base, 0)
                 anchor = base if count == 0 else f"{base}-{count}"
+                while anchor in used_ids:
+                    count += 1
+                    anchor = f"{base}-{count}"
+                used_ids.add(anchor)
+                suffixes[base] = count + 1
                 token.attrSet("id", anchor)
                 if token.tag in {"h2", "h3"}:
                     sections.append(Section(heading, anchor, int(token.tag[1])))
@@ -203,28 +228,45 @@ class GuideBook:
         return Document(guide, title, markdown.renderer.render(tokens, markdown.options, {}), source, sections)
 
     def search(self, query: str) -> list[SearchHit]:
-        terms = list(dict.fromkeys(re.findall(r"\w+", query.casefold())))[:12]
+        phrase = " ".join(query.casefold().split())
+        phrase = SEARCH_ALIASES.get(phrase, phrase)
+        terms = list(dict.fromkeys(re.findall(r"\w+", phrase)))[:12]
         if not terms:
             return []
+        words = [re.compile(rf"\b{re.escape(term)}s?\b") for term in terms]
+        exact_phrase = re.compile(rf"(?<!\w){re.escape(phrase)}(?!\w)")
         results = []
         for guide in self.available():
+            if guide.group == "Earlier notes":
+                continue
             try:
                 document = self.read(guide.slug)
             except GuideUnavailable:
                 continue
             meta = f"{guide.title} {guide.description} {guide.keywords}".casefold()
-            corpus = meta + " " + " ".join(section.text.casefold() for section in document.sections)
-            if not all(term in corpus for term in terms):
+            matches = []
+            for section in document.sections:
+                heading = section.title.casefold()
+                body = " ".join(section.text.casefold().split())
+                heading_matches = [bool(word.search(heading)) for word in words]
+                body_matches = [bool(word.search(body)) for word in words]
+                if all(a or b for a, b in zip(heading_matches, body_matches)):
+                    score = 4 * sum(heading_matches) + sum(body_matches)
+                    score += 6 * bool(exact_phrase.search(heading)) + 2 * bool(exact_phrase.search(body))
+                    matches.append((score, section))
+            if matches:
+                score, section = max(matches, key=lambda match: match[0])
+            elif all(word.search(meta) for word in words):
+                score, section = 0, document.sections[0]
+            else:
                 continue
-            section = max(document.sections, key=lambda s: sum(3 * (term in s.title.casefold()) + (term in s.text.casefold()) for term in terms))
             text = " ".join(section.text.split()) or guide.description
-            offsets = [text.casefold().find(term) for term in terms if term in text.casefold()]
+            offsets = [match.start() for word in words if (match := word.search(text.casefold()))]
             start = max(0, min(offsets, default=0) - 60)
             if start:
                 start = text.rfind(" ", 0, start) + 1
             excerpt = ("…" if start else "") + text[start:start + 240] + ("…" if len(text) > start + 240 else "")
-            score = sum(8 * (term in guide.title.casefold()) + 3 * (term in meta) for term in terms)
-            score -= 8 if guide.group == "Earlier notes" else 0
+            score += 2 * sum(bool(word.search(guide.title.casefold())) for word in words)
             results.append(SearchHit(guide, excerpt, section, score))
         return sorted(results, key=lambda result: result.score, reverse=True)
 

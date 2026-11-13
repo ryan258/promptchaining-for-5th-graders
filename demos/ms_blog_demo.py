@@ -26,7 +26,8 @@ from tools.ms_blog.ms_content_tools import (
     generate_prompt_card,
     generate_shortcut_spotlight,
     generate_guide,
-    expand_content_idea
+    expand_content_idea,
+    save_markdown,
 )
 
 
@@ -90,9 +91,7 @@ def demo_2_prompt_card_generation():
 
     # Save it
     output_path = os.path.join(project_root, "output", "ms_blog", "daily-planning-prompt.md")
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    with open(output_path, 'w') as f:
-        f.write(content)
+    output_path = save_markdown(content, output_path)
     print(f"\n💾 Saved to: {output_path}")
 
     return content, metadata
@@ -126,8 +125,7 @@ def demo_3_shortcut_generation():
 
     # Save it
     output_path = os.path.join(project_root, "output", "ms_blog", "voice-typing-shortcut.md")
-    with open(output_path, 'w') as f:
-        f.write(content)
+    output_path = save_markdown(content, output_path)
     print(f"\n💾 Saved to: {output_path}")
 
     return content, metadata
@@ -161,8 +159,7 @@ def demo_4_guide_generation():
 
     # Save it
     output_path = os.path.join(project_root, "output", "ms_blog", "ai-symptom-tracking-guide.md")
-    with open(output_path, 'w') as f:
-        f.write(content)
+    output_path = save_markdown(content, output_path)
     print(f"\n💾 Saved to: {output_path}")
 
     return content, metadata

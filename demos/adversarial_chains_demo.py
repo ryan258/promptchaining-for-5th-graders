@@ -32,22 +32,22 @@ def demo_red_vs_blue():
     print("\n" + "=" * 70)
     print("DEMO 1: RED TEAM vs BLUE TEAM")
     print("=" * 70)
-    print("\nTopic: MS Treatment Strategies")
-    print("Position: MS patients should prioritize high-efficacy DMTs from diagnosis")
+    print("\nTopic: Choosing a process for internal service requests")
+    print("Position: A structured form should be the default for routine requests")
     print("\nRed Team will attack this position...")
     print("Blue Team will defend...")
-    print("Judge will evaluate the debate...")
+    print("A model judge will score the arguments using the supplied rubric.")
     print()
 
     result, metadata = red_vs_blue(
-        topic="Multiple Sclerosis treatment strategies",
-        position_to_defend="MS patients should start high-efficacy DMTs immediately after diagnosis",
+        topic="Choosing a process for internal service requests",
+        position_to_defend="A structured form should be the default for routine requests",
         rounds=2,  # 2 rounds for demo speed
         judge_criteria=[
             "Strength of evidence",
             "Logical coherence",
             "Practical considerations",
-            "Patient welfare"
+            "Ease of use and recovery"
         ]
     )
 
@@ -67,7 +67,7 @@ def demo_red_vs_blue():
         if counters:
             print(f"  Strengthened position: {round_data['blue_defense'].get('strengthened_position', 'N/A')}")
 
-    print(f"\n⚖️  JUDGE'S VERDICT:")
+    print(f"\nMODEL JUDGE'S ASSESSMENT:")
     print(f"  Blue Team strength: {result['judgment'].get('blue_team_strength', 'N/A')}/10")
     print(f"  Red Team strength: {result['judgment'].get('red_team_strength', 'N/A')}/10")
     print(f"  Winner: {metadata['winner']}")
@@ -83,15 +83,15 @@ def demo_dialectical():
     print("\n" + "=" * 70)
     print("DEMO 2: DIALECTICAL SYNTHESIS")
     print("=" * 70)
-    print("\nThesis: MS patients should focus on symptom management")
+    print("\nThesis: A written handoff should replace the daily status meeting.")
     print("\nApplying Hegelian dialectic...")
     print("  Thesis → Antithesis → Synthesis")
     print()
 
     result, metadata = dialectical(
-        thesis="MS patients should prioritize symptom management over disease modification",
-        context="Approaches to MS treatment and patient quality of life",
-        domain="Medical philosophy"
+        thesis="A written handoff should replace the daily status meeting",
+        context="A fictional support team works across different shifts and must still escalate urgent issues",
+        domain="Operations"
     )
 
     print("\n📖 DIALECTICAL PROGRESSION:")
@@ -125,12 +125,12 @@ def demo_adversarial_socratic():
     print("\n" + "=" * 70)
     print("DEMO 3: ADVERSARIAL SOCRATIC DIALOGUE")
     print("=" * 70)
-    print("\nClaim: AI assistants will solve the MS medication adherence problem")
+    print("\nClaim: An AI assistant will resolve every missing incident handoff.")
     print("\nSubjecting claim to aggressive Socratic questioning...")
     print()
 
     result, metadata = adversarial_socratic(
-        claim="AI assistants will solve the MS medication adherence problem",
+        claim="An AI assistant will resolve every missing incident handoff",
         depth=3,  # 3 rounds for demo
         aggressive=True
     )
@@ -242,7 +242,12 @@ if __name__ == "__main__":
         help="Run specific demo (1=Red vs Blue, 2=Dialectical, 3=Adversarial Socratic, 4=All)"
     )
 
+    parser.add_argument("--live", action="store_true", help="Send the selected provider requests.")
     args = parser.parse_args()
+    limits = {1: 6, 2: 4, 3: 8, 4: 18}
+    if args.demo is None or not args.live:
+        parser.error("Choose --demo and pass --live for provider requests. For offline examples use ./verify_demos.sh.")
+    print(f"Up to {limits[args.demo]} provider requests. Provider charges apply.")
 
     if args.demo == 1:
         demo_red_vs_blue()

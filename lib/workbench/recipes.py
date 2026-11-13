@@ -1,10 +1,112 @@
-"""Six useful starting points and one honestly labelled, authored example."""
+"""Built-in starting points and a labelled, authored example."""
 
+from .everyday_recipes import EVERYDAY_INPUT_HINTS, EVERYDAY_RECIPE_EXAMPLES, EVERYDAY_RECIPES
 from .models import Recipe, Result, Run, Step
+from .parent_insight_recipes import PARENT_INSIGHT_INPUT_HINTS, PARENT_INSIGHT_RECIPE_EXAMPLES, PARENT_INSIGHT_RECIPES
+from .teacher_insight_recipes import TEACHER_INSIGHT_INPUT_HINTS, TEACHER_INSIGHT_RECIPE_EXAMPLES, TEACHER_INSIGHT_RECIPES
+from .teacher_recipes import TEACHER_INPUT_HINTS, TEACHER_RECIPE_EXAMPLES, TEACHER_RECIPES
 
 
 def step(name: str, purpose: str, prompt: str) -> Step:
     return Step(name=name, purpose=purpose, prompt=prompt)
+
+
+_PARENT_AUDIENCE = "A parent or caregiver. Write directions a fifth grader can follow."
+
+PARENT_RECIPE_EXAMPLES = {
+    "family-game": (
+        "Try a silly drawing game",
+        "Make a five-minute game where two people draw silly animals with paper and pencils.",
+    ),
+    "memory-comic": (
+        "Try the picnic squirrel",
+        "Make a comic about an imaginary picnic where a squirrel grabs the napkin instead of the sandwich.",
+    ),
+    "home-invention": (
+        "Try a pencil holder",
+        "Invent a cardboard holder that keeps pencils from rolling off a table.",
+    ),
+}
+
+RECIPE_EXAMPLES = {
+    **PARENT_RECIPE_EXAMPLES, **EVERYDAY_RECIPE_EXAMPLES, **TEACHER_RECIPE_EXAMPLES,
+    **PARENT_INSIGHT_RECIPE_EXAMPLES, **TEACHER_INSIGHT_RECIPE_EXAMPLES,
+}
+RECIPE_INPUT_HINTS = {
+    **EVERYDAY_INPUT_HINTS, **TEACHER_INPUT_HINTS, **PARENT_INSIGHT_INPUT_HINTS, **TEACHER_INSIGHT_INPUT_HINTS,
+}
+
+PARENT_RECIPES = {
+    "family-game": Recipe(
+        title="Make a game for family night",
+        description="Make up a game you can teach at the kitchen table in a few minutes.",
+        audience=_PARENT_AUDIENCE,
+        steps=[
+            step("Make up a game", "Pick a theme your grown-up would enjoy and say what you have to play with.",
+                 "Help me invent a five-minute game.\n\nAudience\n{{audience}}\n\n"
+                 "Here’s my idea.\n{{topic}}\n\n"
+                 "Here’s what I have in mind for players and supplies.\n{{context}}\n\n"
+                 "Use supplies I list or just paper and a pencil. "
+                 "Draft the setup, one turn, and how the game ends. Point out one rule I can change."),
+            step("Try a pretend turn", "Read the draft. Change a rule or add a twist before you keep going.",
+                 "Here are my rules. Walk through one pretend turn with them.\n{{output[-1]}}\n\n"
+                 "Show what two players could do and what happens next. Find one place a new player might "
+                 "get stuck and suggest a fix. Keep any rule or twist I added."),
+            step("Make a rules card", "Read the sample turn. Fix a confusing rule before you make the card.",
+                 "Here’s my game.\n{{output[-2]}}\n\nHere’s my checked sample turn.\n{{output[-1]}}\n\n"
+                 "Write a short rules card I can read aloud.\n\nAudience\n{{audience}}\n\n"
+                 "Include the name, supplies, "
+                 "setup, what to do on a turn, how the game ends, and how to win or succeed. "
+                 "Include a one-line example turn. Use the checked turn to clarify the rules, "
+                 "and use my version of any rule I changed."),
+        ],
+    ),
+    "memory-comic": Recipe(
+        title="Turn a memory into a comic",
+        description="Draw a four-panel comic from a funny moment or a scene you make up.",
+        audience=_PARENT_AUDIENCE,
+        steps=[
+            step("Pick the moment", "Share a few details you’re comfortable showing, or make up the whole scene.",
+                 "Help me plan a comic.\n\nAudience\n{{audience}}\n\nHere’s my moment.\n{{topic}}\n\n"
+                 "Here are my details.\n{{context}}\n\n"
+                 "Suggest a beginning, a surprise, and an ending using the details I gave. "
+                 "Call an imagined scene fiction. Use roles such as 'my grown-up' for real people. "
+                 "Leave space for a detail I want to draw."),
+            step("Plan four pictures", "Change the ending or add one detail you want your grown-up to notice.",
+                 "Turn my plan below into four easy-to-draw panels.\n{{output[-1]}}\n\n"
+                 "Describe the action in each picture and suggest a short caption if it helps. "
+                 "Use only the details I shared for a real memory. Leave speech bubbles blank for me to fill."),
+            step("Make a storyboard", "Check the four pictures. Keep the details you want to share.",
+                 "Make a four-panel storyboard from my revised panels below.\n{{output[-1]}}\n\n"
+                 "Give it a title and one short drawing direction per panel, with room for my own words. "
+                 "Keep my changes and label an imagined scene as fiction. Leave out identifying details "
+                 "and keep real dialogue for me to write. "
+                 "Make it easy to copy onto one sheet of paper."),
+        ],
+    ),
+    "home-invention": Recipe(
+        title="Invent a fix for home",
+        description="Design a paper or cardboard prototype and show how you would test it.",
+        audience=_PARENT_AUDIENCE,
+        steps=[
+            step("Sketch two fixes", "Pick one small problem you see at home, like pencils rolling off the table.",
+                 "Here’s my problem.\n{{topic}}\n\nHere’s what I have and what I’ve noticed.\n{{context}}\n\n"
+                 "Suggest two simple tabletop prototypes I can make from paper or cardboard and tape. "
+                 "Give each a name and say what it would help with. Offer one change I could try for each."),
+            step("Plan one test", "Keep the idea you want to build and change one part to make it yours.",
+                 "Use my prototype idea below.\n{{output[-1]}}\n\nMy problem and notes are below.\n{{topic}}\n{{context}}\n\n"
+                 "Follow my choice if I picked a design. If I left both options open, use the one with "
+                 "fewer materials. Describe the design, including any changes I made. Plan one short test "
+                 "that compares what happens with and without the prototype. Say what to count or watch for."),
+            step("Pitch the invention", "Check the plan, then show your grown-up what you built or want to try.",
+                 "Use my invention and test plan below.\n{{output[-1]}}\n\n"
+                 "My problem and notes are below.\n{{topic}}\n{{context}}\n\n"
+                 "Audience\n{{audience}}\n\nGive me labels for a sketch, short build directions, the test, "
+                 "and a 30-second pitch I can say out loud. Carry forward my design choices. "
+                 "Describe the test as a plan and leave a blank for what I actually observe."),
+        ],
+    ),
+}
 
 
 RECIPES = {
@@ -87,6 +189,11 @@ RECIPES = {
                  "Teach the first lesson in this path:\n{{output[-1]}}\nLearner: {{audience}}. Context: {{context}}. Include a plain explanation, worked example, practice question and suggested answer. End by naming the next lesson. Distinguish simplifications from literal facts."),
         ],
     ),
+    **PARENT_RECIPES,
+    **EVERYDAY_RECIPES,
+    **TEACHER_RECIPES,
+    **PARENT_INSIGHT_RECIPES,
+    **TEACHER_INSIGHT_RECIPES,
 }
 
 

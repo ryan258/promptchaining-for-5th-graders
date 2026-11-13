@@ -31,25 +31,20 @@ import json
 
 
 def demo_scientific_method():
-    """Demo: Apply scientific method to an MS-related hypothesis."""
+    """Draft a test plan using observations from a fictional intake log."""
     print("\n" + "=" * 70)
     print("DEMO 1: SCIENTIFIC METHOD")
     print("=" * 70)
-    print("\nHypothesis: Regular exercise improves MS fatigue management")
-    print("\nApplying the scientific method...\n")
+    print("\nHypothesis: A structured intake form reduces follow-up for missing details.")
+    print("\nThe model will propose tests for the fictional observations.\n")
 
     result, metadata = scientific_method(
-        hypothesis="Regular exercise improves MS fatigue management",
-        context="Multiple sclerosis patients often experience chronic fatigue",
-        evidence_sources=[
-            "Studies show exercise improves mitochondrial function",
-            "MS patients report both fatigue and exercise intolerance",
-            "Some MS patients report feeling better after exercise"
-        ]
+        hypothesis="A structured intake form reduces follow-up for missing details",
+        context="Fictional sample: 14 of 40 email requests and 5 of 20 form requests required follow-up. Teams chose their own channel. The log omits request type and urgency.",
     )
 
     print("\n📊 RESULTS:")
-    print(f"Verdict: {metadata['verdict']}")
+    print(f"Model assessment: {metadata['verdict']}")
     print(f"\nObservations: {json.dumps(result['observations'], indent=2)}")
     print(f"\nConclusion: {json.dumps(result['conclusion'], indent=2)}")
     print(f"\n✅ Scientific method completed in {metadata['steps_completed']} steps")
@@ -61,12 +56,12 @@ def demo_socratic_dialogue():
     print("\n" + "=" * 70)
     print("DEMO 2: SOCRATIC DIALOGUE")
     print("=" * 70)
-    print("\nBelief: People with MS should always use high-efficacy DMTs")
+    print("\nBelief: A meeting is the fastest way to unblock work.")
     print("\nEngaging Socratic dialogue...\n")
 
     result, metadata = socratic_dialogue(
-        belief="People with MS should always use high-efficacy DMTs",
-        teacher_persona="Neurologist",
+        belief="A meeting is always the fastest way to unblock work",
+        teacher_persona="A facilitator asking for concrete examples and exceptions",
         depth=3  # 3 rounds of questioning
     )
 
@@ -90,13 +85,13 @@ def demo_design_thinking():
     print("\n" + "=" * 70)
     print("DEMO 3: DESIGN THINKING")
     print("=" * 70)
-    print("\nProblem: MS patients struggle to track daily symptoms")
+    print("\nProblem: People returning to drafts forget which file is current.")
     print("\nApplying design thinking methodology...\n")
 
     result, metadata = design_thinking(
-        problem="MS patients struggle to track daily symptoms",
-        target_user="Person with MS experiencing brain fog",
-        constraints=["Low energy", "Cognitive limitations", "Variable symptoms"]
+        problem="Someone returning to a draft forgets which file is current",
+        target_user="A writer who uses dictation and takes breaks throughout a session",
+        constraints=["Use the existing folder", "Minimize typing", "Make the next action easy to find"]
     )
 
     print("\n🎨 DESIGN PROCESS:")
@@ -106,7 +101,7 @@ def demo_design_thinking():
     print(f"   Top ideas: {result['ideate'].get('most_promising', [])}")
     print(f"\n4. PROTOTYPE: {result['prototype'].get('chosen_idea', 'N/A')}")
     print(f"   How it works: {result['prototype'].get('how_it_works', 'N/A')[:200]}...")
-    print(f"\n5. TEST: {result['test'].get('overall_assessment', 'N/A')} solution")
+    print(f"\n5. PROPOSED TEST: {result['test'].get('overall_assessment', 'N/A')}")
     print(f"   Next iteration: {result['test'].get('next_iteration', 'N/A')}")
     print(f"\n✅ Design thinking completed")
 
@@ -116,21 +111,15 @@ def demo_judicial_reasoning():
     print("\n" + "=" * 70)
     print("DEMO 4: JUDICIAL REASONING")
     print("=" * 70)
-    print("\nCase: Should employers be required to accommodate MS-related fatigue?")
+    print("\nFictional case: Does an incident handoff comply with an internal policy?")
     print("\nApplying judicial reasoning...\n")
 
     result, metadata = judicial_reasoning(
-        case="Should employers be required to accommodate MS-related fatigue with flexible schedules?",
+        case="An outgoing support engineer posts an active priority incident in the team channel and leaves without acknowledgement. Did the ownership transfer under the fictional policy?",
         relevant_principles=[
-            "ADA (Americans with Disabilities Act)",
-            "Reasonable accommodation",
-            "Undue hardship standard",
-            "Equal opportunity"
+            "Fictional support policy: ownership transfers only when the incoming engineer acknowledges",
+            "If no acknowledgement arrives after five minutes, page the duty manager",
         ],
-        precedents=[
-            "ADA requires accommodation unless it causes undue hardship",
-            "Flexible schedules have been upheld as reasonable accommodations"
-        ]
     )
 
     print("\n⚖️  JUDICIAL ANALYSIS:")
@@ -138,24 +127,24 @@ def demo_judicial_reasoning():
     print(f"\nPrinciples: {json.dumps(result['principles'].get('principles', [])[:2], indent=2)}")
     print(f"\nArguments for Position A: {result['arguments'].get('position_A', {}).get('strongest_point', 'N/A')}")
     print(f"\nArguments for Position B: {result['arguments'].get('position_B', {}).get('strongest_point', 'N/A')}")
-    print(f"\n📜 RULING: {result['ruling'].get('ruling', 'N/A')}")
+    print(f"\nMODEL'S PROPOSED INTERPRETATION: {result['ruling'].get('ruling', 'N/A')}")
     print(f"\nReasoning: {result['ruling'].get('core_reasoning', 'N/A')}")
     print(f"Confidence: {result['ruling'].get('confidence', 'N/A')}")
     print(f"\n✅ Judicial reasoning completed")
 
 
 def demo_five_whys():
-    """Demo: Use 5 Whys to find root cause."""
+    """Draft possible causes and propose a way to investigate them."""
     print("\n" + "=" * 70)
     print("DEMO 5: ROOT CAUSE ANALYSIS (5 WHYS)")
     print("=" * 70)
-    print("\nProblem: I missed my medication dose today")
-    print("\nDigging to find root cause...\n")
+    print("\nProblem: A reviewer opened an out-of-date draft.")
+    print("\nGenerating possible explanations to check.\n")
 
     result, metadata = five_whys(
-        problem="I missed my medication dose today",
+        problem="A reviewer opened an out-of-date draft",
         depth=5,
-        context="Person with MS taking daily disease-modifying therapy"
+        context="Fictional observations: two drafts share almost the same filename. The handoff message links one of them. The cause is undetermined."
     )
 
     print("\n🔍 WHY CHAIN:")
@@ -165,8 +154,8 @@ def demo_five_whys():
         print(f"\nWhy #{i}: {why.get('question', 'N/A')}")
         print(f"  → {why.get('cause', 'N/A')}")
 
-    print(f"\n🎯 ROOT CAUSE: {result['synthesis'].get('root_cause', 'N/A')}")
-    print(f"\nWhy this is the root: {result['synthesis'].get('why_this_is_root', 'N/A')}")
+    print(f"\nPOSSIBLE CAUSE: {result['synthesis'].get('root_cause', 'N/A')}")
+    print(f"\nModel's reasoning: {result['synthesis'].get('why_this_is_root', 'N/A')}")
     print(f"\n💡 SYSTEMIC SOLUTIONS:")
     for solution in result['synthesis'].get('systemic_solutions', []):
         print(f"  • {solution}")
@@ -221,7 +210,12 @@ if __name__ == "__main__":
         help="Run specific demo (1=Scientific, 2=Socratic, 3=Design, 4=Judicial, 5=Five Whys, 6=All)"
     )
 
+    parser.add_argument("--live", action="store_true", help="Send the selected provider requests.")
     args = parser.parse_args()
+    limits = {1: 5, 2: 8, 3: 5, 4: 5, 5: 7, 6: 30}
+    if args.demo is None or not args.live:
+        parser.error("Choose --demo and pass --live for provider requests. For offline examples use ./verify_demos.sh.")
+    print(f"Up to {limits[args.demo]} provider requests. Provider charges apply.")
 
     if args.demo == 1:
         demo_scientific_method()

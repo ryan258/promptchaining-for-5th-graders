@@ -28,14 +28,16 @@ def archive_backup(recipes, runs) -> bytes:
             size += record_size
     if any(current) or not parts:
         parts.append(Backup(recipes=current[0], runs=current[1]).model_dump_json().encode("utf-8"))
-    if len(parts) > PART_LIMIT or sum(map(len, parts)) > EXPANDED_LIMIT or any(len(p) > JSON_LIMIT for p in parts):
-        raise ValueError("This workspace exceeds the archive limits. Preserve a stopped workspace-folder copy instead.")
     manifest = {"format": "prompt-chaining-studio-archive", "version": 1,
                 "parts": [{"name": f"part-{i:04d}.json", "sha256": hashlib.sha256(part).hexdigest()}
                           for i, part in enumerate(parts, 1)]}
+    manifest_raw = json.dumps(manifest).encode("utf-8")
+    if (len(parts) > PART_LIMIT or sum(map(len, parts)) + len(manifest_raw) > EXPANDED_LIMIT
+            or any(len(p) > JSON_LIMIT for p in parts)):
+        raise ValueError("This workspace exceeds the archive limits. Preserve a stopped workspace-folder copy instead.")
     stream = BytesIO()
     with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("manifest.json", json.dumps(manifest))
+        archive.writestr("manifest.json", manifest_raw)
         for entry, part in zip(manifest["parts"], parts):
             archive.writestr(entry["name"], part)
     raw = stream.getvalue()
@@ -44,11 +46,18 @@ def archive_backup(recipes, runs) -> bytes:
     return raw
 
 
+def read_json_backup(raw: bytes) -> Backup:
+    backup = Backup.model_validate_json(raw)
+    if not {"format", "version"} <= backup.model_fields_set:
+        raise ValueError("Choose a versioned Studio backup.")
+    return backup
+
+
 def read_backup(raw: bytes) -> tuple[list, list]:
     if not raw.startswith(b"PK"):
         if len(raw) > JSON_LIMIT:
             raise ValueError("Choose a Studio JSON backup smaller than 10 MB, or a Studio ZIP archive.")
-        backup = Backup.model_validate_json(raw)
+        backup = read_json_backup(raw)
         return backup.recipes, backup.runs
     if len(raw) > ARCHIVE_LIMIT:
         raise ValueError("Choose a Studio archive smaller than 128 MB.")
@@ -64,8 +73,9 @@ def read_backup(raw: bytes) -> tuple[list, list]:
             if len(manifest_raw) > 20_000:
                 raise ValueError()
             manifest = json.loads(manifest_raw)
-            if (set(manifest) != {"format", "version", "parts"}
-                    or manifest["format"] != "prompt-chaining-studio-archive" or manifest["version"] != 1
+            if (not isinstance(manifest, dict) or set(manifest) != {"format", "version", "parts"}
+                    or manifest["format"] != "prompt-chaining-studio-archive"
+                    or type(manifest["version"]) is not int or manifest["version"] != 1
                     or not isinstance(manifest["parts"], list) or not 1 <= len(manifest["parts"]) <= PART_LIMIT):
                 raise ValueError()
             recipes, runs = [], []
@@ -79,7 +89,7 @@ def read_backup(raw: bytes) -> tuple[list, list]:
                     part = source.read(JSON_LIMIT + 1)
                 if len(part) > JSON_LIMIT or hashlib.sha256(part).hexdigest() != entry["sha256"]:
                     raise ValueError()
-                backup = Backup.model_validate_json(part)
+                backup = read_json_backup(part)
                 recipes.extend(backup.recipes)
                 runs.extend(backup.runs)
             if names != {i.filename for i in infos}:
